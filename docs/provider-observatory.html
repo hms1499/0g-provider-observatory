@@ -1,0 +1,609 @@
+<title>0G Provider Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --bg:#EFF1F3; --surface:#FFFFFF; --surface-2:#F6F7F9;
+    --text:#141A21; --text-dim:#5A6672; --text-faint:#8794A0;
+    --border:#DCE1E6; --border-strong:#C2CAD2;
+    --accent:#146A75; --accent-mid:#5C9AA1; --accent-soft:#E2EEEF;
+    --pass:#2C6E4E; --warn:#9A6B14; --fail:#9E3B2E;
+    --pass-soft:#E4F0E8; --warn-soft:#F6EEDC;
+    --plate:#FBFAF7; --plate-border:#D9D4C8;
+    --shadow:0 1px 2px rgba(20,26,33,.06),0 8px 24px -16px rgba(20,26,33,.24);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1218; --surface:#151B23; --surface-2:#1B222B;
+      --text:#E6EAEE; --text-dim:#9BA7B3; --text-faint:#6B7885;
+      --border:#242D38; --border-strong:#33404E;
+      --accent:#4FB3BF; --accent-mid:#2F7079; --accent-soft:#123034;
+      --pass:#5EA97F; --warn:#C79A3E; --fail:#D0776A;
+      --pass-soft:#16281F; --warn-soft:#2A2113;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1218; --surface:#151B23; --surface-2:#1B222B;
+    --text:#E6EAEE; --text-dim:#9BA7B3; --text-faint:#6B7885;
+    --border:#242D38; --border-strong:#33404E;
+    --accent:#4FB3BF; --accent-mid:#2F7079; --accent-soft:#123034;
+    --pass:#5EA97F; --warn:#C79A3E; --fail:#D0776A;
+    --pass-soft:#16281F; --warn-soft:#2A2113;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Newsreader",Georgia,"Times New Roman",serif;font-size:18px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+  .col{max-width:68ch}
+
+  h1,h2,h3,.mono,.eyebrow,th,.tag{font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif}
+  .mono,code,kbd{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  h1{font-size:clamp(2.1rem,4.6vw,3.3rem);line-height:1.04;font-weight:700;letter-spacing:-.022em;margin:0 0 .4rem;text-wrap:balance}
+  h2{font-size:clamp(1.35rem,2.4vw,1.75rem);line-height:1.16;font-weight:700;letter-spacing:-.014em;margin:0;text-wrap:balance}
+  h3{font-size:1.05rem;line-height:1.3;font-weight:700;letter-spacing:-.006em;margin:0}
+  p{margin:0}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)}
+  .lede{font-size:1.2rem;line-height:1.55;color:var(--text-dim)}
+  strong{font-weight:500;color:var(--text)}
+  a{color:var(--accent);text-underline-offset:2px}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+  code{font-size:.86em;background:var(--surface-2);border:1px solid var(--border);border-radius:2px;padding:1px 5px}
+
+  header.top{padding:72px 0 0}
+  .kicker{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+  .tag{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 9px;border:1px solid var(--border-strong);border-radius:2px;color:var(--text-dim)}
+  .tag.hot{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin:40px 0 0;
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .meta div{padding:16px 20px 18px;border-right:1px solid var(--border)}
+  .meta div:last-child{border-right:0}
+  .meta dt{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px}
+  .meta dd{margin:0;font-family:"Bricolage Grotesque",sans-serif;font-weight:500;font-size:1rem;line-height:1.3;font-variant-numeric:tabular-nums}
+
+  section{margin-top:72px}
+  .sechead{display:flex;align-items:baseline;gap:16px;margin-bottom:26px;padding-bottom:14px;border-bottom:2px solid var(--text)}
+  .sechead .eyebrow{flex:none}
+  .stack{display:flex;flex-direction:column;gap:18px}
+
+  .ev{display:flex;flex-direction:column;gap:14px;margin:26px 0 0}
+  .ev figure{margin:0;padding:16px 20px;background:var(--surface);border:1px solid var(--border);
+    border-left:3px solid var(--accent);border-radius:0 3px 3px 0}
+  .ev q{font-style:italic;color:var(--text-dim);display:block;font-size:.98rem;line-height:1.5}
+  .ev figcaption{margin-top:9px;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase}
+
+  .dist{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+  .distrow{display:grid;grid-template-columns:104px 1fr 128px;gap:16px;align-items:center}
+  .distrow .lbl{font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-weight:600;color:var(--text)}
+  .distrow .bar{height:28px;background:var(--surface-2);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+  .distrow .bar i{display:block;height:100%}
+  .distrow .val{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--text-dim);font-variant-numeric:tabular-nums;text-align:right}
+  .distrow.l3 .bar i{background:var(--accent)}
+  .distrow.l2 .bar i{background:var(--accent-mid)}
+  .distrow.l1 .bar i{background:var(--border-strong)}
+
+  .verdict{margin-top:26px;padding:22px 24px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:4px;
+    display:flex;flex-direction:column;gap:8px}
+  .verdict .eyebrow{color:var(--accent)}
+  .verdict p{font-size:1.05rem;line-height:1.5}
+
+  .finds{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-top:26px}
+  .find{background:var(--surface);padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+  .find h3{font-size:1rem}
+  .find p{font-size:.94rem;color:var(--text-dim);line-height:1.55}
+  pre.data{margin:0;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:3px;
+    font-family:"IBM Plex Mono",monospace;font-size:.78rem;line-height:1.7;color:var(--text-dim);overflow-x:auto}
+  pre.data b{color:var(--text);font-weight:600}
+
+  .feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+  .feat{background:var(--surface);padding:22px 22px 24px;display:flex;flex-direction:column;gap:9px}
+  .feat .id{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;letter-spacing:.1em;color:var(--accent)}
+  .feat p{font-size:.95rem;line-height:1.55;color:var(--text-dim)}
+  .feat .parts{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+  .feat .parts li{font-family:"IBM Plex Mono",monospace;font-size:.76rem;line-height:1.45;color:var(--text-faint);padding-left:14px;position:relative}
+  .feat .parts li::before{content:"\203A";position:absolute;left:0;color:var(--accent)}
+
+  .plate{background:var(--plate);border:1px solid var(--plate-border);border-radius:4px;padding:26px 18px;margin:8px 0 0;overflow-x:auto;box-shadow:var(--shadow)}
+  .plate .mermaid{min-width:520px}
+  .platecap{display:flex;gap:10px;align-items:baseline;margin-top:12px;font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--text-faint);line-height:1.5}
+  .platecap b{color:var(--accent);font-weight:600;flex:none}
+
+  .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:4px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:.93rem}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);font-weight:600;background:var(--surface-2)}
+  tr:last-child td{border-bottom:0}
+  td.num{font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace;font-size:.85rem;white-space:nowrap}
+  .no{color:var(--text-faint)}
+  .pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap}
+  .pill.p{background:var(--accent-soft);color:var(--accent)}
+  .pill.w{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+
+  .risks{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+  .risk{background:var(--surface);padding:20px 22px}
+  .risk h3{font-size:1rem;margin-bottom:6px}
+  .risk p{font-size:.93rem;color:var(--text-dim);line-height:1.55}
+  .risk .fix{margin-top:9px;font-size:.9rem;color:var(--text-dim);padding-left:14px;border-left:2px solid var(--pass)}
+  .risk .gone{margin-top:9px;font-size:.9rem;color:var(--text-dim);padding-left:14px;border-left:2px solid var(--text-faint)}
+  .risk .st{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-left:8px;vertical-align:2px}
+  .risk .st.open{background:var(--warn-soft);color:var(--warn)}
+  .risk .st.closed{background:var(--pass-soft);color:var(--pass)}
+
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+  .rule{background:var(--surface);padding:20px 22px;display:flex;flex-direction:column;gap:7px}
+  .rule .n{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--accent);font-weight:600}
+  .rule h3{font-size:.98rem}
+  .rule p{font-size:.9rem;color:var(--text-dim);line-height:1.5}
+
+  ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+  ul.plain li{padding-left:20px;position:relative;color:var(--text-dim);font-size:.98rem;line-height:1.55}
+  ul.plain li::before{content:"\2014";position:absolute;left:0;color:var(--accent)}
+
+  footer{margin-top:80px;padding-top:24px;border-top:1px solid var(--border);color:var(--text-faint);font-family:"IBM Plex Mono",monospace;font-size:.74rem;line-height:1.7}
+
+  @media (max-width:640px){
+    body{font-size:17px}
+    header.top{padding-top:44px}
+    .meta div{border-right:0;border-bottom:1px solid var(--border)}
+    .meta div:last-child{border-bottom:0}
+    .distrow{grid-template-columns:84px 1fr;grid-template-areas:"lbl val" "bar bar";gap:6px 12px}
+    .distrow .lbl{grid-area:lbl}.distrow .val{grid-area:val}.distrow .bar{grid-area:bar}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">
+    <span class="tag hot">0G Bridge · Wave 3</span>
+    <span class="tag">Developer Tooling</span>
+    <span class="tag">Bản nháp v3</span>
+  </div>
+  <h1>0G Provider Observatory</h1>
+  <p class="lede col">Thiết bị đo độc lập cho mạng inference của 0G. Hôm nay lập trình viên chọn provider dựa trên chỉ số mà mạng lưới tự báo về chính mình — <strong>chưa ai đo lại, và không có gì lưu theo thời gian</strong>.</p>
+
+  <dl class="meta">
+    <div><dt>Hạn nộp</dt><dd>30/08/2026 · 22:00</dd></div>
+    <div><dt>Thời gian còn</dt><dd>9 ngày</dd></div>
+    <div><dt>Component 0G</dt><dd>Chain · Storage · Compute</dd></div>
+    <div><dt>Chi phí ước tính</dt><dd>$10 – $20</dd></div>
+  </dl>
+</header>
+
+<section>
+  <div class="sechead"><span class="eyebrow">01</span><h2>Vấn đề</h2></div>
+  <div class="col stack">
+    <p>0G Compute Router cho phép định tuyến theo <em>độ trễ thấp nhất</em> hoặc <em>giá rẻ nhất</em>. Đó là tính năng tốt. Nhưng những con số đứng sau quyết định ấy do chính mạng lưới tự báo, và không ai kiểm lại.</p>
+    <p>Ngày 21/08/2026, Router báo bốn model có kích thước khác hẳn nhau — <code>kimi-k2.7-code</code>, <code>glm-5.2</code>, <code>qwen3.7-max</code>, <code>qwen3.7-plus</code> — đều có độ trễ <strong>9408 ms</strong>, giống nhau tới từng mili giây. Bốn bản ghi ấy thuộc cùng một địa chỉ vận hành, nên nhiều khả năng con số được gộp ở mức địa chỉ chứ không đo riêng từng model.</p>
+    <p>Không ai làm gì sai ở đây. Nhưng một lập trình viên chọn "provider nhanh nhất" đang ra quyết định dựa trên con số không mô tả thứ họ sẽ thực sự nhận. Và nếu tuần sau con số đổi, không có bản ghi nào để đối chiếu — <strong>lịch sử không tồn tại</strong>.</p>
+    <p>Vấn đề thứ hai kín đáo hơn. Mỗi provider chạy ở một trong ba chế độ đảm bảo rất khác nhau, thông tin này <em>có</em> trong API nhưng <em>không</em> hiện ở bất kỳ giao diện nào. Người dùng không biết mình đang mua loại cam kết gì.</p>
+    <p>Và đây không phải chuyện lý thuyết. Chính các đội trong Wave 3 đã kể ra khi mô tả thứ họ phải tự dựng:</p>
+  </div>
+
+  <div class="ev col">
+    <figure><q>0G Compute calls can take 10–20 seconds. We added a job queue in the backend and return a pending status to the frontend.</q><figcaption>VeriAgent · Wave 3</figcaption></figure>
+    <figure><q>Dispatch inference to 0G Compute TEE service (or fallback provider) and attach normalized TeeProof envelopes.</q><figcaption>Aevum · Wave 3</figcaption></figure>
+    <figure><q>Zero-dependency verify script (stdlib only): PASS against live chain state.</q><figcaption>TRAIDE Keeper · Wave 3</figcaption></figure>
+  </div>
+
+  <div class="col stack" style="margin-top:26px">
+    <p>Bốn đội không quen nhau cùng tự tay dựng lại một mảnh hạ tầng gần giống nhau. Đó là dấu hiệu kinh điển của một thứ còn thiếu trong stack.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">02</span><h2>Bản đồ mạng lưới</h2></div>
+  <div class="col stack" style="margin-bottom:24px">
+    <p>Gọi <code>router-api.0g.ai/v1/providers</code> trên mainnet ngày 21/08/2026: <strong>42 bản ghi dịch vụ</strong> đến từ <strong>20 địa chỉ vận hành</strong>, thuộc <strong>6 nhà cung cấp</strong>. Đây là trạng thái thật, không phải suy đoán từ tài liệu.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Nhà vận hành</th><th>Bản ghi</th><th>Chế độ</th></tr></thead>
+      <tbody>
+        <tr><td>0G Foundation</td><td class="num">16</td><td>4 TeeML · 12 standard</td></tr>
+        <tr><td>Aliyun (Alibaba Cloud)</td><td class="num">16</td><td>TeeTLS</td></tr>
+        <tr><td>Tencent</td><td class="num">4</td><td>TeeTLS</td></tr>
+        <tr><td>OpenRouter</td><td class="num">2</td><td>TeeTLS</td></tr>
+        <tr><td>MiniMax</td><td class="num">2</td><td>TeeTLS</td></tr>
+        <tr><td>ByteDance</td><td class="num">1</td><td>TeeTLS</td></tr>
+        <tr><td>(không khai báo)</td><td class="num">1</td><td>TeeML</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col stack" style="margin-top:30px;margin-bottom:16px">
+    <p>Ba chế độ, ba mức đảm bảo khác nhau — và đây chính là thứ người dùng không nhìn thấy:</p>
+  </div>
+
+  <div class="dist">
+    <div class="distrow l3"><span class="lbl">TeeML</span><span class="bar"><i style="width:11.9%"></i></span><span class="val">5 bản ghi</span></div>
+    <div class="distrow l2"><span class="lbl">TeeTLS</span><span class="bar"><i style="width:59.5%"></i></span><span class="val">25 bản ghi</span></div>
+    <div class="distrow l1"><span class="lbl">standard</span><span class="bar"><i style="width:28.6%"></i></span><span class="val">12 bản ghi</span></div>
+  </div>
+
+  <div class="tablewrap" style="margin-top:22px">
+    <table>
+      <thead><tr><th>Chế độ</th><th>Bạn được đảm bảo điều gì</th><th>Không đảm bảo điều gì</th></tr></thead>
+      <tbody>
+        <tr><td><strong>TeeML</strong></td><td>Model chạy trong enclave TDX, verifier <code>dstack</code>. Chứng minh được chính model nào đã chạy</td><td>—</td></tr>
+        <tr><td><strong>TeeTLS</strong></td><td>Broker có attest trong TEE; phản hồi đúng là từ provider đó</td><td>Không chứng minh <em>"model execution specifics"</em></td></tr>
+        <tr><td><strong>standard</strong></td><td>Không có trường TEE nào</td><td>Không có bằng chứng mật mã ở tầng nào</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="verdict col">
+    <span class="eyebrow">Đọc con số cho đúng</span>
+    <p>15 trên 20 nhà vận hành không chạy chế độ TeeML. Đó là <strong>kích thước vùng chưa được đo</strong>, không phải số nhà cung cấp đáng ngờ. Và không đếm được theo lưu lượng thực tế — API không cung cấp dữ liệu đó.</p>
+  </div>
+
+  <div class="finds">
+    <article class="find">
+      <h3>Chế độ <code>standard</code> là kiến trúc hợp lý, không phải cẩu thả</h3>
+      <p>Cả 12 bản ghi <code>standard</code> đều thuộc 0G Foundation, bán lại Claude, GPT và Kimi qua API thượng nguồn. Không ai nhét được API đóng của một hãng khác vào enclave TDX của mình. Bảng xếp hạng phải nói rõ điều này, nếu không nó sẽ phạt oan một lựa chọn kỹ thuật đúng đắn.</p>
+    </article>
+
+    <article class="find">
+      <h3>42 bản ghi, nhưng chỉ 20 địa chỉ</h3>
+      <pre class="data">0x1F444c8A8D0b…  9 dịch vụ   0G Foundation
+0xB01EBd79c3fd…  6 dịch vụ   Aliyun
+0xe4d9768112BF…  4 dịch vụ   Tencent
+0xF203A388e9E7…  4 dịch vụ   Aliyun</pre>
+      <p>Xếp hạng theo "model" tạo ảo giác đa dạng. Dashboard phải gom về nhà vận hành mới phản ánh đúng mức độ tập trung thật của mạng lưới.</p>
+    </article>
+
+    <article class="find">
+      <h3>Có sẵn cặp đối chứng để hiệu chuẩn</h3>
+      <pre class="data">glm-5.2
+  provider A   <b>TeeML</b>    lat=3080 ms
+  provider B   <b>TeeTLS</b>   lat=9408 ms
+
+deepseek-v4-flash-0731   4 provider cùng model
+  giá chênh <b>45%</b>       2930 ms → <b>11149 ms</b></pre>
+      <p>Cùng một model tồn tại ở cả chế độ chứng minh được lẫn chế độ không. TeeML thành chuẩn để hiệu chuẩn phép đo tính nhất quán — không cần dựng provider giả làm mồi.</p>
+    </article>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">03</span><h2>Ba thứ sản phẩm trả lời</h2></div>
+  <div class="rules">
+    <div class="rule">
+      <span class="n">01</span>
+      <h3>Độ trễ thật là bao nhiêu</h3>
+      <p>Đo bởi bên thứ ba, riêng từng provider, không gộp theo địa chỉ. Kèm p50 và p95, không phải một con số duy nhất.</p>
+    </div>
+    <div class="rule">
+      <span class="n">02</span>
+      <h3>Bạn đang mua loại cam kết nào</h3>
+      <p>TeeML, TeeTLS hay standard — hiện rõ ngay cạnh mỗi provider, kèm giải thích chế độ đó đảm bảo và không đảm bảo điều gì.</p>
+    </div>
+    <div class="rule">
+      <span class="n">03</span>
+      <h3>Tuần trước nó chạy thế nào</h3>
+      <p>Lịch sử theo epoch, ghi bất biến trên 0G Chain. Thứ duy nhất hôm nay hoàn toàn không tồn tại.</p>
+    </div>
+  </div>
+  <div class="col stack" style="margin-top:24px">
+    <p>Cộng thêm một phép đo thứ tư: <strong>tính nhất quán</strong>. Với model được nhiều provider cùng phục vụ — và đặc biệt khi có bản TeeML làm chuẩn — hành vi phản hồi có khớp nhau không. Đây là <em>số đo độ lệch</em>, không phải phán quyết.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">04</span><h2>Bảy tính năng</h2></div>
+  <div class="col stack" style="margin-bottom:26px">
+    <p>Mã F1–F7 là định danh để tham chiếu trong lúc build, không phải thứ tự thực hiện. Ba tính năng đầu là lõi bắt buộc; bốn cái sau là lớp làm cho lõi dùng được.</p>
+  </div>
+
+  <div class="feats">
+    <article class="feat">
+      <span class="id">F1</span>
+      <h3>Prober</h3>
+      <p>Dịch vụ chạy theo lịch, gửi bộ prompt thăm dò cố định tới từng provider và <strong>tự đo</strong> thay vì tin chỉ số của Router.</p>
+      <ul class="parts">
+        <li>đọc danh sách từ /v1/providers</li>
+        <li>tự đo latency p50 / p95, tỉ lệ lỗi</li>
+        <li>đo riêng từng model, không gộp địa chỉ</li>
+        <li>xác minh chữ ký TEE khi có</li>
+      </ul>
+    </article>
+
+    <article class="feat">
+      <span class="id">F2</span>
+      <h3>Phép đo tính nhất quán</h3>
+      <p>Hành vi phản hồi có khớp giữa các provider cùng khai một model không. Hiệu chuẩn bằng cặp <code>glm-5.2</code> TeeML/TeeTLS.</p>
+      <ul class="parts">
+        <li>prompt xác định, temperature 0</li>
+        <li>so chéo giữa provider cùng model</li>
+        <li>TeeML làm chuẩn khi có</li>
+        <li>báo độ lệch, không kết luận nguyên nhân</li>
+      </ul>
+    </article>
+
+    <article class="feat">
+      <span class="id">F3</span>
+      <h3>Sổ đo on-chain</h3>
+      <p>Contract trên 0G mainnet lưu kết quả từng vòng đo. Bất biến, ai đọc cũng được, không qua máy chủ của mình.</p>
+      <ul class="parts">
+        <li>ProviderRegistry — địa chỉ, model, chế độ</li>
+        <li>MeasurementRegistry — số đo theo epoch</li>
+        <li>chỉ ghi bản tóm tắt + rootHash cho rẻ</li>
+        <li>thiết kế mở cho nhiều prober về sau</li>
+      </ul>
+    </article>
+
+    <article class="feat">
+      <span class="id">F4</span>
+      <h3>Kho bằng chứng trên Storage</h3>
+      <p>Toàn bộ transcript thô, phản hồi và TEE proof đẩy lên 0G Storage. On-chain chỉ giữ con trỏ.</p>
+      <ul class="parts">
+        <li>transcript đầy đủ mỗi vòng đo</li>
+        <li>rootHash nhúng vào bản ghi on-chain</li>
+        <li>giữ chi phí on-chain gần như không đổi</li>
+      </ul>
+    </article>
+
+    <article class="feat">
+      <span class="id">F5</span>
+      <h3>Dashboard công khai</h3>
+      <p>Bảng so sánh provider theo số đo thật, gom về nhà vận hành, kèm nhãn chế độ đảm bảo.</p>
+      <ul class="parts">
+        <li>latency tự đo, uptime, độ lệch</li>
+        <li>gom 42 bản ghi về 20 địa chỉ</li>
+        <li>nhãn TeeML / TeeTLS / standard kèm giải thích</li>
+        <li>mọi số đều bấm ra explorer</li>
+      </ul>
+    </article>
+
+    <article class="feat">
+      <span class="id">F6</span>
+      <h3>SDK chọn provider</h3>
+      <p>Gói TypeScript nhỏ để chọn provider theo số đo độc lập và theo mức đảm bảo mong muốn.</p>
+      <ul class="parts">
+        <li>pickProvider({ mode, maxP95 })</li>
+        <li>đọc thẳng từ chain, không qua API mình</li>
+        <li>dùng kèm Router, không thay thế</li>
+      </ul>
+    </article>
+
+    <article class="feat">
+      <span class="id">F7</span>
+      <h3>CLI kiểm chứng độc lập</h3>
+      <p>Thứ biến dashboard từ "tin lời mình" thành "tự kiểm tra lấy". Không có nó, cả dự án chỉ là một trang web có ý kiến.</p>
+      <ul class="parts">
+        <li>tải bản ghi đo từ chain</li>
+        <li>tải transcript từ Storage</li>
+        <li>băm lại, đối chiếu, kiểm chữ ký TEE</li>
+        <li>in ra PASS hoặc FAIL</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">05</span><h2>Kiến trúc</h2></div>
+  <div class="plate">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'IBM Plex Mono, monospace','fontSize':'13px','primaryColor':'#FFFFFF','primaryTextColor':'#141A21','primaryBorderColor':'#146A75','lineColor':'#5A6672','clusterBkg':'#F2F1EC','clusterBorder':'#D9D4C8','edgeLabelBackground':'#FBFAF7'}}}%%
+flowchart LR
+  subgraph OFF["Ngoài chuỗi"]
+    direction TB
+    P["F1 · Prober<br/>tự đo, chạy theo lịch"]
+    FP["F2 · Đo tính nhất quán<br/>hiệu chuẩn bằng TeeML"]
+  end
+  subgraph ZG["Hạ tầng 0G"]
+    direction TB
+    C["0G Compute<br/>42 dịch vụ · 20 địa chỉ"]
+    S["0G Storage<br/>transcript đầy đủ"]
+    CH["0G Chain<br/>F3 · Registry + Measurement"]
+  end
+  subgraph USE["Người dùng cuối"]
+    direction TB
+    D["F5 · Dashboard"]
+    SDK["F6 · SDK chọn provider"]
+    V["F7 · CLI kiểm chứng"]
+  end
+
+  P -->|"prompt thăm dò"| C
+  C -->|"phản hồi + chữ ký TEE"| P
+  P --> FP
+  FP -->|"upload transcript"| S
+  S -.->|"rootHash"| P
+  P ==>|"ghi bản đo"| CH
+  CH --> D
+  S --> D
+  CH --> SDK
+  CH --> V
+  S --> V
+</pre>
+  </div>
+  <p class="platecap"><b>Hình 1</b><span>Prober là thành phần duy nhất ghi dữ liệu. Dashboard, SDK và CLI đều đọc thẳng từ 0G Chain và 0G Storage — không thành phần nào phải tin máy chủ của mình.</span></p>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">06</span><h2>Vòng đo</h2></div>
+  <div class="plate">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'IBM Plex Mono, monospace','fontSize':'13px','primaryColor':'#FFFFFF','primaryTextColor':'#141A21','primaryBorderColor':'#146A75','lineColor':'#5A6672','actorBkg':'#FFFFFF','actorBorder':'#146A75','actorTextColor':'#141A21','signalColor':'#5A6672','signalTextColor':'#141A21','labelBoxBkg':'#E2EEEF','labelBoxBorderColor':'#146A75','labelTextColor':'#141A21','noteBkgColor':'#F2F1EC','noteBorderColor':'#D9D4C8','noteTextColor':'#5A6672','sequenceNumberColor':'#FFFFFF'}}}%%
+sequenceDiagram
+  autonumber
+  participant PR as Prober
+  participant CP as 0G Compute
+  participant FP as Đo nhất quán
+  participant ST as 0G Storage
+  participant CH as 0G Chain
+
+  PR->>CP: GET /v1/providers
+  CP-->>PR: 42 dịch vụ + model + chế độ
+
+  Note over PR,FP: hiệu chuẩn: probe bản TeeML<br/>của cùng model để lấy chuẩn
+
+  loop mỗi dịch vụ
+    PR->>CP: gửi N prompt thăm dò (temp 0)
+    CP-->>PR: phản hồi + chữ ký TEE + thời gian
+    PR->>PR: tự đo p50/p95, kiểm chữ ký nếu có
+    PR->>FP: so hành vi với chuẩn / với peer
+    FP-->>PR: độ lệch + probe nào lệch
+  end
+
+  PR->>ST: upload transcript thô của cả vòng
+  ST-->>PR: rootHash
+  PR->>CH: writeMeasurement(epoch, số đo, rootHash)
+  Note over CH: bất biến, ai cũng đọc được
+</pre>
+  </div>
+  <p class="platecap"><b>Hình 2</b><span>Transcript lên Storage <em>trước</em> khi ghi chain, để rootHash trong bản đo luôn trỏ tới bằng chứng đã tồn tại.</span></p>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">07</span><h2>Hai luồng người dùng</h2></div>
+  <div class="plate">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'fontFamily':'IBM Plex Mono, monospace','fontSize':'13px','primaryColor':'#FFFFFF','primaryTextColor':'#141A21','primaryBorderColor':'#146A75','lineColor':'#5A6672','clusterBkg':'#F2F1EC','clusterBorder':'#D9D4C8','edgeLabelBackground':'#FBFAF7'}}}%%
+flowchart TB
+  subgraph A["Luồng A — lập trình viên chọn provider"]
+    direction LR
+    A1["Gọi SDK<br/>pickProvider(mode, maxP95)"] --> A2["Đọc MeasurementRegistry<br/>trên 0G Chain"]
+    A2 --> A3["Lọc theo số đo thật<br/>và mức đảm bảo"]
+    A3 --> A4["Ghim provider<br/>khi gọi Router"]
+  end
+
+  subgraph B["Luồng B — bất kỳ ai muốn tự kiểm chứng"]
+    direction LR
+    B1["Chạy CLI<br/>verify &lt;measurementId&gt;"] --> B2["Tải bản đo<br/>từ 0G Chain"]
+    B2 --> B3["Tải transcript<br/>từ 0G Storage"]
+    B3 --> B4["Băm lại + kiểm<br/>chữ ký TEE"]
+    B4 --> B5{"Khớp?"}
+    B5 -->|"có"| B6["PASS"]
+    B5 -->|"không"| B7["FAIL"]
+  end
+
+  style B6 fill:#E4F0E8,stroke:#2C6E4E,color:#1E4C36
+  style B7 fill:#F6E3E0,stroke:#9E3B2E,color:#7A2C22
+</pre>
+  </div>
+  <p class="platecap"><b>Hình 3</b><span>Luồng B là phần quan trọng nhất về mặt lập luận. Nếu người ngoài không tự kiểm chứng được thì sản phẩm chỉ là một bảng xếp hạng tập trung — đúng thứ mình đang muốn thay thế.</span></p>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">08</span><h2>Nguyên tắc</h2></div>
+  <div class="rules">
+    <div class="rule">
+      <span class="n">01</span>
+      <h3>Thiết bị đo, không phải cáo trạng</h3>
+      <p>Báo cáo độ lệch, không phán quyết động cơ. Một địa chỉ bán nhiều model là chuyện bình thường của nhà tổng hợp.</p>
+    </div>
+    <div class="rule">
+      <span class="n">02</span>
+      <h3>Giải thích trước khi xếp hạng</h3>
+      <p>Chế độ <code>standard</code> hiện kèm lý do kỹ thuật, không bị chấm điểm thấp như một khiếm khuyết.</p>
+    </div>
+    <div class="rule">
+      <span class="n">03</span>
+      <h3>Mọi con số dẫn về nguồn</h3>
+      <p>Không có số nào chỉ tồn tại trên dashboard. Tất cả đều truy ngược được về chain, Storage và transcript thô.</p>
+    </div>
+    <div class="rule">
+      <span class="n">04</span>
+      <h3>Nói rõ cái mình không biết</h3>
+      <p>Không đo được theo lưu lượng. Không biết traffic thật phân bổ ra sao. Ghi rõ trên dashboard thay vì lờ đi.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">09</span><h2>Phạm vi 9 ngày</h2></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Hạng mục</th><th>Wave 3</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>F1 Prober, tự đo latency/uptime</td><td><span class="pill p">Có</span></td><td>Lõi. Đo riêng từng dịch vụ, không gộp theo địa chỉ.</td></tr>
+        <tr><td>F2 Đo nhất quán, hiệu chuẩn glm-5.2</td><td><span class="pill p">Có</span></td><td>10–15 probe thủ công. TeeML làm chuẩn, so chéo peer khi không có chuẩn.</td></tr>
+        <tr><td>F3 Contract trên 0G mainnet</td><td><span class="pill p">Có</span></td><td>Bắt buộc để hợp lệ ở Wave 3.</td></tr>
+        <tr><td>F4 Transcript lên 0G Storage</td><td><span class="pill p">Có</span></td><td>Rẻ, và là component 0G thứ hai.</td></tr>
+        <tr><td>F5 Dashboard</td><td><span class="pill p">Có</span></td><td>Gom theo nhà vận hành, nhãn chế độ kèm giải thích.</td></tr>
+        <tr><td>F7 CLI kiểm chứng</td><td><span class="pill p">Có</span></td><td>Nhỏ nhưng là lập luận cốt lõi. Không cắt.</td></tr>
+        <tr><td>F6 SDK chọn provider</td><td><span class="pill w">Nếu kịp</span></td><td>Vài chục dòng, cắt được mà không hỏng câu chuyện.</td></tr>
+        <tr><td>Provider giả tự dựng làm mồi</td><td class="no">Bỏ</td><td>Không cần — cặp glm-5.2 TeeML/TeeTLS là đối chứng thật.</td></tr>
+        <tr><td>Xếp hạng "độ trung thực"</td><td class="no">Bỏ</td><td>Đổi thành số đo độ lệch. Không gán nhãn đạo đức cho nhà cung cấp.</td></tr>
+        <tr><td>Phương pháp thống kê đầy đủ</td><td class="no">Không</td><td>Wave 4. Cần dữ liệu tích luỹ nhiều epoch.</td></tr>
+        <tr><td>Nhiều prober phi tập trung + staking</td><td class="no">Không</td><td>Wave 5. Nhưng contract phải thiết kế mở sẵn từ bây giờ.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">10</span><h2>Rủi ro</h2></div>
+  <div class="risks">
+    <div class="risk">
+      <h3>Bị hiểu là công kích chủ nhà<span class="st closed">đã xử lý</span></h3>
+      <p>Đối tượng đo bao gồm chính 0G Foundation, Alibaba Cloud, Tencent, ByteDance. Định vị cũ — "88% mạng lưới không chứng minh được model" — sẽ đọc thành lời tố cáo nhắm vào ban tổ chức.</p>
+      <p class="gone">Đã đổi định vị sang <strong>đo độc lập những gì chưa ai đo</strong>. Cùng kiến trúc, cùng code, khác thứ tuyên bố. Nguyên tắc ở mục 08 giữ cho giọng điệu nhất quán.</p>
+    </div>
+
+    <div class="risk">
+      <h3>Không có gì để bắt<span class="st closed">đã xử lý</span></h3>
+      <p>Phương án cũ định dựng provider giả làm mồi để demo có kịch tính.</p>
+      <p class="gone">Không cần nữa. Giá trị nằm ở phép đo, không ở việc bắt được ai. Bằng chứng có sẵn: 9408 ms trùng bốn model, <code>deepseek-v4-flash</code> chênh 3,8 lần độ trễ giữa 4 provider cùng model.</p>
+    </div>
+
+    <div class="risk">
+      <h3>Chữ ký TEE có xác minh được từ ngoài không<span class="st open">còn mở</span></h3>
+      <p>Đã biết: 30/42 bản ghi có <code>tee_type=TDX</code>, <code>tee_verifier=dstack</code>, <code>tee_attested=true</code>. Chưa rõ bên thứ ba có lấy được Remote Attestation report và tự kiểm chữ ký hay không.</p>
+      <p class="fix">Việc đầu tiên của ngày 1. Nếu không, F7 lùi về kiểm tính toàn vẹn của transcript và bản ghi on-chain — vẫn có giá trị, nhưng phải nói thật là yếu hơn.</p>
+    </div>
+
+    <div class="risk">
+      <h3>Trùng lặp với VeriAgent<span class="st open">còn mở</span></h3>
+      <p>VeriAgent trong Wave 3 cũng làm "verification oracle" gọi 0G Compute để kiểm chứng inference.</p>
+      <p class="fix">Đối tượng khác hẳn: họ chấm điểm tin cậy cho <em>agent</em> của người dùng, mình đo <em>hạ tầng</em> của chính mạng lưới. Phải nói rõ ngay trong mô tả một dòng và trong video demo.</p>
+    </div>
+
+    <div class="risk">
+      <h3>Gas mainnet và token<span class="st open">còn mở</span></h3>
+      <p>Wave 3 bắt buộc contract trên mainnet, mà faucet chỉ cấp token testnet.</p>
+      <p class="fix">Mua trước khoảng $10–20 token 0G, hoặc hỏi hỗ trợ trong Telegram của 0G. Dev toàn bộ trên testnet, chỉ deploy bản cuối lên mainnet.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><span class="eyebrow">11</span><h2>Chín ngày</h2></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Ngày</th><th>Việc</th><th>Xong khi</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>Dựng repo. Gọi thật cặp <code>glm-5.2</code> TeeML và TeeTLS. Thử lấy Remote Attestation report và tự kiểm chữ ký</td><td>Biết chắc F7 làm được tới mức nào</td></tr>
+        <tr><td class="num">2–3</td><td>Viết prober và bộ probe. Đo nhất quán, hiệu chuẩn trên chuẩn TeeML</td><td>Đo được độ lệch giữa hai provider cùng model</td></tr>
+        <tr><td class="num">3–4</td><td>Contract Registry + Measurement, test trên testnet</td><td>Test xanh, ghi/đọc chạy đúng</td></tr>
+        <tr><td class="num">5</td><td>Nối 0G Storage, transcript lên và rootHash về</td><td>Một vòng chạy khép kín đầu cuối</td></tr>
+        <tr><td class="num">6–7</td><td>Dashboard. Quét toàn bộ 42 dịch vụ, gom theo 20 địa chỉ, gắn nhãn chế độ</td><td>Bảng so sánh chạy trên dữ liệu thật</td></tr>
+        <tr><td class="num">8</td><td>CLI kiểm chứng, deploy mainnet, chạy vài epoch thật</td><td>Có link explorer để nộp</td></tr>
+        <tr><td class="num">9</td><td>README, sơ đồ kiến trúc, video 3 phút, post X, nộp bài</td><td>Nộp trước 22:00</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col" style="margin-top:24px">
+    <ul class="plain">
+      <li>Ngày 1 quyết định mức độ mạnh của lập luận kiểm chứng, không còn quyết định đề tài có sống hay không.</li>
+      <li>Deploy mainnet để tới ngày 8 nhưng phải chạy thật vài epoch, vì judge sẽ mở explorer ra xem có hoạt động on-chain thật không.</li>
+      <li>Cả ngày 9 dành cho việc nộp bài. Không viết code ngày 9.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  Bản nháp thiết kế v3 · định vị: đo độc lập · 21/08/2026<br>
+  Số liệu mạng lưới đo ngày 21/08/2026 từ router-api.0g.ai/v1/providers · 42 dịch vụ · 20 địa chỉ · 6 nhà vận hành<br>
+  0G Bridge by AKINDO · Wave 3 · hạn 30/08/2026 22:00
+</footer>
+
+</div>

@@ -1,0 +1,77 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - generic [ref=e7]:
+          - link [ref=e8] [cursor=pointer]:
+            - /url: https://app.akindo.io/
+          - generic [ref=e18]:
+            - link "Buildathons" [ref=e20] [cursor=pointer]:
+              - /url: https://app.akindo.io/wave-hacks
+            - link "Hackathons" [ref=e22] [cursor=pointer]:
+              - /url: https://app.akindo.io/hackathons
+            - link "Products" [ref=e24] [cursor=pointer]:
+              - /url: https://app.akindo.io/products
+            - link "Sign in" [ref=e25] [cursor=pointer]:
+              - /url: https://app.akindo.io/login
+      - contentinfo [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - link "BOOK A STRATEGY CALL" [ref=e43] [cursor=pointer]:
+                - /url: https://calendly.com/shinkinjo/30min
+              - generic [ref=e44]:
+                - list [ref=e45]:
+                  - listitem [ref=e46]:
+                    - link "Contact us" [ref=e47] [cursor=pointer]:
+                      - /url: https://app.deform.cc/form/d4def915-fae8-46a9-b66f-3bf623ff2a98/?page_number=0
+                  - listitem [ref=e48]:
+                    - link "Buildathons" [ref=e49] [cursor=pointer]:
+                      - /url: https://app.akindo.io/wave-hacks
+                  - listitem [ref=e50]:
+                    - link "Products" [ref=e51] [cursor=pointer]:
+                      - /url: https://app.akindo.io/products
+                  - listitem [ref=e52]:
+                    - link "The Builder Activation" [ref=e53] [cursor=pointer]:
+                      - /url: https://www.youtube.com/@akindo_io
+                - list [ref=e54]:
+                  - listitem [ref=e55]:
+                    - link "About us" [ref=e56] [cursor=pointer]:
+                      - /url: https://akindo.io
+                  - listitem [ref=e57]:
+                    - link "Brand Assets" [ref=e58] [cursor=pointer]:
+                      - /url: https://drive.google.com/drive/folders/14xy6WPsUUSkoqn6nULor0WFrLjizscrs?usp=sharing
+                  - listitem [ref=e59]:
+                    - link "Terms" [ref=e60] [cursor=pointer]:
+                      - /url: https://akindo.notion.site/Terms-4d86eec7d87c424e987ddb0dbc53af29
+                  - listitem [ref=e61]:
+                    - link "Privacy Policy" [ref=e62] [cursor=pointer]:
+                      - /url: https://akindo.notion.site/PrivacyPolicy-db4b7aad0fe74d95a580665bb6d374a0
+            - generic [ref=e63]:
+              - list [ref=e64]:
+                - listitem [ref=e65]:
+                  - link [ref=e66] [cursor=pointer]:
+                    - /url: https://twitter.com/akindo_io
+                - listitem [ref=e69]:
+                  - link [ref=e70] [cursor=pointer]:
+                    - /url: https://discord.gg/xAHPkSM9t7
+                - listitem [ref=e73]:
+                  - link [ref=e74] [cursor=pointer]:
+                    - /url: https://www.youtube.com/@akindo_io
+                - listitem [ref=e77]:
+                  - link [ref=e78] [cursor=pointer]:
+                    - /url: https://t.me/akindo_io
+                - listitem [ref=e81]:
+                  - link [ref=e82] [cursor=pointer]:
+                    - /url: https://lu.ma/user/akindo
+                    - img "Luma" [ref=e84]
+                - listitem [ref=e85]:
+                  - link [ref=e86] [cursor=pointer]:
+                    - /url: https://akindo.substack.com/
+                    - img "Substack" [ref=e88]
+              - generic [ref=e89]: ©AKINDO
+          - img "Build a Killer App" [ref=e91]
+    - region "Notifications Alt+T"
+  - alert [ref=e92]: AKINDO
+  - generic:
+    - alertdialog
