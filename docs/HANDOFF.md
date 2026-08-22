@@ -69,12 +69,12 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T7 | Registry contracts + chain reader | `contracts/`, `src/chain/` |
 | T7b | Testnet deploy, seeded and verified live | `deployments/galileo-16602.json` |
 | T6 | Latency aggregation: results -> p50/p95/error rate | `src/probes/aggregate.ts` |
+| T5 | Divergence engine, calibrated on the TeeML reference | `src/probes/divergence.ts` |
 
 ### Ready now — nothing blocks these, do them in any order
 
 | | Task | Notes |
 |---|---|---|
-| T5 | **Divergence engine** (F2) | `CallResult[]` -> divergence per comparator, minus the internal noise floor from the `arith-mult` / `arith-mult-repeat` pair. Plugs into the `divergenceBps` hook `toMeasurements` already exposes |
 | T8 | **Verification CLI** (F7) | Buildable against fixtures; needs no live data. Argumentatively load-bearing, do not cut |
 | T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; swap in real measurements when T5/T6 land |
 
@@ -89,7 +89,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 
 | | Task | Waits on |
 |---|---|---|
-| T10 | Live epoch run against real providers | B1 — T5 optional, divergence can start at 0 |
+| T10 | Live epoch run against real providers | **B1 only** — every piece it needs is built |
 | T11 | Storage wiring (F4): transcript up, rootHash back | T10 for real transcripts — buildable against a fixture before that |
 | T12 | **Mainnet deploy + accumulate real epochs** | B2, T10 — contracts are ready |
 | T13 | Submission pack: README, 3-min video, X post | T12 for the explorer link |
@@ -200,6 +200,36 @@ Percentiles use nearest rank, `rank = ceil(k*n/100)`, no interpolation.
 single epoch's p95 *is* its slowest call and carries almost no tail information. It only
 becomes meaningful once epochs are pooled — which `aggregate()` supports, since pooling
 many epochs is the same call as aggregating one.
+
+### What T5 measures, and what it refuses to say
+
+`src/probes/divergence.ts` answers one question: do two providers claiming the same model
+behave the same way? The answer is always a distance, never a verdict — a provider that
+differs may be running a different model, quantisation, sampler or system prompt, and this
+code cannot tell which.
+
+- **A reference when one exists, a symmetric distance when it does not.** Where a group
+  holds a TeeML service, that service is the standard and the others are measured against
+  it. Only `glm-5.2` qualifies, out of ten multi-provider groups. Everywhere else the
+  figure is symmetric: both peers carry the same number, because with no ground truth
+  neither side can be called the wrong one. Three or more peers fall back to the modal
+  answer, and a tie among peers drops the probe rather than picking a side.
+- **Self-instability is subtracted first.** `arith-mult` and `arith-mult-repeat` are
+  byte-identical prompts, so disagreement between them is the provider's own noise. That
+  floor is subtracted from raw divergence, and the subtraction can only ever lower a
+  provider's number. In a single epoch the floor is 0 or 10000 with nothing in between —
+  10000 zeroes the whole figure, which is the safe direction to err: a service that cannot
+  agree with itself should not be reported as differing from its peers. Pooling epochs
+  turns it into a real rate.
+- **12 of 15 probes carry the figure.** The two freeform probes are not compared — doing
+  so would make F7 reimplement "exactly seven words" in another language, and word
+  counting is ambiguous enough that two implementations would disagree. `arith-mult-repeat`
+  is held out so its twin is not weighted twice. Both stay in the transcript for a human.
+- **A failed call is not a wrong answer.** Errors belong to T6's error rate and are
+  invisible here. A probe a provider never answered is skipped, never scored as differing.
+
+The normalisation rules, the refusal regex and the arithmetic are all part of the
+verification contract, because F7 recomputes these values from the raw transcript.
 
 ### Measured gas — not estimated
 
