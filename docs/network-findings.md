@@ -1,8 +1,9 @@
-# Day 1 — Findings
+# Network findings
 
 **2026-08-21** · 0G Aristotle mainnet (chain 16661) · inference contract `0x47340d900bdFec2BD393c626E12ea0656F938d84`
 
-Day 1 goal per the design doc: stand up the repo, and answer **"how far can any of this actually be verified?"**
+What reconciling the two sources of truth about the network turned up, and what it means for the design.
+The question driving it: **how far can any of this actually be verified?**
 
 ---
 
@@ -100,8 +101,8 @@ No address appears in the Router while missing from the chain.
    correct mode. The Router becomes a cross-check, and the gap between the two is itself a measurement.
 2. **Add a column to F5:** "on-chain label" next to "real mode", making the 15 divergent services visible.
 3. **F7 keeps its strong scope** — a complete public verification path exists.
-4. **Day 2 needs a funded wallet** to make real inference calls. Everything so far has been
-   read-only and cost nothing.
+4. **A funded wallet is needed** before any real inference call. Everything here is read-only
+   and costs nothing.
 
 ---
 

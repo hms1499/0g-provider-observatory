@@ -1,5 +1,5 @@
 /**
- * Day 1 — dump raw on-chain metadata next to the Router's classification, to find
+ * Dump raw on-chain metadata next to the Router's classification, to find
  * which field actually separates the guarantee modes.
  */
 import { fetchRouterServices } from '../sources/router.js';

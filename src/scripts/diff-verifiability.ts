@@ -1,5 +1,5 @@
 /**
- * Day 1 — compare the `verifiability` field between on-chain and the HTTP Router
+ * Compare the `verifiability` field between on-chain and the HTTP Router
  * for the same (address, model). This is what a developer relies on to know which
  * guarantee they are buying.
  */

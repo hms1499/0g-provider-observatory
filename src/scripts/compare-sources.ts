@@ -1,5 +1,5 @@
 /**
- * Day 1 — reconcile the two sources describing the same network:
+ * Reconcile the two sources describing the same network:
  *   1. HTTP Router  (router-api.0g.ai/v1/providers)
  *   2. On-chain     (the inference contract via listService)
  * The gap between them is the Observatory's first datum.

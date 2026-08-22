@@ -1,8 +1,17 @@
 # 0G Provider Observatory
 
 Independent measurement layer for 0G's inference network. Wave 3 submission for
-0G Bridge by AKINDO. Read `docs/HANDOFF.md` first — it carries the current state,
+0G Bridge by AKINDO. Read `docs/HANDOFF.md` first — it carries the task board,
 the positioning constraints, and what is blocked.
+
+## How work is organised
+
+**Task-based, not day-based.** There is no per-day schedule; the only fixed date is
+the submission deadline. Pick a task from *Ready now* in `docs/HANDOFF.md`, finish
+it, move it to *Done*. Optimise for the shortest path to a valid submission — the
+critical path runs mainnet funds -> T7 contracts -> T12 deploy -> T13 submission,
+because Wave 3 is invalid without a mainnet contract and an explorer link. Do not
+reintroduce a day-by-day plan.
 
 ## Language
 

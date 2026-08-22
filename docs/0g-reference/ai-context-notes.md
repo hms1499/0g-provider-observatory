@@ -76,7 +76,7 @@ GET /file/info/{cid}              look up file info
 ```
 
 So an independent verifier needs only `curl` plus a re-hash. Nothing to install.
-Combined with the two public TEE endpoints found on day 1:
+Combined with the two public TEE endpoints already confirmed:
 
 ```
 GET {providerURL}/v1/proxy/attestation/report

@@ -39,7 +39,7 @@ export function loadSnapshot(path: string): Snapshot {
   return JSON.parse(readFileSync(path, 'utf8')) as Snapshot;
 }
 
-/** Guarantee mode per the Router. Day 1 confirmed it matches the on-chain derivation exactly. */
+/** Guarantee mode per the Router. Confirmed to match the on-chain derivation exactly. */
 export function routerMode(s: SnapshotRouterService): Mode {
   return s.verifiability ?? 'standard';
 }
@@ -73,7 +73,7 @@ export interface PlanOptions {
 /**
  * Negotiate generation parameters against what each service declares.
  *
- * The day-2 plan said "temperature 0" across the board. That does not hold: 9/38
+ * The original plan said "temperature 0" across the board. That does not hold: 9/38
  * chatbot services (the whole Claude line plus kimi-k3) do not declare support for
  * `temperature`, and sending it may return 400. So drop the parameter and RECORD
  * what was dropped — comparing a service running at temperature 0 against one
@@ -175,7 +175,7 @@ export interface EpochPlan {
   estCostUsd: number;
   /** Services that had to drop temperature — must be labelled when publishing divergence. */
   degraded: Target[];
-  /** Listed by the Router but absent from the contract. Day 1 recorded the two sources diverge. */
+  /** Listed by the Router but absent from the contract. The two sources are known to diverge. */
   routerOnly: Target[];
   /**
    * Registered on the contract but never exposed by the Router. Header pinning CANNOT

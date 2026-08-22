@@ -1,7 +1,7 @@
 /**
  * Provider-pinned Router call layer — F1.
  *
- * Decision locked on day 1: pin via Router headers, do NOT fund a per-provider
+ * Locked decision: pin via Router headers, do NOT fund a per-provider
  * sub-account. That avoids 20 sub-accounts and a 24-hour withdrawal lock.
  *
  *   X-0G-Provider-Address                      pin to exactly one provider

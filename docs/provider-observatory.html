@@ -170,7 +170,7 @@
 
   <dl class="meta">
     <div><dt>Deadline</dt><dd>2026-08-30 · 22:00</dd></div>
-    <div><dt>Time remaining</dt><dd>8 days</dd></div>
+    <div><dt>Build model</dt><dd>Task-based</dd></div>
     <div><dt>0G components</dt><dd>Chain · Storage · Compute</dd></div>
     <div><dt>Estimated cost</dt><dd>$10 – $20</dd></div>
   </dl>
@@ -519,7 +519,7 @@ flowchart TB
 </section>
 
 <section>
-  <div class="sechead"><span class="eyebrow">09</span><h2>Nine-day scope</h2></div>
+  <div class="sechead"><span class="eyebrow">09</span><h2>Scope</h2></div>
   <div class="tablewrap">
     <table>
       <thead><tr><th>Item</th><th>Wave 3</th><th>Note</th></tr></thead>
@@ -558,7 +558,7 @@ flowchart TB
     <div class="risk">
       <h3>Can a TEE signature be verified from outside<span class="st closed">closed</span></h3>
       <p>Known: 30 of 42 records carry <code>tee_type=TDX</code>, <code>tee_verifier=dstack</code>, <code>tee_attested=true</code>.</p>
-      <p class="gone">Answered on day 1: yes. Both <code>/v1/proxy/attestation/report</code> and <code>/v1/proxy/signature/{chatID}</code> are public and need no auth, and signature recovery runs offline via <code>ethers.recoverAddress()</code>. F7 keeps its strong scope.</p>
+      <p class="gone">Answered: yes. Both <code>/v1/proxy/attestation/report</code> and <code>/v1/proxy/signature/{chatID}</code> are public and need no auth, and signature recovery runs offline via <code>ethers.recoverAddress()</code>. F7 keeps its strong scope.</p>
     </div>
 
     <div class="risk">
@@ -576,33 +576,48 @@ flowchart TB
 </section>
 
 <section>
-  <div class="sechead"><span class="eyebrow">11</span><h2>Nine days</h2></div>
+  <div class="sechead"><span class="eyebrow">11</span><h2>Order of work</h2></div>
+  <div class="col stack" style="margin-bottom:26px">
+    <p>There is no per-day schedule. Work is picked off a task board, and the only fixed date is the submission deadline. What matters is the dependency order, not the calendar.</p>
+  </div>
+
   <div class="tablewrap">
     <table>
-      <thead><tr><th>Day</th><th>Work</th><th>Done when</th></tr></thead>
+      <thead><tr><th>Task</th><th>State</th><th>Waits on</th></tr></thead>
       <tbody>
-        <tr><td class="num">1</td><td>Stand up the repo. Make real calls against the <code>glm-5.2</code> TeeML and TeeTLS pair. Try fetching a Remote Attestation report and verifying a signature</td><td>We know exactly how strong F7 can be</td></tr>
-        <tr><td class="num">2</td><td>Probe suite, provider-pinned Router layer, dry run over the stored snapshot</td><td>A full epoch is planned and priced without spending anything</td></tr>
-        <tr><td class="num">3</td><td>Divergence engine and p50/p95, calibrated on the TeeML reference</td><td>Divergence between two providers of one model is measurable</td></tr>
-        <tr><td class="num">3–4</td><td>Registry + Measurement contracts, tested on testnet</td><td>Tests green, read and write both work</td></tr>
-        <tr><td class="num">5</td><td>Wire up 0G Storage, transcripts up and rootHash back</td><td>One epoch runs end to end</td></tr>
-        <tr><td class="num">6–7</td><td>Dashboard. Sweep all 42 services, roll up to 20 addresses, attach mode labels</td><td>The comparison table runs on real data</td></tr>
-        <tr><td class="num">8</td><td>Verification CLI, mainnet deploy, run several real epochs</td><td>There is an explorer link to submit</td></tr>
-        <tr><td class="num">9</td><td>README, architecture diagram, 3-minute video, X post, submit</td><td>Submitted before 22:00</td></tr>
+        <tr><td>T1 Repo, dual-source reconciliation, <code>deriveMode()</code></td><td><span class="pill p">Done</span></td><td class="no">—</td></tr>
+        <tr><td>T2 Probe suite, 15 deterministic probes</td><td><span class="pill p">Done</span></td><td class="no">—</td></tr>
+        <tr><td>T3 Provider-pinned Router layer</td><td><span class="pill p">Done</span></td><td class="no">—</td></tr>
+        <tr><td>T4 Epoch plan and offline dry run</td><td><span class="pill p">Done</span></td><td class="no">—</td></tr>
+        <tr><td>T5 Divergence engine · F2</td><td><span class="pill w">Ready</span></td><td class="no">nothing</td></tr>
+        <tr><td>T6 Latency aggregation, p50 / p95 · F1</td><td><span class="pill w">Ready</span></td><td class="no">nothing</td></tr>
+        <tr><td>T7 Registry contracts · F3</td><td><span class="pill w">Ready</span></td><td class="no">nothing</td></tr>
+        <tr><td>T8 Verification CLI · F7</td><td><span class="pill w">Ready</span></td><td class="no">nothing</td></tr>
+        <tr><td>T9 Dashboard · F5</td><td><span class="pill w">Ready</span></td><td class="no">nothing</td></tr>
+        <tr><td>T10 Live epoch run against real providers</td><td class="no">Blocked</td><td>Router API key · T5 · T6</td></tr>
+        <tr><td>T11 Transcripts to 0G Storage · F4</td><td class="no">Blocked</td><td>T10</td></tr>
+        <tr><td>T12 Mainnet deploy, accumulate real epochs</td><td class="no">Blocked</td><td>mainnet funds · T7 · T10</td></tr>
+        <tr><td>T13 README, video, submission</td><td class="no">Blocked</td><td>T12</td></tr>
       </tbody>
     </table>
   </div>
+
+  <div class="verdict col">
+    <span class="eyebrow">Critical path</span>
+    <p>mainnet funds &rarr; <strong>T7</strong> &rarr; <strong>T12</strong> &rarr; <strong>T13</strong>. Wave 3 is invalid without a contract on 0G mainnet and an explorer link showing real activity, so that chain is the whole schedule. Everything in the Ready group runs alongside it, in any order.</p>
+  </div>
+
   <div class="col" style="margin-top:24px">
     <ul class="plain">
-      <li>Day 1 decided how strong the verification argument could be; it no longer decides whether the idea survives.</li>
-      <li>Mainnet deploy is scheduled for day 8 but several real epochs must run, because judges will open the explorer to check for genuine on-chain activity.</li>
-      <li>Day 9 is entirely for submission. No code on day 9.</li>
+      <li>Stand the contract up early and let epochs accumulate while the rest is built. Judges open the explorer to check for genuine on-chain activity, and activity takes wall-clock time to exist.</li>
+      <li>Nothing in the Ready group blocks anything else in it — the five can be taken in whatever order suits.</li>
+      <li>The verification CLI is small but argumentatively load-bearing. Without it the product is a centralised leaderboard, which is the thing it sets out to replace.</li>
     </ul>
   </div>
 </section>
 
 <footer>
-  Design draft v3 · positioning: independent measurement · 2026-08-21<br>
+  Design draft v3 · positioning: independent measurement · task-based build · 2026-08-21<br>
   Network figures measured 2026-08-21 from router-api.0g.ai/v1/providers · 42 services · 20 addresses · 6 operators<br>
   0G Bridge by AKINDO · Wave 3 · deadline 2026-08-30 22:00
 </footer>
