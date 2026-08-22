@@ -6,3 +6,9 @@ dist/
 data/raw/
 .DS_Store
 .playwright-mcp/
+
+# Foundry
+out/
+cache/
+broadcast/
+lib/

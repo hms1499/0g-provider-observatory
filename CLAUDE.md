@@ -9,9 +9,9 @@ the positioning constraints, and what is blocked.
 **Task-based, not day-based.** There is no per-day schedule; the only fixed date is
 the submission deadline. Pick a task from *Ready now* in `docs/HANDOFF.md`, finish
 it, move it to *Done*. Optimise for the shortest path to a valid submission — the
-critical path runs mainnet funds -> T7 contracts -> T12 deploy -> T13 submission,
-because Wave 3 is invalid without a mainnet contract and an explorer link. Do not
-reintroduce a day-by-day plan.
+critical path runs mainnet funds -> T12 deploy -> T13 submission, because Wave 3 is
+invalid without a mainnet contract and an explorer link. Do not reintroduce a
+day-by-day plan.
 
 ## Language
 
@@ -41,8 +41,21 @@ Run the command and read its output before claiming anything works.
 
 ```bash
 pnpm typecheck
-pnpm dry-run     # plans a full epoch offline, zero cost, no API key
+pnpm dry-run           # plans a full epoch offline, zero cost, no API key
+pnpm contracts:test    # Solidity suite
 ```
+
+## Contracts
+
+`contracts/` is Foundry (`foundry.toml`, tests in `contracts/test/`). Two rules that
+are load-bearing, not preferences:
+
+- `MeasurementRegistry` is **write-once**. No update, no delete, no owner override. A
+  record that could be revised afterwards is worth nothing as history, which is the
+  whole reason it is on chain.
+- Every measurement must carry a `storageRoot` pointing at the transcript it was
+  derived from. A summary with no path back to its evidence cannot be verified, and
+  F7 is the argument the project rests on.
 
 Everything except a live prober run works without `PRIVATE_KEY` or
 `ROUTER_API_KEY` and costs nothing.
