@@ -1,4 +1,4 @@
-/** Chụp trạng thái mạng lưới từ cả hai nguồn, lưu kèm dấu thời gian. */
+/** Capture network state from both sources and store it with a timestamp. */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fetchRouterServices } from '../sources/router.js';
 import { fetchOnchainServices } from '../sources/onchain.js';
@@ -22,10 +22,10 @@ async function main() {
   const modes = chain.reduce<Record<string, number>>((a, s) => ((a[s.mode] = (a[s.mode] ?? 0) + 1), a), {});
   const overstated = chain.filter((s) => s.rawVerifiability === 'TeeML' && s.mode !== 'TeeML').length;
 
-  console.log(`\n✓ ${file}`);
-  console.log(`  Router:   ${router.length} dịch vụ`);
-  console.log(`  On-chain: ${chain.length} dịch vụ`);
-  console.log(`  Chế độ suy ra:`, modes);
-  console.log(`  Dịch vụ có verifiability on-chain nói quá mức đảm bảo: ${overstated}\n`);
+  console.log(`\nok ${file}`);
+  console.log(`  Router:   ${router.length} services`);
+  console.log(`  On-chain: ${chain.length} services`);
+  console.log(`  Derived modes:`, modes);
+  console.log(`  Services whose on-chain verifiability overstates the guarantee: ${overstated}\n`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

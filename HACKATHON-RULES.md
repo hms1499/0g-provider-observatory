@@ -1,44 +1,44 @@
 # 0G Bridge by AKINDO — Rules & Submission Requirements
 
-> Nguồn: https://app.akindo.io/wave-hacks/Z4MlX4vreI72ol6pd
+> Source: https://app.akindo.io/wave-hacks/Z4MlX4vreI72ol6pd
 > Terms: https://akindo.notion.site/Terms-4d86eec7d87c424e987ddb0dbc53af29
-> Cập nhật: 2026-08-21
+> Updated: 2026-08-21
 
 ---
 
-## 1. Tổng quan chương trình
+## 1. Program overview
 
-| Hạng mục | Chi tiết |
+| Item | Detail |
 |---|---|
-| Tên | 0G Bridge by AKINDO |
+| Name | 0G Bridge by AKINDO |
 | Tagline | The Continuation Pathway for Apollo Builders — Ship Real AI x Onchain dApps on 0G |
 | Grant Partner | 0G Foundation |
 | Operator / Platform | AKINDO |
-| Thời lượng | 10 tuần · 5 Waves (mỗi Wave ~2 tuần) |
-| Tổng pool | $50,000 (USDC + 0G Credits) |
-| Phí tham gia | Miễn phí |
-| Hình thức | 100% online (nộp bài, chấm, trả thưởng đều remote) |
+| Duration | 10 weeks · 5 Waves (~2 weeks each) |
+| Total pool | $50,000 (USDC + 0G Credits) |
+| Entry fee | Free |
+| Format | 100% online (submission, judging, and payout all remote) |
 
 ---
 
 ## 2. Timeline & Deadlines
 
-Trạng thái hiện tại: **Wave 3 đang mở** (pool lớn nhất chương trình).
+Current status: **Wave 3 is open** (the largest pool in the program).
 
-| Mốc | Thời điểm |
+| Milestone | When |
 |---|---|
-| **Wave 3 — Submit Deadline** | **30/08/2026, 22:00** |
-| Deadline kế tiếp | 10/09/2026, 22:00 |
-| Deadline kế tiếp | 20/09/2026, 22:00 |
-| Deadline cuối (Wave 5) | 25/09/2026, 22:00 |
-| Demo Day (Token2049 Singapore) | 07–08/10/2026 — **optional**, format TBA |
+| **Wave 3 — Submit Deadline** | **2026-08-30, 22:00** |
+| Next deadline | 2026-09-10, 22:00 |
+| Next deadline | 2026-09-20, 22:00 |
+| Final deadline (Wave 5) | 2026-09-25, 22:00 |
+| Demo Day (Token2049 Singapore) | 2026-10-07/08 — **optional**, format TBA |
 
-> Toàn bộ tiền thưởng được chấm và phát **sau mỗi Wave**, tức đã chia xong **trước** Demo Day.
-> Không tham dự Demo Day **không** ảnh hưởng đến quyền nhận thưởng.
+> All prize money is judged and paid out **after each Wave**, i.e. fully distributed **before** Demo Day.
+> Not attending Demo Day does **not** affect eligibility for prizes.
 
 ---
 
-## 3. Cơ cấu thưởng
+## 3. Prize structure
 
 | Wave | Allocation | Pool | Format |
 |---|---|---|---|
@@ -47,145 +47,145 @@ Trạng thái hiện tại: **Wave 3 đang mở** (pool lớn nhất chương tr
 | **Wave 3** | **30%** | **$15,000** | **$7,500 USDC + $7,500 Credits** |
 | Wave 4 | 20% | $10,000 | TBA |
 | Wave 5 | 25% | $12,500 | TBA |
-| **Tổng** | 100% | **$50,000** | |
+| **Total** | 100% | **$50,000** | |
 
-- USDC trả **trực tiếp vào ví** builder dựa trên kết quả chấm.
-- Credits phát qua **0G Pay**, dùng được cho Compute / Storage / hạ tầng 0G.
-- Thưởng chưa dùng hết trong một Wave **có thể roll over** sang Wave sau (do 0G quyết định).
-- **Multi-Wave Completion Bonus**: nộp đủ cả 5 Wave → mở khóa credit thưởng thêm.
-- **Apollo Bridge Recognition**: ưu tiên xét cohort Apollo tiếp theo + giới thiệu trực tiếp team BD của 0G.
-- Top performers được tiến cử lên **0G Investment Committee** và **Deal Room**.
+- USDC is paid **directly to the builder's wallet** based on judging results.
+- Credits are issued via **0G Pay** and can be spent on Compute / Storage / 0G infrastructure.
+- Unused prize budget in a Wave **may roll over** to the next Wave (at 0G's discretion).
+- **Multi-Wave Completion Bonus**: submitting in all 5 Waves unlocks additional bonus credits.
+- **Apollo Bridge Recognition**: priority consideration for the next Apollo cohort plus a direct intro to 0G's BD team.
+- Top performers are put forward to the **0G Investment Committee** and **Deal Room**.
 
 ---
 
 ## 4. Eligibility
 
-- ✅ Mở cho developer / founder / team toàn cầu
-- ✅ Solo hoặc team **tối đa 6 người**
-- ✅ Apollo applicants (đậu hay không), APAC Hackathon participants, cộng đồng AKINDO, và builder hoàn toàn mới
-- ✅ Dự án mới tinh, MVP sớm, hoặc prototype có sẵn được phát triển tiếp trên 0G — đều hợp lệ
-- ⚠️ **Một người chỉ được ở một team duy nhất trong mỗi Wave**
-- ℹ️ Không yêu cầu KYC / tên thật. Terms xác định builder bằng **email đăng ký**, không phải danh tính pháp lý.
+- Open to developers / founders / teams worldwide
+- Solo or teams of **up to 6 people**
+- Apollo applicants (accepted or not), APAC Hackathon participants, the AKINDO community, and entirely new builders
+- Brand-new projects, early MVPs, or existing prototypes extended onto 0G — all eligible
+- **One person may belong to only one team per Wave**
+- No KYC or legal name required. The Terms identify a builder by their **registration email**, not legal identity.
 
 ---
 
-## 5. Submission Requirements (bắt buộc mỗi Wave)
+## 5. Submission requirements (mandatory every Wave)
 
 ### 5.1 Project Information
-- Tên dự án + mô tả một dòng (**tối đa 30 từ**)
-- Tóm tắt ngắn: làm gì, giải quyết vấn đề gì, dùng component 0G nào
+- Project name plus a one-line description (**max 30 words**)
+- Short summary: what it does, what problem it solves, which 0G components it uses
 
 ### 5.2 Code Repository
-- Repo **GitHub public** (hoặc share cho judges)
-- **Commit có ý nghĩa trong đúng kỳ Wave đó** ← quan trọng, đây là bằng chứng "progress"
-- README kèm hướng dẫn setup
+- A **public GitHub repo** (or shared with the judges)
+- **Meaningful commits dated within that Wave** — important, this is the evidence of "progress"
+- A README with setup instructions
 
-### 5.3 0G Integration Proof — bắt buộc từ Wave 3
-- **Địa chỉ contract trên 0G mainnet**
-- **Link 0G Explorer** thể hiện hoạt động on-chain
-- Bằng chứng rõ ràng đã tích hợp **ít nhất một** component của 0G
+### 5.3 0G Integration Proof — mandatory from Wave 3 onward
+- **A contract address on 0G mainnet**
+- **A 0G Explorer link** showing real on-chain activity
+- Clear evidence of integrating **at least one** 0G component
 
-> Wave 3 trở đi: 0G Chain phải là **mainnet**. Compute Network và DA vẫn được dùng testnet.
+> From Wave 3 onward, 0G Chain must be **mainnet**. Compute Network and DA may stay on testnet.
 
 ### 5.4 Demo Video
-- **Tối đa 3 phút**
-- Thể hiện: core functionality, user flow, và phần tích hợp 0G
-- Host public (YouTube / Loom)
-- *Screen recording là đủ — không yêu cầu quay mặt.*
+- **3 minutes maximum**
+- Must show: core functionality, user flow, and the 0G integration
+- Publicly hosted (YouTube / Loom)
+- *A screen recording is enough — no face cam required.*
 
 ### 5.5 Documentation
-- Sơ đồ kiến trúc hoặc mô tả kỹ thuật
-- Dùng module 0G nào và dùng như thế nào
-- Các bước deploy / reproduce local
+- An architecture diagram or technical description
+- Which 0G modules are used, and how
+- Deploy and local-reproduction steps
 
-### 5.6 Public X Post — BẮT BUỘC
-Mỗi submission phải kèm ít nhất một post public trên X gồm:
-- Tên dự án
-- Screenshot demo hoặc clip ngắn
+### 5.6 Public X post — MANDATORY
+Every submission needs at least one public X post containing:
+- The project name
+- A demo screenshot or short clip
 - Hashtags: `#0GBridge` `#BuildOn0G`
 - Tags: `@0G_labs` `@0G_Builders` `@AKINDO_io`
 
 ### 5.7 Optional Bonus Materials
 - Pitch deck
 - User feedback / testing notes
-- Tutorial hoặc technical write-up
-- Link frontend demo
+- A tutorial or technical write-up
+- A frontend demo link
 
 ---
 
-## 6. Judging Criteria
+## 6. Judging criteria
 
-Chấm bằng **AKINDO DD Arena (AI evaluation)** + **human review bởi judges của 0G**, cộng thêm **0G DevRel verify** xem tích hợp 0G có thật không.
+Judged by **AKINDO DD Arena (AI evaluation)** plus **human review by 0G's judges**, with **0G DevRel verifying** that the 0G integration is real.
 
-Mỗi Wave chấm theo **mức tiến bộ so với Wave trước**, không so với milestone cố định.
+Each Wave is scored on **progress relative to the previous Wave**, not against a fixed milestone.
 
-| Tiêu chí | Trọng số | Nội dung |
+| Criterion | Weight | What it covers |
 |---|---|---|
-| **Progress & Momentum** | **40%** | Dự án tiến thêm được bao xa trong Wave này, bất kể đang ở giai đoạn nào |
-| **0G Integration** | **30%** | Độ sâu và chất lượng khi dùng stack 0G (Chain, Compute, Storage, Agentic ID, 0G Pay) |
-| **Technical Quality & Execution** | **20%** | Chất lượng code, kiến trúc, bảo mật, độ hoàn thiện |
-| **Traction & Communication** | **10%** | Usage thực tế (nếu có), documentation, demo rõ ràng, public updates |
+| **Progress & Momentum** | **40%** | How far the project moved during this Wave, whatever stage it is at |
+| **0G Integration** | **30%** | Depth and quality of use of the 0G stack (Chain, Compute, Storage, Agentic ID, 0G Pay) |
+| **Technical Quality & Execution** | **20%** | Code quality, architecture, security, completeness |
+| **Traction & Communication** | **10%** | Real usage (if any), documentation, a clear demo, public updates |
 
-> Dự án có tích hợp 0G thật được **ưu tiên** trong đánh giá.
+> Projects with a genuine 0G integration are **prioritised** in evaluation.
 
 ---
 
 ## 7. Rules
 
-| # | Quy định |
+| # | Rule |
 |---|---|
-| 1 | **Submission Platform** — mọi dự án phải nộp qua AKINDO trước deadline của mỗi Wave |
-| 2 | **Resubmissions** — được update và nộp lại trước deadline cuối của Wave; phải nêu rõ điểm gì mới |
-| 3 | **Originality** — toàn bộ công việc phải là của mình hoặc credit đầy đủ. Code tái sử dụng phải là open source và được trích dẫn |
-| 4 | **Intellectual Property** — không xâm phạm bản quyền / bằng sáng chế / thương hiệu bên thứ ba |
-| 5 | **Multiple Waves** — được tham gia nhiều Wave; mỗi submission phải cho thấy tiến bộ thật |
-| 6 | **Eligibility** — team quy mô bất kỳ, nhưng mỗi thành viên chỉ thuộc một team trong mỗi Wave |
-| 7 | **Deployment** — dự án phải deploy được và judges test được |
+| 1 | **Submission platform** — every project must be submitted through AKINDO before each Wave's deadline |
+| 2 | **Resubmissions** — you may update and resubmit before the Wave's final deadline; state clearly what is new |
+| 3 | **Originality** — all work must be your own or fully credited. Reused code must be open source and cited |
+| 4 | **Intellectual property** — no infringement of third-party copyright, patents, or trademarks |
+| 5 | **Multiple Waves** — you may enter several Waves; each submission must show real progress |
+| 6 | **Eligibility** — any team size, but each member belongs to only one team per Wave |
+| 7 | **Deployment** — the project must be deployable and testable by the judges |
 
-### Điều khoản bổ sung từ Terms of Service
-- Ban tổ chức **có quyền yêu cầu thông tin bổ sung** và truy cập ứng dụng để xác minh phần mềm chạy đúng như mô tả, hoặc xác minh vai trò của bạn trong việc tạo ra nó. **Không hợp tác → có thể bị loại.**
-- Tranh chấp danh tính builder được xử lý dựa trên **email dùng để đăng ký**.
-- Cấm khai man về danh tính, công việc, học vấn, kỹ năng hoặc năng lực.
+### Additional clauses from the Terms of Service
+- The organisers **may request further information** and access to the application to verify that the software works as described, or to verify your role in creating it. **Refusing to cooperate can mean disqualification.**
+- Disputes over builder identity are resolved using the **registration email**.
+- Misrepresenting identity, employment, education, skills, or ability is prohibited.
 
 ---
 
 ## 8. What to Build
 
-**Không có track cố định** — open-ended by design. Miễn là tận dụng hạ tầng modular của 0G để ship ứng dụng AI × Web3 thật lên mainnet.
+**There are no fixed tracks** — open-ended by design. The only requirement is to use 0G's modular infrastructure to ship a real AI x Web3 application to mainnet.
 
-Các mảng 0G đang có traction nhất (theo Apollo 2026 cohort):
+The areas with the most traction on 0G (per the Apollo 2026 cohort):
 
-| Mảng | Ví dụ |
+| Area | Examples |
 |---|---|
 | 🤖 **AI Agents** | Autonomous agents on-chain, agent infrastructure, multi-agent systems, AI-powered DAOs, agent wallets, Agentic IDs |
 | 🛡 **Trust & Safety** | AI guardrails, deepfake detection, content verification, fraud detection, compliance, AI safety infra |
-| 🏦 **Finance** | DeFi + AI, credit cho AI agents, AI-driven trading, neobanks, on-chain financial intelligence |
+| **Finance** | DeFi + AI, credit for AI agents, AI-driven trading, neobanks, on-chain financial intelligence |
 | 📊 **Data & Infrastructure** | Decentralized AI training data, model marketplaces, verifiable compute pipelines, on-chain data markets |
-| 🎮 **Consumer & Gaming** | AI-powered consumer apps, game với AI NPC, dynamic NFTs, decentralized content với AI |
-| 🔧 **Developer Tooling** | SDKs, analytics dashboards, deployment tools, testing frameworks cho hệ sinh thái 0G |
+| **Consumer & Gaming** | AI-powered consumer apps, games with AI NPCs, dynamic NFTs, decentralized AI-driven content |
+| **Developer Tooling** | SDKs, analytics dashboards, deployment tools, testing frameworks for the 0G ecosystem |
 
-> Dự án cross-area được **khuyến khích mạnh**.
+> Cross-area projects are **strongly encouraged**.
 
 ---
 
-## 9. 0G Stack — components có thể tích hợp
+## 9. 0G stack — integrable components
 
-| Component | Mô tả | Docs |
+| Component | Description | Docs |
 |---|---|---|
-| **0G Chain** | L1 EVM-compatible, nhanh, modular — cho smart contract và transaction AI-native | https://docs.0g.ai/concepts/chain |
-| **0G Compute** | Marketplace GPU phi tập trung: inference, fine-tuning, training, verifiable compute | https://docs.0g.ai/concepts/compute · https://pc.0g.ai |
-| **0G Storage** | Storage phi tập trung tối ưu cho AI, petabyte-scale, kiến trúc dual-layer | https://docs.0g.ai/concepts/storage |
-| **0G DA** | Data Availability scale vô hạn cho ứng dụng throughput cao | https://docs.0g.ai/concepts/da |
-| **Agentic ID (ERC-7857)** | Chuẩn token hóa AI agent kèm nguyên vẹn "trí tuệ" — encrypted metadata, chuyển quyền sở hữu an toàn, dynamic on-chain AI assets | https://docs.0g.ai/concepts/agentic-id |
-| **0G Pay** | Hạ tầng thanh toán on-chain cho AI agents, dApps, microtransactions | https://build.0g.ai/ |
-| **0G App** | Bộ app consumer của 0G: vibe coding launchpad, private chat, AI agent launcher | https://app.0g.ai/ |
+| **0G Chain** | A fast, modular, EVM-compatible L1 for AI-native smart contracts and transactions | https://docs.0g.ai/concepts/chain |
+| **0G Compute** | A decentralized GPU marketplace: inference, fine-tuning, training, verifiable compute | https://docs.0g.ai/concepts/compute · https://pc.0g.ai |
+| **0G Storage** | Decentralized storage tuned for AI, petabyte-scale, dual-layer architecture | https://docs.0g.ai/concepts/storage |
+| **0G DA** | Infinitely scalable Data Availability for high-throughput applications | https://docs.0g.ai/concepts/da |
+| **Agentic ID (ERC-7857)** | A standard for tokenising an AI agent with its intelligence intact — encrypted metadata, safe ownership transfer, dynamic on-chain AI assets | https://docs.0g.ai/concepts/agentic-id |
+| **0G Pay** | On-chain payment infrastructure for AI agents, dApps, and microtransactions | https://build.0g.ai/ |
+| **0G App** | 0G's consumer app suite: vibe coding launchpad, private chat, AI agent launcher | https://app.0g.ai/ |
 
 ---
 
 ## 10. Links & Resources
 
-**Chương trình**
-- Trang buildathon: https://app.akindo.io/wave-hacks/Z4MlX4vreI72ol6pd
+**Program**
+- Buildathon page: https://app.akindo.io/wave-hacks/Z4MlX4vreI72ol6pd
 - Apollo Accelerator: https://apollo.0g.ai/
 
 **0G**
@@ -203,14 +203,14 @@ Các mảng 0G đang có traction nhất (theo Apollo 2026 cohort):
 
 ---
 
-## 11. Checklist nộp bài Wave 3
+## 11. Wave 3 submission checklist
 
-- [ ] Repo GitHub public, có commit thật trải đều trong kỳ Wave
-- [ ] README + hướng dẫn setup
-- [ ] Contract deploy lên **0G mainnet** + lưu lại địa chỉ
-- [ ] Link 0G Explorer chứng minh hoạt động on-chain
-- [ ] Sơ đồ kiến trúc + mô tả module 0G đã dùng
-- [ ] Video demo ≤ 3 phút, host public (YouTube/Loom)
-- [ ] Tên dự án + mô tả 1 dòng ≤ 30 từ
-- [ ] Post X public: tên + screenshot + `#0GBridge #BuildOn0G` + tag `@0G_labs @0G_Builders @AKINDO_io`
-- [ ] Nộp trên AKINDO **trước 30/08/2026 22:00**
+- [ ] Public GitHub repo with real commits spread across the Wave
+- [ ] README plus setup instructions
+- [ ] Contract deployed to **0G mainnet**, address recorded
+- [ ] 0G Explorer link proving on-chain activity
+- [ ] Architecture diagram plus a description of the 0G modules used
+- [ ] Demo video <= 3 minutes, publicly hosted (YouTube/Loom)
+- [ ] Project name plus a one-line description <= 30 words
+- [ ] Public X post: name + screenshot + `#0GBridge #BuildOn0G` + tags `@0G_labs @0G_Builders @AKINDO_io`
+- [ ] Submitted on AKINDO **before 2026-08-30 22:00**

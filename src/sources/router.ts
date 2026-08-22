@@ -1,6 +1,6 @@
 import { ROUTER_API } from '../config.js';
 
-/** Một dịch vụ như Router HTTP mô tả. Chỉ số ở đây do mạng lưới tự báo. */
+/** One service as the HTTP Router describes it. These figures are the network's own claims. */
 export interface RouterService {
   address: string;
   model_id: string;
@@ -13,7 +13,7 @@ export interface RouterService {
   tee_type?: string;
   tee_verifier?: string;
   is_healthy: boolean;
-  /** Router tự báo. Prober không tin số này — nó là thứ chúng ta đối chiếu. */
+  /** Self-reported by the Router. The prober does not trust this — it is what we check against. */
   latency: number | null;
   uptime: number | null;
   pricing_usd?: Record<string, string>;
@@ -21,12 +21,12 @@ export interface RouterService {
 
 export async function fetchRouterServices(): Promise<RouterService[]> {
   const res = await fetch(`${ROUTER_API}/providers`);
-  if (!res.ok) throw new Error(`Router /providers trả về ${res.status}`);
+  if (!res.ok) throw new Error(`Router /providers returned ${res.status}`);
   const body = (await res.json()) as { data: RouterService[] };
   return body.data;
 }
 
-/** Chế độ đảm bảo, gộp hai trường mà Router dùng không nhất quán. */
+/** Guarantee mode, folding the two fields the Router uses inconsistently. */
 export function guaranteeMode(s: RouterService): 'TeeML' | 'TeeTLS' | 'standard' {
   return s.verifiability ?? (s.trust_mode === 'standard' ? 'standard' : 'standard');
 }

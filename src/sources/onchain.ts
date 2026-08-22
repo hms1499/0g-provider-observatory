@@ -1,7 +1,7 @@
 import { createZGComputeNetworkReadOnlyBroker } from '@0gfoundation/0g-compute-ts-sdk';
 import { CHAIN_ID, RPC_URL } from '../config.js';
 
-/** Chế độ đảm bảo thật sự của một dịch vụ. */
+/** The guarantee a service actually provides. */
 export type GuaranteeMode = 'TeeML' | 'TeeTLS' | 'standard';
 
 export interface OnchainService {
@@ -12,10 +12,11 @@ export interface OnchainService {
   outputPrice: bigint;
   updatedAt: bigint;
   model: string;
-  /** Trường thô on-chain. CẢNH BÁO: ghi 'TeeML' cho cả dịch vụ chạy model ngoài enclave. */
+  /** Raw on-chain field. WARNING: reads 'TeeML' even for services running the model
+   *  outside the enclave. */
   rawVerifiability: string;
   meta: OnchainMeta;
-  /** Chế độ suy ra đúng — dùng cái này, không dùng rawVerifiability. */
+  /** The correctly derived mode. Use this, not rawVerifiability. */
   mode: GuaranteeMode;
 }
 
@@ -30,17 +31,18 @@ interface OnchainMeta {
 }
 
 /**
- * Suy ra chế độ đảm bảo thật từ metadata on-chain.
+ * Derive the real guarantee mode from on-chain metadata.
  *
- * Trường `verifiability` on-chain ghi 'TeeML' cho MỌI dịch vụ có TEE, kể cả
- * khi model chạy ngoài enclave. Phân biệt thật nằm ở `TargetSeparated`:
+ * The on-chain `verifiability` field reads 'TeeML' for EVERY service that has a TEE,
+ * including those running the model outside the enclave. The real distinction lives
+ * in `TargetSeparated`:
  *
- *   TargetSeparated = false  → model chạy trong enclave        → TeeML
- *   TargetSeparated = true  + TEEVerifier khác rỗng → broker trong enclave, model ngoài → TeeTLS
- *   TargetSeparated = true  + TEEVerifier rỗng      → không có TEE                      → standard
+ *   TargetSeparated = false                     -> model runs inside the enclave  -> TeeML
+ *   TargetSeparated = true  + TEEVerifier set   -> broker in enclave, model out   -> TeeTLS
+ *   TargetSeparated = true  + TEEVerifier empty -> no TEE                         -> standard
  *
- * Kiểm chứng 21/08/2026: khớp 100% với phân loại của Router HTTP trên cả 20
- * dịch vụ đối chiếu được (5 TeeML, 13 TeeTLS, 2 standard).
+ * Verified 2026-08-21: matches the HTTP Router's classification on all 20 comparable
+ * services (5 TeeML, 13 TeeTLS, 2 standard), with no exceptions.
  */
 export function deriveMode(raw: string, meta: OnchainMeta): GuaranteeMode {
   if (!meta.TEEVerifier) return 'standard';
@@ -52,8 +54,8 @@ function parseMeta(v: unknown): OnchainMeta {
 }
 
 /**
- * Đọc sổ dịch vụ thẳng từ contract inference trên 0G Chain.
- * Không cần ví, không tốn gas — đây là nguồn sự thật gốc, độc lập với Router HTTP.
+ * Read the service registry straight from the inference contract on 0G Chain.
+ * No wallet, no gas — this is the source of truth, independent of the HTTP Router.
  */
 export async function fetchOnchainServices(): Promise<OnchainService[]> {
   const broker = await createZGComputeNetworkReadOnlyBroker(RPC_URL, CHAIN_ID);

@@ -1,5 +1,5 @@
-# 0G AI Context — bản lưu ngày 21/08/2026
+# 0G AI Context — captured 2026-08-21
 
-> Nguồn: https://docs.0g.ai/ai-context
-> Lưu lại vì đây là nguồn SDK và địa chỉ contract chính xác nhất — các skill package đang trỏ vào SDK đã deprecated.
+> Source: https://docs.0g.ai/ai-context
+> Kept because this is the most accurate source for SDK names and contract addresses — the skill packages point at deprecated SDKs.
 

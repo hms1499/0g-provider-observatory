@@ -1,121 +1,191 @@
-# Bàn giao phiên — tiếp tục từ đây
+# Session handoff — continue from here
 
-**Cập nhật:** 21/08/2026 · kết thúc ngày 1/9
-
----
-
-## Đang làm gì
-
-**0G Provider Observatory** — lớp đo độc lập cho mạng inference của 0G.
-Dự thi **0G Bridge by AKINDO, Wave 3**. Hạn nộp **30/08/2026 22:00** (còn 9 ngày).
-
-Design doc (v3, đã chốt): https://claude.ai/code/artifact/d4f6a199-c73f-470d-bc63-e90a22cdd02c
-Nguồn file: `docs/provider-observatory.html` — sửa file rồi publish lại là cùng URL.
-
-## Định vị — ĐỌC TRƯỚC KHI VIẾT BẤT KỲ THỨ GÌ
-
-**Đây là thiết bị đo, KHÔNG phải cáo trạng.**
-
-Nhà vận hành trên mạng là **0G Foundation, Alibaba Cloud, Tencent, ByteDance, MiniMax, OpenRouter**
-— tức chính ban tổ chức và các tập đoàn lớn. Định vị ban đầu ("88% mạng lưới không chứng minh được
-model nào đã chạy") đã bị **loại bỏ** vì nó đọc thành lời tố cáo nhắm vào chủ nhà.
-
-Định vị hiện tại: *lập trình viên chọn provider dựa trên chỉ số mà mạng lưới tự báo về chính mình —
-chưa ai đo lại, và không có gì lưu theo thời gian.*
-
-Bốn nguyên tắc (mục 08 của design doc): thiết bị đo không phải cáo trạng · giải thích trước khi
-xếp hạng · mọi con số dẫn về nguồn · nói rõ cái mình không biết.
-
-Riêng chế độ `standard` phải hiện kèm **lý do kỹ thuật**, không chấm điểm thấp — không ai nhét được
-API đóng của Anthropic vào enclave TDX của mình.
+**Updated:** 2026-08-22 · end of day 2 of 9
 
 ---
 
-## Ngày 1 đã xong
+## What this is
 
-Chi tiết: `docs/day-1-findings.md`
+**0G Provider Observatory** — an independent measurement layer for 0G's inference network.
+Submission for **0G Bridge by AKINDO, Wave 3**. Deadline **2026-08-30 22:00** (8 days left).
 
-1. **Rủi ro TEE đã đóng** — chuỗi kiểm chứng công khai, bên thứ ba chạy được. F7 giữ bản mạnh.
-2. **Phát hiện chính** — `verifiability` on-chain ghi `TeeML` cho 21/23 dịch vụ nhưng chỉ 6 thực sự
-   chạy model trong enclave. Phân biệt thật nằm ở `TargetSeparated`. Đã cài thành `deriveMode()`
-   trong `src/sources/onchain.ts`, khớp 100% với Router trên 20 dịch vụ so được.
-3. **Hai nguồn lệch nhau** — Router 42 dịch vụ, on-chain 23. Ba địa chỉ on-chain vô hình với Router,
-   một trong đó là dịch vụ TeeML thật.
-4. **Cả hai SDK trong skill chính chủ đã deprecated** — đã chuyển sang gói đúng.
+Design doc (v3, locked): https://claude.ai/code/artifact/d4f6a199-c73f-470d-bc63-e90a22cdd02c
+Source file: `docs/provider-observatory.html` — edit the file and republish to the same URL.
 
-Snapshot mốc: `data/snapshot-2026-08-21.json`
+## Positioning — READ BEFORE WRITING ANYTHING
 
-## Lệnh chạy được (không cần private key, chi phí 0)
+**This is an instrument, NOT an indictment.**
+
+The operators on this network are **0G Foundation, Alibaba Cloud, Tencent, ByteDance, MiniMax, and
+OpenRouter** — that is, the hackathon's own hosts and several large corporations. The original
+positioning ("88% of the network cannot prove which model ran") was **dropped** because it reads as
+an accusation aimed at the host.
+
+Current positioning: *developers pick providers based on metrics the network reports about itself —
+nobody has measured them independently, and nothing is retained over time.*
+
+Four principles (section 08 of the design doc): an instrument, not an indictment · explain before
+ranking · every number traces to a source · state plainly what we do not know.
+
+In particular, `standard` mode must be shown with its **technical reason** and must not be scored
+down — nobody can put Anthropic's closed API inside their own TDX enclave.
+
+## Project language
+
+**All project artefacts are in English** — code, comments, console output, docs, commit messages,
+the design doc. Vietnamese is used only in conversation between Huy and Claude.
+
+One deliberate exception: the `diacritics-echo` probe in `src/probes/suite.ts` uses Vietnamese
+diacritics on purpose. It is a tokenizer discriminator, not untranslated text, and the file says so.
+
+Not translated: `.claude/skills/**` is a vendored third-party package from the 0G Foundation.
+
+---
+
+## Day 1 — done
+
+Details: `docs/day-1-findings.md`
+
+1. **TEE risk closed** — the verification chain is public and a third party can run it. F7 keeps its
+   strong scope.
+2. **Main finding** — the on-chain `verifiability` field reads `TeeML` for 21 of 23 services, but
+   only 6 actually run the model inside an enclave. The real distinction is `TargetSeparated`.
+   Implemented as `deriveMode()` in `src/sources/onchain.ts`; matches the Router on all 20
+   comparable services.
+3. **The two sources disagree** — Router 42 services, on-chain 23. Three on-chain addresses are
+   invisible to the Router, one of them a genuine TeeML service.
+4. **Both SDKs in the first-party skill are deprecated** — switched to the correct packages.
+
+Baseline snapshot: `data/snapshot-2026-08-21.json`
+
+## Commands that run today (no private key, zero cost)
 
 ```bash
 pnpm install
-pnpm snapshot             # chụp cả hai nguồn
-pnpm compare              # đối chiếu số lượng, địa chỉ
-pnpm diff-verifiability   # bảng lệch nhãn từng dịch vụ
-pnpm inspect-meta         # metadata on-chain thô
-npx tsx src/scripts/cost-model.ts   # chi phí một vòng đo
+pnpm snapshot             # capture both sources
+pnpm compare              # reconcile counts and addresses
+pnpm diff-verifiability   # per-service label divergence table
+pnpm inspect-meta         # raw on-chain metadata
+pnpm cost-model           # cost from the on-chain price table
+pnpm dry-run              # DRY RUN a whole epoch: probes, pinning, groups, cost, sample request
 ```
 
 ---
 
-## VIỆC TIẾP THEO — ngày 2
+## Day 2 — done
 
-### Chặn ở người dùng (chỉ anh Huy làm được)
+Runs today at zero cost: `pnpm dry-run`
 
-Vào **pc.0g.ai** → nối ví → nạp một ít 0G → Dashboard → API Keys → tạo key quyền `inference`
-(dạng `sk-…`) → điền vào `.env`. Đây là thứ duy nhất Claude không tự làm được.
+1. **15-probe suite** — `src/probes/suite.ts`. Six categories: format, arithmetic, tokenizer,
+   instruction following, context, and refusal boundary. Each probe carries its own `comparator`
+   (exact / numeric / json / categorical / freeform) because the goal is measuring divergence, not
+   scoring answers.
+   `arith-mult-repeat` is byte-identical to `arith-mult` so the **internal noise floor** of a single
+   provider can be measured — that noise must be subtracted before attributing divergence between
+   two providers to anything else.
+2. **Provider-pinned Router layer** — `src/probes/router-client.ts`. `buildPinnedRequest()` is pure
+   (usable by the dry run, never touches the key) and separate from `callPinned()` which sends.
+   **No retries** — retrying corrupts the latency measurement and hides the error rate, and the
+   error rate is one of the things being measured.
+3. **Epoch plan** — `src/probes/plan.ts`. Groups multi-provider models, attaches the TeeML
+   reference, computes price ceilings and a cost estimate.
 
-Bắt đầu bằng **testnet** (faucet https://faucet.0g.ai, 0.1 0G/ngày). Chuyển mainnet ở ngày 6.
+### Three corrections to the original plan
 
-### Làm được ngay, không cần chờ
+- **"temperature 0 for everything" does not hold.** 9 of 38 chatbot services (the whole Claude line
+  plus kimi-k3) do not declare `temperature` support. Now negotiated per service, and **the dropped
+  parameters are recorded** in the measurement — comparing a service at temperature 0 against one
+  running its own default is comparing against a different baseline, and the published number must
+  say so.
+- **Price ceilings must be plain decimals.** A per-token price is around 1e-8 USD, so `toString()`
+  yields `4.14e-7`; a malformed header makes the Router return 400. Fixed with `plainDecimal()` plus
+  a regex check before sending.
+- **Twice the calls of the day-1 estimate, at lower cost.** `cost-model.ts` counts 19 on-chain
+  chatbot services, but the Router exposes **38** — and the prober calls through the Router. Calls
+  go 285 -> **570**. The upper bound for one epoch is still only **$0.19** (below the old $0.39)
+  because the real probes are shorter than the 250/120-token assumption in `cost-model.ts`: ~696
+  input tokens and <=440 output tokens for all 15 probes. 1 epoch/day for 8 days is about **$1.50**.
 
-- Viết bộ 15 probe (prompt xác định, temperature 0)
-- Lớp gọi Router có ghim provider bằng header `X-0G-Provider-Address`
-- Chạy khô trên `data/snapshot-2026-08-21.json`
+### Known limit, not yet handled
 
-### Quyết định kỹ thuật đã chốt cho ngày 2
+**3 chatbot services exist on the contract but the Router never exposes them** — header pinning
+cannot reach them, and one is a genuine **TeeML** service (`openai/gpt-5.4-mini`, Phala dstack).
+The dry run prints them with their direct URLs. This must be shown on the dashboard rather than
+silently dropped from the sample. Measuring them would mean calling `{providerURL}` directly — which
+means funding a sub-account, exactly what decision F1 set out to avoid. Decide on day 6 during the
+full-network sweep.
 
-**Ghim provider bằng header Router, KHÔNG nạp sub-account từng provider.**
-Tránh được 20 sub-account và khóa rút 24 giờ.
+### Calibration pairs
 
-```
-X-0G-Provider-Address: 0x…                      ghim đúng một provider
-X-0G-Provider-Max-Price-Usd-Completion: …       van an toàn chống đốt tiền
-```
-
-Chi tiết SDK, contract, endpoint: `docs/0g-reference/ai-context-notes.md`
+Only **1 of 10** multi-provider groups has a TeeML reference: `glm-5.2` (TeeML `0x7DCF…e87D` plus a
+TeeTLS peer). The other nine must be compared peer-to-peer. `deepseek-v4-flash` is the largest group
+— 4 providers, all TeeTLS.
 
 ---
 
-## Chi phí
+## NEXT — day 3
+
+### Blocked on the user (only Huy can do this)
+
+Go to **pc.0g.ai** -> connect wallet -> fund a little 0G -> Dashboard -> API Keys -> create a key
+with the `inference` scope (`sk-…`) -> put it in `.env`. This is the one thing Claude cannot do.
+
+Start on **testnet** (faucet https://faucet.0g.ai, 0.1 0G/day). Move to mainnet on day 6.
+
+### Can start immediately, no waiting
+
+- Divergence engine: take `CallResult[]` -> divergence per comparator, minus the internal noise floor
+- Aggregate measurements into p50/p95 per service, never pooled by address
+- `ProviderRegistry` + `MeasurementRegistry` contracts (F3), tested on testnet
+
+### Technical decision from day 2, still in force
+
+**Pin providers with Router headers, do NOT fund per-provider sub-accounts.**
+Avoids 20 sub-accounts and a 24-hour withdrawal lock.
+
+```
+X-0G-Provider-Address: 0x…                      pin to exactly one provider
+X-0G-Provider-Max-Price-Usd-Completion: …       safety valve against burning funds
+```
+
+SDK, contract, and endpoint details: `docs/0g-reference/ai-context-notes.md`
+
+---
+
+## Cost
 
 | | |
 |---|---|
-| Một vòng đo (15 probe × 19 dịch vụ chatbot = 285 lời gọi) | **$0,39** |
-| Inference cả chương trình (1 vòng/ngày × 8 ngày) | ~$3 |
-| Gas deploy mainnet | $5–10 |
-| **Tổng** | **$10–15** |
+| One epoch (15 probes x 38 Router services = 570 calls) | **$0.19** upper bound |
+| ~~Day-1 estimate based on 19 on-chain services~~ | ~~$0.39~~ — see `pnpm dry-run` |
+| Inference for the whole program (1 epoch/day for 8 days) | ~$1.50 |
+| Mainnet deploy gas | $5–10 |
+| **Total** | **$10–15** |
 
-Hai dịch vụ đắt nhất (`claude-fable-5`, `claude-opus-5`) chiếm gần 1/3 chi phí mỗi vòng.
+The five most expensive services (`claude-fable-5`, `gpt-5.6-sol`, `gpt-5.5`, `claude-opus-4-8`,
+`claude-opus-5`) account for 46% of the cost of an epoch.
 
 ---
 
-## Còn mở
+## Open questions
 
-- **Trùng lặp với VeriAgent** (Wave 3) — họ chấm điểm tin cậy cho *agent* của người dùng,
-  mình đo *hạ tầng* của mạng lưới. Phải nói rõ trong mô tả một dòng và video demo.
-- **Nên báo lại 0G DevRel** hai việc: skill trỏ vào SDK deprecated, và `verifiability` on-chain
-  nói quá mức đảm bảo. Cả hai đều là đóng góp thật, ghi điểm Traction & Communication.
+- **Overlap with VeriAgent** (Wave 3) — they score the trustworthiness of a user's *agent*; we
+  measure the *infrastructure* of the network. This has to be explicit in the one-line description
+  and in the demo video.
+- **Two things worth reporting to 0G DevRel**: the skill points at deprecated SDKs, and the on-chain
+  `verifiability` field overstates the guarantee. Both are genuine contributions and score under
+  Traction & Communication.
 
-## Lịch còn lại
+## Remaining schedule
 
-| Ngày | Việc |
+| Day | Work |
 |---|---|
-| 2–3 | Prober + bộ probe + đo tính nhất quán, hiệu chuẩn cặp `glm-5.2` TeeML/TeeTLS |
-| 3–4 | Contract Registry + Measurement, test testnet |
-| 5 | Nối 0G Storage, transcript lên và rootHash về |
-| 6–7 | Dashboard, quét toàn mạng, gom theo 20 địa chỉ vận hành |
-| 8 | CLI kiểm chứng, deploy mainnet, chạy vài epoch thật |
-| 9 | README, video 3 phút, post X (`#0GBridge #BuildOn0G` tag `@0G_labs @0G_Builders @AKINDO_io`), nộp |
+| ~~2~~ | ~~Probe suite + pinning layer + dry run~~ done |
+| 3 | Divergence engine + p50/p95, calibrate on the `glm-5.2` TeeML/TeeTLS pair, real run once the key exists |
+| 3–4 | Registry + Measurement contracts, testnet tests |
+| 5 | Wire up 0G Storage, transcripts up and rootHash back |
+| 6–7 | Dashboard, full-network sweep, group by the 20 operator addresses |
+| 8 | Verification CLI, mainnet deploy, run several real epochs |
+| 9 | README, 3-minute video, X post (`#0GBridge #BuildOn0G`, tag `@0G_labs @0G_Builders @AKINDO_io`), submit |
 
-**Ngày 9 không viết code.** Yêu cầu nộp bài đầy đủ: `HACKATHON-RULES.md`
+**No code on day 9.** Full submission requirements: `HACKATHON-RULES.md`

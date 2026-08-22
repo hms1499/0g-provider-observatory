@@ -1,16 +1,16 @@
-# 0G AI Context — trích phần dùng cho Observatory
+# 0G AI Context — the parts the Observatory needs
 
-> Nguồn: https://docs.0g.ai/ai-context · lưu ngày 21/08/2026
-> Đây là nguồn SDK và địa chỉ contract chính xác nhất. Các skill package đang trỏ vào SDK đã deprecated.
+> Source: https://docs.0g.ai/ai-context · captured 2026-08-21
+> This is the most accurate source for SDK names and contract addresses. The skill packages point at deprecated SDKs.
 
-## SDK đúng (đã kiểm chứng trên npm)
+## Correct SDKs (verified on npm)
 
-| Việc | Gói ĐÚNG | Gói skill đang dạy (DEPRECATED) |
+| Purpose | CORRECT package | What the skill teaches (DEPRECATED) |
 |---|---|---|
 | Compute | `@0gfoundation/0g-compute-ts-sdk` v0.9.0 | ~~`@0glabs/0g-serving-broker`~~ |
 | Storage | `@0gfoundation/0g-storage-ts-sdk` v1.2.11 | ~~`@0glabs/0g-ts-sdk`~~ v0.3.3 |
 
-## Mạng lưới
+## Networks
 
 | | Testnet Galileo | Mainnet Aristotle |
 |---|---|---|
@@ -18,9 +18,9 @@
 | RPC | `https://evmrpc-testnet.0g.ai` | `https://evmrpc.0g.ai` |
 | Explorer | `https://chainscan-galileo.0g.ai` | `https://chainscan.0g.ai` |
 | Storage Indexer | `https://indexer-storage-testnet-turbo.0g.ai` | `https://indexer-storage-turbo.0g.ai` |
-| Faucet | `https://faucet.0g.ai` (0.1 0G/ngày) | — |
+| Faucet | `https://faucet.0g.ai` (0.1 0G/day) | — |
 
-## Contract cần dùng
+## Contracts we use
 
 | Contract | Testnet | Mainnet |
 |---|---|---|
@@ -28,24 +28,24 @@
 | Compute Ledger | `0xE70830508dAc0A97e6c087c75f402f9Be669E406` | `0x2dE54c845Cd948B72D2e32e39586fe89607074E3` |
 | Flow (Storage) | `0x22E03a6A89B950F1c82ec5e74F8eCa321a105296` | `0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526` |
 
-Mainnet Compute Inference khớp với địa chỉ SDK tự báo → đã đối chiếu chéo hai nguồn.
+The mainnet Compute Inference address matches what the SDK reports — cross-checked across both sources.
 
-## F1 — ghim provider qua Router header
+## F1 — pinning a provider via Router headers
 
-Không cần nạp sub-account cho từng provider. Router nhận header:
+No per-provider sub-account funding is needed. The Router accepts these headers:
 
 ```
-X-0G-Provider-Address: 0x…      ghim đúng một provider
+X-0G-Provider-Address: 0x…      pin to exactly one provider
 X-0G-Provider-Sort: latency|price
 X-0G-Provider-Max-Price-Usd-Prompt / -Completion / -Image
 ```
 
-Header sai định dạng → trả 400. Endpoint không cần auth: `GET /v1/models`.
-Theo dõi chi tiêu: `GET /v1/account/balance`, `GET /v1/account/usage/{stats,history}`.
+A malformed header returns 400. No-auth endpoint: `GET /v1/models`.
+Spend tracking: `GET /v1/account/balance`, `GET /v1/account/usage/{stats,history}`.
 
-Lấy API key: pc.0g.ai → nối ví → nạp 0G → Dashboard → API Keys → quyền `inference` → key dạng `sk-…`.
+Getting an API key: pc.0g.ai -> connect wallet -> fund 0G -> Dashboard -> API Keys -> `inference` scope -> a key shaped `sk-…`.
 
-## F4 — upload transcript lên Storage
+## F4 — uploading transcripts to Storage
 
 ```ts
 import { ZgFile, Indexer } from "@0gfoundation/0g-storage-ts-sdk";
@@ -57,35 +57,35 @@ const indexer  = new Indexer(INDEXER_URL);
 
 const file = await ZgFile.fromFilePath(path);
 const [tree] = await file.merkleTree();
-const rootHash = tree?.rootHash();          // ← ghi vào attestation on-chain
+const rootHash = tree?.rootHash();          // <- written into the on-chain attestation
 const [tx] = await indexer.upload(file, RPC_URL, signer);
 await file.close();
 ```
 
-Flow contract do Indexer tự xử lý khi upload file — chỉ cần RPC URL.
-KV mới cần địa chỉ flow contract.
+The Indexer handles the Flow contract itself on file upload — only the RPC URL is needed.
+Only KV requires the flow contract address.
 
-## F7 — tải bằng chứng KHÔNG cần SDK, KHÔNG cần ví
+## F7 — fetching proofs with NO SDK and NO wallet
 
-Indexer có REST gateway:
+The Indexer exposes a REST gateway:
 
 ```
-GET /file?root=0x...              tải file theo merkle root
-GET /file?txSeq=7                 tải theo số thứ tự giao dịch
-GET /file/info/{cid}              tra thông tin file
+GET /file?root=0x...              download a file by merkle root
+GET /file?txSeq=7                 download by transaction sequence number
+GET /file/info/{cid}              look up file info
 ```
 
-Nghĩa là người kiểm chứng độc lập chỉ cần `curl` + băm lại. Không cài gì.
-Kết hợp với hai endpoint TEE công khai đã tìm được ngày 1:
+So an independent verifier needs only `curl` plus a re-hash. Nothing to install.
+Combined with the two public TEE endpoints found on day 1:
 
 ```
 GET {providerURL}/v1/proxy/attestation/report
 GET {providerURL}/v1/proxy/signature/{chatID}?model=...
 ```
 
-→ Toàn bộ chuỗi kiểm chứng chạy được bằng công cụ dòng lệnh phổ thông.
+-> The entire verification chain runs with ordinary command-line tools.
 
-## Starter kit tham khảo
+## Reference starter kits
 
-- Storage TS: https://github.com/0gfoundation/0g-storage-ts-starter-kit — có sẵn `uploadFile`, `downloadFile`, `uploadData`, `batchUpload`
+- Storage TS: https://github.com/0gfoundation/0g-storage-ts-starter-kit — ships `uploadFile`, `downloadFile`, `uploadData`, `batchUpload`
 - Compute TS: https://github.com/0gfoundation/0g-compute-ts-starter-kit
