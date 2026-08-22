@@ -129,8 +129,8 @@ calibration pair. Every finding this project rests on is a mainnet observation.
   The rules permit testnet Compute, but permission does not help when it is empty.
 
 Inference credit at pc.0g.ai is a separate balance from the 0G in the wallet that pays
-contract gas. ~$5 of credit covers 26 epochs; the price-ceiling headers already guard
-against runaway spend.
+contract gas. **~$5 covers 7 epochs**, measured rather than estimated — see Cost below.
+The price-ceiling headers guard against a provider raising its rate mid-run.
 
 ### Live on Galileo testnet (chain 16602)
 
@@ -202,6 +202,36 @@ Network findings in detail: `docs/network-findings.md`
    to `arith-mult` so a provider's internal noise floor can be subtracted first.
 
 Baseline snapshot: `data/snapshot-2026-08-21.json`
+
+### What the first live calls changed
+
+The smoke test against one real provider cost $0.0007 and invalidated four assumptions.
+Every one of them would have corrupted a full epoch silently.
+
+- **The price-ceiling headers are denominated in USD per MILLION tokens**, while
+  `pricing_usd` in `/v1/providers` is USD per token. Sending the per-token figure is
+  rejected as `pinned_provider_exceeds_max_price` — a message that names the provider, not
+  the unit, so it reads as though the provider got more expensive. Measured boundary for a
+  service priced at 0.0359/M: 0.03 rejected, 0.0359 accepted. The comparison is inclusive
+  and is made against the tier the request falls into, not the worst tier. Not documented
+  at docs.0g.ai/ai-context — worth reporting to 0G DevRel.
+- **Truncated answers were being scored as divergence.** Cut off mid-working on
+  `(7^13) mod 1000`, a reasoning model emitted a bare `7`, which the numeric comparator
+  read as a real answer differing from 407. `CallResult.truncated` now carries
+  `finish_reason === 'length'` and divergence discards those — except for the policy probe,
+  where only the opening words matter.
+- **`extractNumber` took the first number, which is the wrong end.** A reasoning model
+  opens by restating the problem, so the first number in `(7^13) mod 1000` is 7, and in a
+  letter count it is the position index 1. It now takes the last number.
+- **The noise floor was firing on our own artifact.** `arith-mult` and `arith-mult-repeat`
+  disagreed (13347244 vs 13342724) purely because both were truncated at 24 tokens. With
+  headroom both return 13352884 and the floor is correctly zero. `assertSuiteValid` now
+  enforces that the pair shares `maxTokens` as well as its prompt — raising one and not the
+  other would turn a measurement of the provider's instability into a measurement of ours.
+
+`max_tokens` is a ceiling, not a charge: a model answering in 17 tokens costs 17. So probe
+ceilings were raised generously — the suite ceiling went 440 -> 3424 — while measured
+consumption is 1740. Only three probes still truncate, and none feed divergence.
 
 ### The three rules T6 encodes
 

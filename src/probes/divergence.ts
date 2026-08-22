@@ -174,11 +174,22 @@ const DIVERGENCE_PROBES = PROBES.filter(
   (p) => p.comparator !== 'freeform' && p.id !== NOISE_PROBE_DUPLICATE,
 ).map((p) => p.id);
 
+/**
+ * Comparators that survive a truncated answer.
+ *
+ * `categorical` only asks whether the provider refused, and a refusal is visible in the
+ * opening words, so cutting the reply short changes nothing. Every other comparator reads
+ * the answer itself, where truncation invents a difference that is ours, not theirs.
+ */
+const TRUNCATION_SAFE = new Set<Comparator>(['categorical']);
+
 /** Answers by service then probe. Multiple epochs collapse to the last successful answer. */
 function indexAnswers(results: readonly CallResult[]) {
   const byService = new Map<string, Map<string, string[]>>();
   for (const r of results) {
     if (!r.ok || r.text === null) continue;
+    const comparator = COMPARATORS.get(r.probeId);
+    if (r.truncated && comparator && !TRUNCATION_SAFE.has(comparator)) continue;
     const k = idOf(r.providerAddress, r.model);
     let probes = byService.get(k);
     if (!probes) byService.set(k, (probes = new Map()));

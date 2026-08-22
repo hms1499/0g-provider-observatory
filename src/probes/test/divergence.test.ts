@@ -31,6 +31,7 @@ function answer(address: string, probeId: string, text: string): CallResult {
     usage: null,
     chatId: null,
     servedBy: null,
+    truncated: false,
     droppedParams: [],
     at: '2026-08-22T00:00:00.000Z',
   };
@@ -229,6 +230,26 @@ describe('computeDivergence', () => {
     const other = rows.find((r) => r.address === TEETLS)!;
     assert.equal(other.comparedProbes, 11);
     assert.equal(other.divergenceBps, 0);
+  });
+
+  it('discards a truncated answer rather than counting it as a difference', () => {
+    // A reasoning model cut off mid-working on (7^13) mod 1000 emitted a bare "7". The
+    // numeric comparator would read that as a real answer differing from 407.
+    const cut = goodRun(TEETLS).map((r) =>
+      r.probeId === 'arith-mod' ? { ...r, text: '7', truncated: true } : r,
+    );
+    const rows = computeDivergence([...goodRun(TEEML), ...cut], pair);
+    const other = rows.find((r) => r.address === TEETLS)!;
+    assert.deepEqual(other.differingProbeIds, [], 'truncation is our artifact, not their difference');
+    assert.equal(other.comparedProbes, 11, 'the probe is dropped, not scored');
+  });
+
+  it('still reads a truncated policy answer, where only refusal matters', () => {
+    const cut = goodRun(TEETLS).map((r) =>
+      r.probeId === 'policy-boundary' ? { ...r, truncated: true } : r,
+    );
+    const rows = computeDivergence([...goodRun(TEEML), ...cut], pair);
+    assert.equal(rows.find((r) => r.address === TEETLS)!.comparedProbes, 12);
   });
 
   it('ignores failed calls entirely — an error is not a wrong answer', () => {

@@ -10,6 +10,15 @@ import { PROBES, SUITE_EST_INPUT_TOKENS, SUITE_MAX_OUTPUT_TOKENS } from './suite
 
 export type Mode = 'TeeML' | 'TeeTLS' | 'standard';
 
+/** Per-token USD prices. Some services also publish tiers that rise with input size. */
+export interface PricingUsd {
+  prompt?: string;
+  completion?: string;
+  cached_prompt?: string;
+  tiered_pricing?: Array<{ max_input_tokens: number; prompt?: string; completion?: string }>;
+  [k: string]: unknown;
+}
+
 export interface SnapshotRouterService {
   address: string;
   model_id: string;
@@ -21,7 +30,7 @@ export interface SnapshotRouterService {
   verifiability?: 'TeeML' | 'TeeTLS';
   trust_mode?: string;
   supported_parameters?: string[];
-  pricing_usd?: Record<string, string>;
+  pricing_usd?: PricingUsd;
   latency?: number | null;
   uptime?: number | null;
 }
@@ -59,10 +68,16 @@ export interface Target {
   estCostUsd: number;
   /** What the Router reports. Kept so it can be compared against what we measure. */
   reportedLatency: number | null;
+  /** Base-tier USD per token. What a probe actually costs — not what the header carries. */
+  usdPerPromptToken: number;
+  usdPerCompletionToken: number;
 }
 
 export interface PlanOptions {
-  /** Price ceiling = snapshot price x this factor. A provider raising price gets rejected. */
+  /**
+   * Price ceiling = the service's highest published tier x this factor. A provider that
+   * raises its price beyond this gets rejected by the Router instead of billing us.
+   */
   priceMultiplier?: number;
   temperature?: number;
   seed?: number;
@@ -98,8 +113,24 @@ export function negotiateParams(
   return p;
 }
 
+/** Base-tier price. What a small probe actually costs, so this drives the estimate. */
 const usdPerToken = (s: SnapshotRouterService, k: 'prompt' | 'completion') =>
   Number(s.pricing_usd?.[k] ?? 0);
+
+/**
+ * Highest price the service publishes across every tier.
+ *
+ * 12 of 38 chatbot services price in tiers that rise with input size, up to 4x the base
+ * rate. Probes are ~250 input tokens so they always fall in the base tier, but building
+ * the ceiling from the top tier means a ceiling can never reject a request mid-epoch just
+ * because a prompt grew. The cost estimate still uses the base rate, which is what a probe
+ * actually costs.
+ */
+export function maxUsdPerToken(s: SnapshotRouterService, k: 'prompt' | 'completion'): number {
+  const base = Number(s.pricing_usd?.[k] ?? 0);
+  const tiers = s.pricing_usd?.tiered_pricing ?? [];
+  return tiers.reduce((hi, t) => Math.max(hi, Number(t[k] ?? 0)), base);
+}
 
 /**
  * A per-token price is around 1e-8 USD, so Number.toString() yields exponent form
@@ -108,6 +139,31 @@ const usdPerToken = (s: SnapshotRouterService, k: 'prompt' | 'completion') =>
 export function plainDecimal(n: number, digits = 14): string {
   if (!Number.isFinite(n) || n <= 0) return '0';
   return n.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+/**
+ * The X-0G-Provider-Max-Price-Usd-* headers are denominated in USD per MILLION tokens,
+ * while `pricing_usd` in /v1/providers is USD per token. Sending the per-token figure is
+ * rejected with `pinned_provider_exceeds_max_price` — it reads as a ceiling a million
+ * times too low, and the message names the provider rather than the unit, so it looks
+ * like the provider got more expensive.
+ *
+ * Measured against the live Router 2026-08-22 for qwen3-vl-30b-a3b-instruct, whose base
+ * rate is 0.0000000359/token = 0.0359/M:
+ *
+ *   0.03    -> rejected        0.0359 -> accepted (the comparison is inclusive)
+ *   0.036   -> accepted        0.14   -> accepted
+ *
+ * 0.14 is below that service's top tier of 0.1436/M and still passes, so the ceiling is
+ * compared against the tier the request actually falls into, not the worst tier.
+ *
+ * Not documented at docs.0g.ai/ai-context — worth reporting to 0G DevRel.
+ */
+export const TOKENS_PER_PRICE_UNIT = 1_000_000;
+
+export function toHeaderPrice(usdPerToken: number, multiplier: number): string | undefined {
+  if (!usdPerToken) return undefined;
+  return plainDecimal(usdPerToken * TOKENS_PER_PRICE_UNIT * multiplier);
 }
 
 export function buildTargets(snap: Snapshot, opts: PlanOptions = {}): Target[] {
@@ -122,6 +178,8 @@ export function buildTargets(snap: Snapshot, opts: PlanOptions = {}): Target[] {
     .map((s) => {
       const inUsd = usdPerToken(s, 'prompt');
       const outUsd = usdPerToken(s, 'completion');
+      const inCap = maxUsdPerToken(s, 'prompt');
+      const outCap = maxUsdPerToken(s, 'completion');
       return {
         address: s.address,
         providerName: s.provider_name ?? null,
@@ -130,10 +188,12 @@ export function buildTargets(snap: Snapshot, opts: PlanOptions = {}): Target[] {
         mode: routerMode(s),
         onchainMode: onchain.get(s.address.toLowerCase()) ?? null,
         params: negotiateParams(s, opts),
-        maxPriceUsdPrompt: inUsd ? plainDecimal(inUsd * mult) : undefined,
-        maxPriceUsdCompletion: outUsd ? plainDecimal(outUsd * mult) : undefined,
+        maxPriceUsdPrompt: toHeaderPrice(inCap, mult),
+        maxPriceUsdCompletion: toHeaderPrice(outCap, mult),
         estCostUsd: inUsd * SUITE_EST_INPUT_TOKENS + outUsd * SUITE_MAX_OUTPUT_TOKENS,
         reportedLatency: s.latency ?? null,
+        usdPerPromptToken: inUsd,
+        usdPerCompletionToken: outUsd,
       };
     });
 }

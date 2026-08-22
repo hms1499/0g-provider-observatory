@@ -116,6 +116,13 @@ export interface CallResult {
   chatId: string | null;
   /** The provider the Router echoes back, if any — used to confirm the pin took effect. */
   servedBy: string | null;
+  /**
+   * The model hit max_tokens mid-sentence. A truncated answer is a measurement artifact,
+   * not a provider difference: a reasoning model cut off partway through `(7^13) mod 1000`
+   * returned a bare "7", which a numeric comparator would happily read as a real answer
+   * differing from 407. Divergence must treat these as incomparable.
+   */
+  truncated: boolean;
   errorKind?: ErrorKind;
   errorMessage?: string;
   /** Parameters dropped when sending. The measurement must carry these for a fair comparison. */
@@ -172,7 +179,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
     if (!res.ok) {
       return {
         ...base, ok: false, status: res.status, latencyMs,
-        text: null, usage: null, chatId: null, servedBy: null,
+        text: null, usage: null, chatId: null, servedBy: null, truncated: false,
         errorKind: classify(res.status),
         errorMessage: raw.slice(0, 400),
       };
@@ -182,12 +189,13 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
     try { json = JSON.parse(raw); } catch {
       return {
         ...base, ok: false, status: res.status, latencyMs,
-        text: null, usage: null, chatId: null, servedBy: null,
+        text: null, usage: null, chatId: null, servedBy: null, truncated: false,
         errorKind: 'malformed', errorMessage: raw.slice(0, 400),
       };
     }
 
-    const text = json?.choices?.[0]?.message?.content ?? null;
+    const choice = json?.choices?.[0];
+    const text = choice?.message?.content ?? null;
     const u = json?.usage ?? null;
     return {
       ...base,
@@ -198,6 +206,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
       usage: u && {
         prompt: u.prompt_tokens, completion: u.completion_tokens, total: u.total_tokens,
       },
+      truncated: choice?.finish_reason === 'length',
       chatId: json?.id ?? null,
       servedBy:
         res.headers.get('x-0g-provider-address') ??
@@ -210,7 +219,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
     const timedOut = e?.name === 'AbortError';
     return {
       ...base, ok: false, status: 0, latencyMs,
-      text: null, usage: null, chatId: null, servedBy: null,
+      text: null, usage: null, chatId: null, servedBy: null, truncated: false,
       errorKind: timedOut ? 'timeout' : 'network',
       errorMessage: String(e?.message ?? e),
     };

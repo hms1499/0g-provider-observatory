@@ -9,7 +9,12 @@
 import { existsSync } from 'node:fs';
 import { buildPinnedRequest } from '../probes/router-client.js';
 import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
-import { assertSuiteValid, PROBES, SUITE_EST_INPUT_TOKENS, SUITE_MAX_OUTPUT_TOKENS } from '../probes/suite.js';
+import {
+  assertSuiteValid,
+  PROBES,
+  SUITE_MAX_OUTPUT_TOKENS,
+  SUITE_MEASURED_TOKENS,
+} from '../probes/suite.js';
 
 const B = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -44,7 +49,8 @@ function main() {
     );
   }
   console.log(
-    `${PROBES.length} probes · in ~${SUITE_EST_INPUT_TOKENS} tok · out <=${SUITE_MAX_OUTPUT_TOKENS} tok per service`,
+    `${PROBES.length} probes · ceiling ${SUITE_MAX_OUTPUT_TOKENS} out tok · ` +
+      `measured ${SUITE_MEASURED_TOKENS.input} in / ${SUITE_MEASURED_TOKENS.output} out`,
   );
 
   // ── 02 targets ────────────────────────────────────────────────────────────
@@ -120,10 +126,27 @@ function main() {
     console.log(t.canonicalId.padEnd(24), t.mode.padEnd(10), ('$' + t.estCostUsd.toFixed(6)).padStart(12));
   }
   const share = top.reduce((n, t) => n + t.estCostUsd, 0) / plan.estCostUsd;
+
+  // Priced from one real run rather than from the ceiling. This is the number to budget on.
+  const measured = plan.targets.reduce(
+    (n, t) =>
+      n +
+      t.usdPerPromptToken * SUITE_MEASURED_TOKENS.input +
+      t.usdPerCompletionToken * SUITE_MEASURED_TOKENS.output,
+    0,
+  );
+
   console.log('─'.repeat(78));
-  console.log(`full epoch: ${B('$' + plan.estCostUsd.toFixed(4))}   ${DIM(`(top 5 services account for ${(share * 100).toFixed(0)}%)`)}`);
-  console.log(`1 epoch/day for 8 days: $${(plan.estCostUsd * 8).toFixed(2)}`);
-  console.log(DIM('This is an upper bound: it assumes max_tokens, and real output is usually shorter.'));
+  console.log(`ceiling  ${'$' + plan.estCostUsd.toFixed(4)}   ${DIM('if every probe used its whole max_tokens')}`);
+  console.log(`measured ${B('$' + measured.toFixed(4))}   ${DIM(`(top 5 services account for ${(share * 100).toFixed(0)}%)`)}`);
+  console.log(
+    DIM(`  token profile from a live run: ${SUITE_MEASURED_TOKENS.input} in / ${SUITE_MEASURED_TOKENS.output} out per service`),
+  );
+  console.log(`\n1 epoch/day for 8 days:  $${(measured * 8).toFixed(2)}`);
+  console.log(`2 epochs/day for 8 days: $${(measured * 16).toFixed(2)}`);
+  console.log(
+    YEL('Inference is the real cost, not gas — one epoch of inference buys ~870 epochs of chain writes.'),
+  );
   console.log(
     YEL('Differs from cost-model.ts: that counts 19 on-chain chatbot services, the Router exposes ' +
       `${plan.targets.length}. The prober calls through the Router, so use the figure here.`),
