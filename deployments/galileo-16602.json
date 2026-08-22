@@ -1,0 +1,26 @@
+{
+  "network": "0G Galileo testnet",
+  "chainId": 16602,
+  "rpc": "https://evmrpc-testnet.0g.ai",
+  "explorer": "https://chainscan-galileo.0g.ai",
+  "deployedAt": "2026-08-22",
+  "contracts": {
+    "ProviderRegistry": "0xCF9236a145FaE855B6894Eb7951cA9619D6613a8",
+    "MeasurementRegistry": "0x9bdeC5D5749270cf20DDa5d541770839E083CAc6"
+  },
+  "owner": "0xaBaCa14B88Ee1E392985e4dF315ae4e70CC734DB",
+  "probers": ["0xaBaCa14B88Ee1E392985e4dF315ae4e70CC734DB"],
+  "epochSeconds": 3600,
+  "transactions": {
+    "deployProviderRegistry": "0x2836c14f8ae9750a1ca59df7dc4134ef27e5219ea3f2aa2b2b591ca555abf9a7",
+    "deployMeasurementRegistry": "0x63780c605f0ccd3e164652587a706d60742964f9c211371aa1070338b64d8adb",
+    "authorizeProberOnRegistry": "0x2e811b1b0adc6727c195cbe242f501d9d84a7619117376dc2f9b2185d69d0db5",
+    "authorizeProberOnMeasurement": "0x1214ddbf06ada249fa056232f5b2b32e05d4eedaf2e55832631d960ddfef4665"
+  },
+  "seeded": {
+    "providerCount": 38,
+    "firstEpoch": 496497,
+    "note": "Providers are the real 38 healthy chatbot services from data/snapshot-2026-08-21.json. Epoch 496497 holds stand-in measurement values — the ledger is under test here, not the prober."
+  },
+  "note": "Testnet only. The owner key was generated inside a Claude Code session and must never hold mainnet funds. Mainnet deployment requires a key Huy generates himself, because the deployer becomes contract owner."
+}
