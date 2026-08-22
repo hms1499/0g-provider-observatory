@@ -12,7 +12,9 @@
     "compare": "tsx src/scripts/compare-sources.ts",
     "diff-verifiability": "tsx src/scripts/diff-verifiability.ts",
     "inspect-meta": "tsx src/scripts/inspect-onchain-meta.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dry-run": "tsx src/scripts/dry-run.ts",
+    "cost-model": "tsx src/scripts/cost-model.ts"
   },
   "dependencies": {
     "@0gfoundation/0g-compute-ts-sdk": "^0.9.0",
