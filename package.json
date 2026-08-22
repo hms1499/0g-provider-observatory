@@ -13,6 +13,7 @@
     "diff-verifiability": "tsx src/scripts/diff-verifiability.ts",
     "inspect-meta": "tsx src/scripts/inspect-onchain-meta.ts",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"src/**/test/*.test.ts\"",
     "dry-run": "tsx src/scripts/dry-run.ts",
     "cost-model": "tsx src/scripts/cost-model.ts",
     "contracts:build": "forge build",

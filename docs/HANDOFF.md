@@ -68,13 +68,13 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T4 | Epoch plan + offline dry run | `src/probes/plan.ts`, `src/scripts/dry-run.ts` |
 | T7 | Registry contracts + chain reader | `contracts/`, `src/chain/` |
 | T7b | Testnet deploy, seeded and verified live | `deployments/galileo-16602.json` |
+| T6 | Latency aggregation: results -> p50/p95/error rate | `src/probes/aggregate.ts` |
 
 ### Ready now — nothing blocks these, do them in any order
 
 | | Task | Notes |
 |---|---|---|
-| T5 | **Divergence engine** (F2) | `CallResult[]` -> divergence per comparator, minus the internal noise floor from the `arith-mult` / `arith-mult-repeat` pair |
-| T6 | **Latency aggregation** (F1) | p50 / p95 / error rate per service, never pooled by address |
+| T5 | **Divergence engine** (F2) | `CallResult[]` -> divergence per comparator, minus the internal noise floor from the `arith-mult` / `arith-mult-repeat` pair. Plugs into the `divergenceBps` hook `toMeasurements` already exposes |
 | T8 | **Verification CLI** (F7) | Buildable against fixtures; needs no live data. Argumentatively load-bearing, do not cut |
 | T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; swap in real measurements when T5/T6 land |
 
@@ -89,7 +89,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 
 | | Task | Waits on |
 |---|---|---|
-| T10 | Live epoch run against real providers | B1, T5, T6 |
+| T10 | Live epoch run against real providers | B1 — T5 optional, divergence can start at 0 |
 | T11 | Storage wiring (F4): transcript up, rootHash back | T10 for real transcripts — buildable against a fixture before that |
 | T12 | **Mainnet deploy + accumulate real epochs** | B2, T10 — contracts are ready |
 | T13 | Submission pack: README, 3-min video, X post | T12 for the explorer link |
@@ -136,6 +136,7 @@ pnpm diff-verifiability   # per-service label divergence table
 pnpm inspect-meta         # raw on-chain metadata
 pnpm cost-model           # cost from the on-chain price table
 pnpm dry-run              # DRY RUN a whole epoch: probes, pinning, groups, cost, sample request
+pnpm test                 # TypeScript tests
 pnpm contracts:test       # 26 Solidity tests
 pnpm contracts:gas        # gas report
 
@@ -172,6 +173,33 @@ Network findings in detail: `docs/network-findings.md`
    to `arith-mult` so a provider's internal noise floor can be subtracted first.
 
 Baseline snapshot: `data/snapshot-2026-08-21.json`
+
+### The three rules T6 encodes
+
+`src/probes/aggregate.ts` turns raw results into the numbers a reader ends up trusting,
+so it is where the project's principles become arithmetic:
+
+- **Never pool by address.** The unit is (address, model), same as ProviderRegistry.
+  Pooling by address is the exact defect this project points at — four differently-sized
+  models reported at an identical 9408 ms because the figure was aggregated at the address.
+- **Our faults are not their errors.** A 401 from an expired key or a 402 from an empty
+  balance is a *prober* failure. Counting it against a provider's error rate would publish
+  an accusation caused by our own billing. `auth` / `payment` / `bad_request` are excluded
+  from both the rate and the attempt count; `upstream` / `timeout` / `rate_limit` /
+  `malformed` / `not_found` count against the provider; `network` is genuinely ambiguous
+  and is reported as unattributed rather than guessed either way.
+- **Too few samples means no number.** Below 5 successful calls the service is marked
+  insufficient and left out of the epoch entirely — which is exactly why
+  MeasurementRegistry stores no zero-filled placeholder.
+
+Every formula is integer-only and stated exactly, because F7 has to recompute the same
+values from the raw transcript in possibly another language and get identical bits.
+Percentiles use nearest rank, `rank = ceil(k*n/100)`, no interpolation.
+
+**Honest consequence worth repeating on the dashboard:** at n=15, p95 has rank 15, so a
+single epoch's p95 *is* its slowest call and carries almost no tail information. It only
+becomes meaningful once epochs are pooled — which `aggregate()` supports, since pooling
+many epochs is the same call as aggregating one.
 
 ### Measured gas — not estimated
 
