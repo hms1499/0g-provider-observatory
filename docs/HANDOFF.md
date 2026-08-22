@@ -78,12 +78,29 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T8 | **Verification CLI** (F7) | Buildable against fixtures; needs no live data. Argumentatively load-bearing, do not cut |
 | T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; swap in real measurements when T5/T6 land |
 
+### How many epochs the project needs: 14
+
+Derived from three constraints, not guessed. The binding one is the noise floor.
+
+| Constraint | Needs | Why |
+|---|---|---|
+| **Noise floor granularity** | **>= 12 epochs** | One duplicate probe pair per epoch, so the floor can only take (epochs + 1) values. One probe differing out of twelve is 833 bps; the floor has to be finer than that step or the subtraction jumps a whole probe. At 12 epochs it is 833 bps. At 1 epoch it is 0 or 10000 — unusable. |
+| **p95 meaningfulness** | >= 7 epochs | At n=15 the p95 has rank 15, so it *is* the slowest call. 7 epochs puts 5 samples above it, 14 puts 10. |
+| **"How did it behave last week"** | spread over days | One of the three questions the product answers. Also what a judge sees in the explorer: a steady series across days reads differently from a burst of test transactions. |
+
+**14 epochs, two a day, ~$9.75.** Twelve is the floor; twenty is comfortable at $13.92.
+
+Cost lever if needed: dropping the five most expensive services makes an epoch 46% cheaper
+($0.70 -> $0.38), at the cost of comparability inside the Claude and GPT groups — which are
+all `standard` mode with no TeeML reference, so already the weakest groups.
+
 ### Blocked on Huy — these are the only things Claude cannot do
 
 | | Blocker | Unblocks | How |
 |---|---|---|---|
 | B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | pc.0g.ai -> connect wallet -> fund ~$5 of 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. See "Why the API key must be mainnet" below |
-| B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission — do it first** |
+| B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission** |
+| B3 | Top up Router credit to ~60 0G (~$10) | T10 | See "Funding, unresolved" below. Current balance runs 0.14 of one epoch |
 
 ### Blocked on other tasks
 
@@ -102,6 +119,48 @@ by (epoch, prober), so opening the gate needs no data migration).
 
 **Critical path:** B2 -> T12 -> T13. The contracts are deployed and verified on testnet, so
 mainnet funds are now the only thing standing between here and a valid submission.
+
+### Funding, unresolved — pick this up first next session
+
+The key works: real pinned calls succeed and are billed. But the balance behind it is far
+too small — 0.1 0G is $0.017, and an epoch is $0.70, so **0.14 of one epoch**.
+
+Topping up stalled on an open question. Huy found a deposit address on pc.0g.ai,
+`0x495C63D097582Fb4e31fDc06970EEebDe9F69227`, with no network stated. Read on chain
+2026-08-22:
+
+| Network | Balance | Nonce | Ledger account |
+|---|---|---|---|
+| 0G mainnet | 0 | **0** | none |
+| 0G testnet | 0 | **0** | none |
+| Ethereum | 0 | **0** | — |
+
+Not a contract (`code = 0x`) and never used anywhere. Yet the key is funded, since calls
+are being billed — so **that address is not the account paying for the key**.
+
+The likely explanation is that 0G Compute has two parallel payment paths and we are on the
+hosted one:
+
+| | Router (`sk-…` key) — what we use | SDK direct |
+|---|---|---|
+| Billing | Hosted account at pc.0g.ai | On-chain Ledger contract |
+| Readable via | Dashboard only | `getLedger(address)` |
+
+`getLedger()` reverting with LedgerNotExists is therefore expected, not a problem, and
+`0x495C…` is plausibly a sweep address that credits the hosted account rather than holding
+a balance.
+
+**Unverified, because the pc.0g.ai UI is not visible from here.** So: send **1 0G on 0G
+mainnet (chain 16661)** first, confirm the dashboard balance moves, and only then send the
+rest. An 0x address is EVM-format and identifies no chain — the same string is valid on
+Ethereum — and 0G is the native token of 0G mainnet, so the network chosen at send time is
+what matters. $0.17 to de-risk $10.
+
+Two things to read off the dashboard next session: whether the deposit page names a
+network, and the current credit balance. The prober key holds only `inference` scope, so
+`/v1/account/balance`, `/v1/account/usage/stats` and `/v1/account/usage/history` all return
+403 — a second key with account-read scope would let T10 preflight the balance instead of
+discovering it is empty halfway through an epoch.
 
 ### Why the API key must be mainnet
 
@@ -232,6 +291,23 @@ Every one of them would have corrupted a full epoch silently.
 `max_tokens` is a ceiling, not a charge: a model answering in 17 tokens costs 17. So probe
 ceilings were raised generously — the suite ceiling went 440 -> 3424 — while measured
 consumption is 1740. Only three probes still truncate, and none feed divergence.
+
+### Two more Router behaviours, measured
+
+- **The pin is confirmed by `x-provider`, not `x-0g-provider-address`.** The client was
+  reading a header that does not exist, so `servedBy` was always null and the pin was never
+  actually verified — a mis-pinned epoch would have attributed every measurement to the
+  wrong service while looking perfectly healthy. Fixed and confirmed live; the smoke test
+  now exits non-zero if the echoed address ever differs from the pinned one.
+- **Rate limit is 500 requests per minute**, reset on the minute boundary, published on
+  every response. An epoch is 570 calls but takes ~25 minutes sequentially, averaging 23
+  requests a minute — under 5% of the limit. More API keys would buy nothing: keys are
+  credentials, not budget, and the limit is not the constraint.
+
+  For T10, parallelise **across** providers and stay sequential **within** each one.
+  Concurrent calls to the same provider inflate the latency we are measuring — we would be
+  recording our own queueing as their performance. 38 concurrent calls, one per provider,
+  cuts an epoch to well under a minute and stays far inside the limit on a single key.
 
 ### The three rules T6 encodes
 
