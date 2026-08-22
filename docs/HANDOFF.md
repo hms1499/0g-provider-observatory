@@ -82,7 +82,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 
 | | Blocker | Unblocks | How |
 |---|---|---|---|
-| B1 | `ROUTER_API_KEY` | T10 | pc.0g.ai -> connect wallet -> fund 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. Start on testnet (faucet https://faucet.0g.ai, 0.1 0G/day) |
+| B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | pc.0g.ai -> connect wallet -> fund ~$5 of 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. See "Why the API key must be mainnet" below |
 | B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission — do it first** |
 
 ### Blocked on other tasks
@@ -102,6 +102,35 @@ by (epoch, prober), so opening the gate needs no data migration).
 
 **Critical path:** B2 -> T12 -> T13. The contracts are deployed and verified on testnet, so
 mainnet funds are now the only thing standing between here and a valid submission.
+
+### Why the API key must be mainnet
+
+Measured 2026-08-22, not assumed:
+
+| | Testnet (16602) | Mainnet (16661) |
+|---|---|---|
+| Chatbot services | **1** (`qwen2.5-omni-7b`) | **38** |
+| Other services | 1 image-editing | 4 |
+| Operator addresses | 2 | 16 |
+| Multi-provider model groups | **0** | 10 |
+| Router API | **none exists** | `router-api.0g.ai`, 29 models |
+
+`router-api-testnet.0g.ai`, `testnet-router-api.0g.ai` and `router-testnet.0g.ai` all fail
+to resolve. The Router is mainnet-only, and the entire pinning layer is built on it.
+
+With one chatbot service, T5 has nothing to measure — divergence needs at least two
+providers of the same model, and testnet has zero such groups. There is no `glm-5.2`
+calibration pair. Every finding this project rests on is a mainnet observation.
+
+**Two independent choices, easy to conflate:**
+
+- **Chain** — where the contracts live. Testnet today, mainnet at T12, which Wave 3 requires.
+- **Compute** — where inference runs. Mainnet, because testnet has nothing to measure.
+  The rules permit testnet Compute, but permission does not help when it is empty.
+
+Inference credit at pc.0g.ai is a separate balance from the 0G in the wallet that pays
+contract gas. ~$5 of credit covers 26 epochs; the price-ceiling headers already guard
+against runaway spend.
 
 ### Live on Galileo testnet (chain 16602)
 
