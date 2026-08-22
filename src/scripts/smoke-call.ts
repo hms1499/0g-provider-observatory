@@ -59,7 +59,20 @@ async function main() {
   console.log(`latency   ${B(String(r.latencyMs))} ms   ${DIM(`Router claims ${target.reportedLatency} ms`)}`);
   if (r.usage) console.log(`tokens    in ${r.usage.prompt} · out ${r.usage.completion}`);
   if (r.chatId) console.log(`chat id   ${r.chatId}  ${DIM('(needed for the TEE signature endpoint)')}`);
-  if (r.servedBy) console.log(`served by ${r.servedBy}`);
+  if (r.servedBy) {
+    const pinHeld = r.servedBy.toLowerCase() === target.address.toLowerCase();
+    console.log(`served by ${r.servedBy}  ${pinHeld ? '— pin held' : B('— PIN DID NOT HOLD')}`);
+    if (!pinHeld) {
+      console.log('\nThe Router served a different provider than the one pinned. Every');
+      console.log('measurement in an epoch would be attributed to the wrong service.');
+      process.exit(1);
+    }
+  } else {
+    console.log(DIM('served by  (no x-provider header — cannot confirm the pin held)'));
+  }
+  if (r.rateLimitRemaining !== null) {
+    console.log(`rate limit ${r.rateLimitRemaining} requests left this minute  ${DIM('(500/min)')}`);
+  }
 
   if (!r.ok) {
     console.log(`\n${B('FAILED')}  ${r.errorKind}`);

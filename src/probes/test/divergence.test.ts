@@ -32,6 +32,7 @@ function answer(address: string, probeId: string, text: string): CallResult {
     chatId: null,
     servedBy: null,
     truncated: false,
+    rateLimitRemaining: null,
     droppedParams: [],
     at: '2026-08-22T00:00:00.000Z',
   };

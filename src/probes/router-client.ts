@@ -114,8 +114,17 @@ export interface CallResult {
   usage: { prompt?: number; completion?: number; total?: number } | null;
   /** Needed by the TEE signature endpoint: /v1/proxy/signature/{chatID} */
   chatId: string | null;
-  /** The provider the Router echoes back, if any — used to confirm the pin took effect. */
+  /**
+   * The provider the Router echoes back in `x-provider` — proof the pin took effect.
+   * Without checking this a mis-pinned epoch would silently measure the wrong service.
+   */
   servedBy: string | null;
+  /**
+   * Requests left in the current rate-limit window, from `x-ratelimit-remaining-requests`.
+   * Measured 2026-08-22: 500 requests per minute, reset on the minute boundary. An epoch is
+   * 570 calls, so the limit is not the constraint — real latency is.
+   */
+  rateLimitRemaining: number | null;
   /**
    * The model hit max_tokens mid-sentence. A truncated answer is a measurement artifact,
    * not a provider difference: a reasoning model cut off partway through `(7^13) mod 1000`
@@ -128,6 +137,13 @@ export interface CallResult {
   /** Parameters dropped when sending. The measurement must carry these for a fair comparison. */
   droppedParams: string[];
   at: string;
+}
+
+function rateLimitOf(res: Response): number | null {
+  const v = res.headers.get('x-ratelimit-remaining-requests');
+  if (v === null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 function classify(status: number): ErrorKind {
@@ -180,6 +196,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
       return {
         ...base, ok: false, status: res.status, latencyMs,
         text: null, usage: null, chatId: null, servedBy: null, truncated: false,
+        rateLimitRemaining: rateLimitOf(res),
         errorKind: classify(res.status),
         errorMessage: raw.slice(0, 400),
       };
@@ -190,6 +207,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
       return {
         ...base, ok: false, status: res.status, latencyMs,
         text: null, usage: null, chatId: null, servedBy: null, truncated: false,
+        rateLimitRemaining: rateLimitOf(res),
         errorKind: 'malformed', errorMessage: raw.slice(0, 400),
       };
     }
@@ -208,10 +226,8 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
       },
       truncated: choice?.finish_reason === 'length',
       chatId: json?.id ?? null,
-      servedBy:
-        res.headers.get('x-0g-provider-address') ??
-        json?.provider_address ??
-        null,
+      servedBy: res.headers.get('x-provider') ?? json?.provider_address ?? null,
+      rateLimitRemaining: rateLimitOf(res),
       ...(text === null && { errorKind: 'malformed' as ErrorKind, errorMessage: raw.slice(0, 400) }),
     };
   } catch (e: any) {
@@ -220,6 +236,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
     return {
       ...base, ok: false, status: 0, latencyMs,
       text: null, usage: null, chatId: null, servedBy: null, truncated: false,
+      rateLimitRemaining: null,
       errorKind: timedOut ? 'timeout' : 'network',
       errorMessage: String(e?.message ?? e),
     };
