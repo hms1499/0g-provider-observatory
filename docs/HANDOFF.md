@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-22
+**Updated:** 2026-08-23
 
 ---
 
@@ -70,13 +70,16 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T7b | Testnet deploy, seeded and verified live | `deployments/galileo-16602.json` |
 | T6 | Latency aggregation: results -> p50/p95/error rate | `src/probes/aggregate.ts` |
 | T5 | Divergence engine, calibrated on the TeeML reference | `src/probes/divergence.ts` |
+| T10 | Live epoch runner, run once against real providers | `src/scripts/run-epoch.ts`, `src/probes/epoch-run.ts` |
 
 ### Ready now — nothing blocks these, do them in any order
 
 | | Task | Notes |
 |---|---|---|
 | T8 | **Verification CLI** (F7) | Buildable against fixtures; needs no live data. Argumentatively load-bearing, do not cut |
-| T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; swap in real measurements when T5/T6 land |
+| T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; real measurements now exist in `data/epochs/` |
+| T10b | **Make the budget cap a real cap** | See "What the first live epoch found", defect 2. Costs nothing to fix |
+| T10c | **Re-measure the token profile** | Defect 3. `SUITE_MEASURED_TOKENS` came from one provider and is 2.15x low |
 
 ### How many epochs the project needs: 14
 
@@ -100,13 +103,12 @@ all `standard` mode with no TeeML reference, so already the weakest groups.
 |---|---|---|---|
 | B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | pc.0g.ai -> connect wallet -> fund ~$5 of 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. See "Why the API key must be mainnet" below |
 | B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission** |
-| B3 | Top up Router credit to ~60 0G (~$10) | T10 | See "Funding, unresolved" below. Current balance runs 0.14 of one epoch |
+| B3 | Top up Router credit to ~62 0G (~$10) | T10 at full roster | See "Funding" below. ~1.67 0G left — one more reduced run |
 
 ### Blocked on other tasks
 
 | | Task | Waits on |
 |---|---|---|
-| T10 | Live epoch run against real providers | **B1 only** — every piece it needs is built |
 | T11 | Storage wiring (F4): transcript up, rootHash back | T10 for real transcripts — buildable against a fixture before that |
 | T12 | **Mainnet deploy + accumulate real epochs** | B2, T10 — contracts are ready |
 | T13 | Submission pack: README, 3-min video, X post | T12 for the explorer link |
@@ -120,12 +122,21 @@ by (epoch, prober), so opening the gate needs no data migration).
 **Critical path:** B2 -> T12 -> T13. The contracts are deployed and verified on testnet, so
 mainnet funds are now the only thing standing between here and a valid submission.
 
-### Funding, unresolved — pick this up first next session
+### Funding
 
-The key works: real pinned calls succeed and are billed. But the balance behind it is far
-too small — 0.1 0G is $0.017, and an epoch is $0.70, so **0.14 of one epoch**.
+Topped up to **2.5 0G** on 2026-08-23 and the credit works: the first live epoch ran and
+was billed against it. At $0.1585/0G that is $0.396, and one full epoch is $0.6962, so the
+top-up never covered a whole epoch — it covered a deliberately reduced one. **$0.131 spent,
+~$0.265 (~1.67 0G) left**, which is one more reduced run and nothing after that.
 
-Topping up stalled on an open question. Huy found a deposit address on pc.0g.ai,
+Reaching 14 epochs needs about **62 0G** at today's price. The credit is denominated in 0G
+while inference is priced in USD, so a falling 0G price shrinks the runway without anyone
+spending anything.
+
+The earlier open question about the deposit address is left below because it was never
+actually answered — the top-up worked, but nothing confirmed *why*.
+
+Huy found a deposit address on pc.0g.ai, Huy found a deposit address on pc.0g.ai,
 `0x495C63D097582Fb4e31fDc06970EEebDe9F69227`, with no network stated. Read on chain
 2026-08-22:
 
@@ -161,6 +172,70 @@ network, and the current credit balance. The prober key holds only `inference` s
 `/v1/account/balance`, `/v1/account/usage/stats` and `/v1/account/usage/history` all return
 403 — a second key with account-read scope would let T10 preflight the balance instead of
 discovering it is empty halfway through an epoch.
+
+### What the first live epoch found
+
+Epoch **496515** on Galileo, 12 measurements, written 2026-08-23 03:00:50Z.
+Transcript: `data/epochs/496514-2026-08-23T025915129Z.jsonl`.
+
+    https://chainscan-galileo.0g.ai/tx/0xb39c4f367795c393caa915806f2710d7074b94f3ef8bf9bae67b3296556d3f25
+
+Deliberately reduced: 15 services across the 6 cheapest multi-provider groups, 225 calls
+planned, **181 sent, 153 successful, $0.131 spent**. The four Claude/kimi groups were
+excluded — none of them holds a TeeML reference, so they exercise no code path the cheaper
+groups do not. The chain round trip reads back exactly what was written.
+
+**The pin held on all 153 successful calls, zero mismatches.** That was the single riskiest
+assumption and it is now measured rather than hoped for.
+
+Four defects surfaced. Two are fixed; two are open and listed in *Ready now*.
+
+**1. Our own ceiling was being published as their error rate. FIXED.**
+15 replies came back HTTP 200 with `content: null`, the chain of thought in a `reasoning`
+field, and `finish_reason: "length"` — reasoning models that spent the entire output budget
+thinking and never reached an answer. The client read only `message.content`, got null, and
+classified them `malformed`, which `aggregate.ts` attributes to the provider. The result was
+an **86.7% error rate published against `zai-org/GLM-5-FP8`** that the provider had no part
+in. This is precisely the failure the project's own rule forbids — *our faults are not their
+errors* — and the ledger is write-once, so it is on testnet permanently.
+
+`readChoice()` now separates the two cases: no content plus `finish_reason: length` is
+`no_content`, attributed to the prober; no content after a normal stop stays `malformed` and
+stays theirs. `reasoning` is deliberately never read as the answer — it is a scratchpad, and
+comparing one model's thinking against another's conclusion would be nonsense. Replaying the
+real transcript through the fix: GLM-5-FP8 goes 86.7% -> 0.0%, and its usable sample count
+drops 15 -> 2, which puts it under the 5-sample floor so it is now dropped from the epoch
+instead of published. That is the correct outcome — no number is better than a wrong one.
+
+**2. The budget cap is not a cap. OPEN (T10b).**
+Spent $0.131 against a $0.120 ceiling. `canAfford()` tests an average per-call estimate, and
+all 15 workers pass that test before any of them records what it spent. Under concurrency it
+is a warning, not a limit. It needs to reserve before the call and settle after.
+
+**3. Cost per call is 2.15x the projection. OPEN (T10c).**
+Projected $0.000336/call, actual $0.000724. `SUITE_MEASURED_TOKENS` (1753 in / 1740 out) was
+measured against a single provider; this roster produced **9,848 in / 41,155 out over 181
+calls**. Reasoning models are the whole difference. Related: **53 of 181 replies truncated
+(29%)**, against the "only three probes still truncate" claim recorded earlier — that claim
+was also measured on one provider.
+
+**4. An epoch label that did not match its own measurements. FIXED.**
+The run started at 02:59:15 and wrote at 03:00:50, crossing the hour. The transcript was
+named for epoch 496514, where nearly every call actually happened; the contract stamped the
+write `currentEpoch()` = **496515**. `storageRoot` still binds the record to its evidence so
+nothing is unverifiable, but the epoch label is wrong and cannot be corrected.
+`assertEpoch()` now refuses the write when the chain has moved on, and the runner warns
+before starting if under 20 minutes remain in the epoch. Blocking is the safe direction: a
+refused write can be re-run, a mislabelled one is permanent.
+
+**Also measured, not a defect:** 12 rate-limit rejections came from the *providers*, not the
+Router — `rate_limit_error` with a `request_id`, concentrated in two operators. The Router's
+500/min is not the binding constraint; individual providers are.
+
+**What divergence actually produced:** one non-zero figure, the `qwen3-vl-30b` pair at
+**9.1%**. `glm-5.2`, the only group with a TeeML reference, compared just **2 probes** — rate
+limits and truncation consumed the rest — so the most important group in the design barely
+reported. Fixing defect 3 should recover most of those probes.
 
 ### Why the API key must be mainnet
 
@@ -393,7 +468,8 @@ worrying about it.
   a regex check before sending.
 - **Twice the calls of the first estimate, at lower cost.** `cost-model.ts` counts 19 on-chain
   chatbot services, but the Router exposes **38** — and the prober calls through the Router. Calls
-  go 285 -> **570**. The upper bound for one epoch is still only **$0.19** (below the old $0.39)
+  go 285 -> **570**. (The **$0.19** figure this line used to carry was wrong — it predated any
+  live token profile. Measured: **$0.6962** per epoch, ceiling **$1.1778**. See Cost.)
   because the real probes are shorter than the 250/120-token assumption in `cost-model.ts`: ~696
   input tokens and <=440 output tokens for all 15 probes.
 
@@ -434,10 +510,10 @@ SDK, contract, and endpoint details: `docs/0g-reference/ai-context-notes.md`
 
 | | |
 |---|---|
-| One epoch (15 probes x 38 Router services = 570 calls) | **$0.19** upper bound |
-| Inference across the whole build (1 epoch/day until submission) | ~$1.50 |
+| One epoch (15 probes x 38 Router services = 570 calls) | **$0.6962** measured · $1.1778 ceiling |
+| Inference across the whole build (1 epoch/day until submission) | ~$5.60 |
 | Mainnet deploy + 100 epochs of gas (measured) | **$0.08** |
-| **Total** | **under $2** |
+| **Total** | **under $6** |
 
 The five most expensive services (`claude-fable-5`, `gpt-5.6-sol`, `gpt-5.5`, `claude-opus-4-8`,
 `claude-opus-5`) account for 46% of the cost of an epoch.

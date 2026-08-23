@@ -237,3 +237,11 @@ describe('toMeasurements', () => {
     assert.equal(rows[0].divergenceBps, 340);
   });
 });
+
+describe('no_content attribution', () => {
+  it('is a prober fault — our max_tokens ceiling, not their failure', () => {
+    // A reasoning model that spends the whole output budget thinking has not failed.
+    // Charging it to the provider publishes an accusation caused by our own probe.
+    assert.equal(faultSide('no_content'), 'prober');
+  });
+});

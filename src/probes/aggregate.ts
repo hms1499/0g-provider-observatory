@@ -44,6 +44,9 @@ export function faultSide(kind: ErrorKind): FaultSide {
     case 'auth':
     case 'payment':
     case 'bad_request':
+    // Our probe's max_tokens ceiling cut the model off before it answered. Charging
+    // that to the provider publishes an accusation we caused.
+    case 'no_content':
       return 'prober';
     case 'network':
       return 'unknown';

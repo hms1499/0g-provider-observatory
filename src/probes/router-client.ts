@@ -100,7 +100,8 @@ export type ErrorKind =
   | 'upstream'         // 5xx — provider-side failure, counts toward their error rate
   | 'timeout'
   | 'network'
-  | 'malformed';       // 200 but the body could not be read
+  | 'malformed'        // 200 but the body could not be read
+  | 'no_content';      // 200, but the whole output budget went on reasoning before any answer
 
 export interface CallResult {
   probeId: string;
@@ -137,6 +138,35 @@ export interface CallResult {
   /** Parameters dropped when sending. The measurement must carry these for a fair comparison. */
   droppedParams: string[];
   at: string;
+}
+
+/**
+ * Read the one choice a probe asks for, and decide what its absence means.
+ *
+ * A reasoning model can return HTTP 200 with `content: null`, its chain of thought in
+ * `reasoning`, and `finish_reason: "length"` — it spent the entire output budget thinking
+ * and never reached an answer. Measured live 2026-08-23: 15 such replies from
+ * zai-org/GLM-5-FP8, every one of them published as an 86.7% error rate against that
+ * service. The ceiling that cut it off is ours, so the fault is ours: `no_content` is
+ * attributed to the prober and kept out of the provider's error rate.
+ *
+ * `reasoning` is deliberately NOT read as the answer. It is a scratchpad, and feeding it
+ * to the comparators would score a model's thinking against another model's conclusion.
+ *
+ * A reply that ends normally with nothing in it is a different thing — that is the
+ * provider returning an empty answer, and it stays `malformed`.
+ */
+export function readChoice(json: any): {
+  text: string | null;
+  truncated: boolean;
+  errorKind: ErrorKind | undefined;
+} {
+  const choice = json?.choices?.[0];
+  const text = choice?.message?.content ?? null;
+  const truncated = choice?.finish_reason === 'length';
+
+  if (text !== null) return { text, truncated, errorKind: undefined };
+  return { text: null, truncated, errorKind: truncated ? 'no_content' : 'malformed' };
 }
 
 function rateLimitOf(res: Response): number | null {
@@ -212,8 +242,7 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
       };
     }
 
-    const choice = json?.choices?.[0];
-    const text = choice?.message?.content ?? null;
+    const { text, truncated, errorKind } = readChoice(json);
     const u = json?.usage ?? null;
     return {
       ...base,
@@ -224,11 +253,11 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
       usage: u && {
         prompt: u.prompt_tokens, completion: u.completion_tokens, total: u.total_tokens,
       },
-      truncated: choice?.finish_reason === 'length',
+      truncated,
       chatId: json?.id ?? null,
       servedBy: res.headers.get('x-provider') ?? json?.provider_address ?? null,
       rateLimitRemaining: rateLimitOf(res),
-      ...(text === null && { errorKind: 'malformed' as ErrorKind, errorMessage: raw.slice(0, 400) }),
+      ...(errorKind && { errorKind, errorMessage: raw.slice(0, 400) }),
     };
   } catch (e: any) {
     const latencyMs = Math.round(performance.now() - t0);
