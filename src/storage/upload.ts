@@ -8,9 +8,8 @@
  */
 import { Indexer, ZgFile } from '@0gfoundation/0g-storage-ts-sdk';
 import { JsonRpcProvider, Wallet } from 'ethers';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+
+export { merkleRootOf, MerkleFailed } from './merkle.js';
 
 export class RootMismatch extends Error {}
 export class UploadFailed extends Error {}
@@ -77,32 +76,6 @@ export async function uploadBundle(opts: {
     // Leaking the handle leaks memory, and a long-running prober would accumulate one
     // per epoch.
     await file.close();
-  }
-}
-
-/**
- * Merkle root of some bytes, derived locally.
- *
- * The verifier needs this: fetching by root proves only that a gateway answered to that
- * root, and a hostile gateway could answer with anything. Recomputing the root over the
- * bytes actually received is what binds them to the record on chain.
- */
-export async function merkleRootOf(bytes: string): Promise<string> {
-  const dir = mkdtempSync(join(tmpdir(), 'og-verify-'));
-  const path = join(dir, 'bundle.json');
-  try {
-    writeFileSync(path, bytes);
-    const file = await ZgFile.fromFilePath(path);
-    try {
-      const [tree, err] = await file.merkleTree();
-      const root = tree?.rootHash();
-      if (err || !root) throw new UploadFailed(`merkle tree failed: ${err?.message}`);
-      return root;
-    } finally {
-      await file.close();
-    }
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
   }
 }
 

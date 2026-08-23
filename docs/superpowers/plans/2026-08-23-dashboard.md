@@ -6,7 +6,7 @@
 
 **Architecture:** Vite + React + TypeScript under `dashboard/`, built from the repository's single root `package.json`. The page imports the same reader and recomputation modules the CLI uses — no copies, no backend, no build-time data snapshot. Two panels: Providers and Verify.
 
-**Tech Stack:** TypeScript 5.6, React 18, Vite 5, ethers 6, `@0gfoundation/0g-storage-ts-sdk` (for `MemData` only), `node:test` for all logic tests.
+**Tech Stack:** TypeScript 5.6, React 19, Vite 8, ethers 6, `@0gfoundation/0g-storage-ts-sdk` (for `MemData` only), `node:test` for all logic tests.
 
 **Spec:** `docs/superpowers/specs/2026-08-23-dashboard-design.md`
 
@@ -254,11 +254,11 @@ git commit -m "Hash bundles from memory so the browser can verify too"
 **Files:**
 - Create: `src/chain/concurrency.ts`
 - Create: `src/chain/test/concurrency.test.ts`
-- Modify: `src/chain/registry.ts` (the `loadProviders` method)
+- Modify: `src/chain/registry.ts` (the `loadProviders` method, and a new `epochTxHash`)
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
-- Produces: `mapWithConcurrency<T, R>(items: readonly T[], limit: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]>` — results in input order. `ObservatoryReader.loadProviders()` keeps its existing signature `(fromBlock?: number) => Promise<ProviderRecord[]>` and gains an internal cache.
+- Produces: `mapWithConcurrency<T, R>(items: readonly T[], limit: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]>` — results in input order. `ObservatoryReader.loadProviders()` keeps its existing signature `(fromBlock?: number) => Promise<ProviderRecord[]>` and gains an internal cache. `ObservatoryReader.epochTxHash(epoch: number, prober: string): Promise<string | null>` is new; Task 5 consumes it.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -413,7 +413,37 @@ Replace the body of `loadProviders` with:
   }
 ```
 
-- [ ] **Step 6: Verify against the real chain**
+- [ ] **Step 6: Recover the transaction that published an epoch**
+
+The spec requires every number to link to its source, and one of those sources is the
+transaction that published it. `EpochRecord` carries no transaction hash — the contract
+stores none, because nothing on chain needs one — so it comes from the `EpochWritten` log.
+It lands here rather than with the view that uses it because `useObservatory` (Task 5)
+calls it, and Task 5 runs first.
+
+Add to `ObservatoryReader` in `src/chain/registry.ts`:
+
+```typescript
+  /**
+   * The transaction that published an epoch.
+   *
+   * `EpochHeader` stores no transaction hash — nothing on chain needs one — so it comes from
+   * the `EpochWritten` log. Needed because every number on the dashboard has to link back to
+   * the transaction that published it; a figure with no path to its source is an opinion.
+   */
+  async epochTxHash(epoch: number, prober: string): Promise<string | null> {
+    const logs = await this.mr.queryFilter(this.mr.filters.EpochWritten(epoch, prober), 0, 'latest');
+    return logs[0]?.transactionHash ?? null;
+  }
+```
+
+Verify it against the real chain with a throwaway script that constructs an
+`ObservatoryReader` for testnet and calls
+`epochTxHash(496516, '0xaBaCa14B88Ee1E392985e4dF315ae4e70CC734DB')`.
+Expected exactly: `0xb557c3d84438a9ae60833d9406e38f9ca1d155b013d66f7443415433e00b6439`.
+Delete the throwaway script afterwards.
+
+- [ ] **Step 7: Verify against the real chain**
 
 Run: `pnpm verify 496516`
 Expected: `VERIFIED  all 11 published measurements recomputed exactly.` — same result as before, noticeably faster.
@@ -421,11 +451,11 @@ Expected: `VERIFIED  all 11 published measurements recomputed exactly.` — same
 Run: `pnpm typecheck && pnpm test`
 Expected: clean, all pass.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/chain/concurrency.ts src/chain/test/concurrency.test.ts src/chain/registry.ts
-git commit -m "Read providers in parallel and cache them, for the dashboard's sake"
+git commit -m "Read providers in parallel and cache them, and recover an epoch's transaction"
 ```
 
 ---
@@ -553,6 +583,15 @@ In `package.json`, add to `scripts`, after `"verify"`:
     "dashboard:preview": "vite preview --outDir ../dashboard-dist",
 ```
 
+Also widen the `test` script, or every dashboard test written from Task 5 onward would sit
+in a directory the suite never looks at:
+
+```json
+    "test": "node --import tsx --test \"src/**/test/*.test.ts\" \"dashboard/test/*.test.ts\"",
+```
+
+Until `dashboard/test/` exists the second pattern matches nothing, which node tolerates.
+
 - [ ] **Step 6: Verify the build and the typecheck**
 
 Run: `pnpm dashboard:build`
@@ -588,8 +627,7 @@ git commit -m "Scaffold the dashboard inside the root package"
   - `bundleUrl(net: NetworkConfig, root: string): string`
   - `useObservatory(net: NetworkConfig)` returning `{ state: 'loading' | 'error' | 'ready' | 'not-deployed'; error?: string; epochs: number[]; providers: ProviderRecord[]; latest?: EpochRecord; latestTxHash?: string | null }`
 
-**Note:** `epochTxHash` is added to `ObservatoryReader` in Task 6. Implement Task 6 Step 5
-before this hook's `Promise.all`, or run the tasks in order as written.
+**Note:** `epochTxHash` comes from Task 3.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -804,12 +842,6 @@ One row per `(address, model)` pair, grouped under its operator for navigation o
 - Create: `dashboard/test/rows.test.ts`
 - Create: `dashboard/Providers.tsx`
 - Modify: `dashboard/App.tsx`
-- Modify: `src/chain/registry.ts` (add `epochTxHash`)
-
-**Why `epochTxHash` is here:** the spec requires every number to link to its source, and one
-of those sources is the transaction that published it. `EpochRecord` carries no transaction
-hash — the contract's storage does not hold one — so it has to be recovered from the
-`EpochWritten` event.
 
 **Interfaces:**
 - Consumes: `NetworkConfig`, `explorerAddress` from Task 5; `ProviderRecord`, `EpochRecord` from `src/chain/registry.ts`.
@@ -1005,29 +1037,7 @@ export function formatMs(ms: number): string {
 Run: `node --import tsx --test dashboard/test/rows.test.ts`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 5: Recover the publishing transaction from the event log**
-
-Add to `ObservatoryReader` in `src/chain/registry.ts`:
-
-```typescript
-  /**
-   * The transaction that published an epoch.
-   *
-   * `EpochHeader` stores no transaction hash — nothing on chain needs one — so it comes from
-   * the `EpochWritten` log. Needed because every number on the dashboard has to link back to
-   * the transaction that published it; a figure with no path to its source is an opinion.
-   */
-  async epochTxHash(epoch: number, prober: string): Promise<string | null> {
-    const logs = await this.mr.queryFilter(this.mr.filters.EpochWritten(epoch, prober), 0, 'latest');
-    return logs[0]?.transactionHash ?? null;
-  }
-```
-
-Verify it against the real chain by running `pnpm verify 496516` (unchanged behaviour) and
-then, in a scratch script, confirming `epochTxHash(496516, prober)` returns
-`0xb557c3d84438a9ae60833d9406e38f9ca1d155b013d66f7443415433e00b6439`.
-
-- [ ] **Step 6: Write the view**
+- [ ] **Step 5: Write the view**
 
 Create `dashboard/Providers.tsx`:
 
@@ -1125,7 +1135,7 @@ export function ModeBadge({ mode }: { mode: string }) {
 }
 ```
 
-- [ ] **Step 7: Wire it into the app**
+- [ ] **Step 6: Wire it into the app**
 
 Replace `dashboard/App.tsx`:
 
@@ -1180,7 +1190,7 @@ export default function App() {
 }
 ```
 
-- [ ] **Step 8: Verify against the live chain**
+- [ ] **Step 7: Verify against the live chain**
 
 Run: `pnpm dashboard:dev`
 Open the printed URL. Expected: the testnet tab lists operators from epoch 496516 with real p50/p95 values, and switching to mainnet shows the not-deployed message.
@@ -1188,10 +1198,10 @@ Open the printed URL. Expected: the testnet tab lists operators from epoch 49651
 Run: `pnpm typecheck && pnpm test && pnpm dashboard:build`
 Expected: all clean.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add dashboard/ src/chain/registry.ts
+git add dashboard/
 git commit -m "Providers view: one row per model, never pooled by address"
 ```
 
@@ -1206,9 +1216,13 @@ Run F7 in the page. This is the half that distinguishes the project from a leade
 - Create: `dashboard/test/verifyEpoch.test.ts`
 - Create: `dashboard/Verify.tsx`
 - Modify: `dashboard/App.tsx`
+**Note:** Task 2 already split `merkleRootOf` into `src/storage/merkle.ts` and added that
+module to the browser-safe guard, so nothing here needs to extend it. Import
+`merkleRootOf` from `'../src/storage/merkle.js'` — NOT from `upload.ts`, which carries the
+wallet and indexer the browser must never load.
 
 **Interfaces:**
-- Consumes: `merkleRootOf` from Task 2; `recompute` and `VerifiableBundle` from `src/verify/recompute.ts`; `compareToChain`, `ProviderLookup`, `Finding` from `src/verify/check.ts`; `bundleUrl` from Task 5.
+- Consumes: `merkleRootOf` from `src/storage/merkle.js` (Task 2); `recompute` and `VerifiableBundle` from `src/verify/recompute.ts`; `compareToChain`, `ProviderLookup`, `Finding` from `src/verify/check.ts`; `bundleUrl` from Task 5.
 - Produces:
   - `type VerifyStep = { label: string; status: 'pending' | 'ok' | 'fail'; detail?: string }`
   - `type VerifyOutcome = { steps: VerifyStep[]; findings: Finding[]; checked: number; verdict: 'verified' | 'failed' }`
@@ -1298,7 +1312,7 @@ Create `dashboard/verifyEpoch.ts`:
 
 ```typescript
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
-import { merkleRootOf } from '../src/storage/upload.js';
+import { merkleRootOf } from '../src/storage/merkle.js';
 import { compareToChain, type Finding, type ProviderLookup } from '../src/verify/check.js';
 import { recompute, type VerifiableBundle } from '../src/verify/recompute.js';
 

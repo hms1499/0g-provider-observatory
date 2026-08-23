@@ -13,11 +13,14 @@
     "diff-verifiability": "tsx src/scripts/diff-verifiability.ts",
     "inspect-meta": "tsx src/scripts/inspect-onchain-meta.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"src/**/test/*.test.ts\"",
+    "test": "node --import tsx --test \"src/**/test/*.test.ts\" \"dashboard/test/*.test.ts\"",
     "dry-run": "tsx src/scripts/dry-run.ts",
     "epoch": "tsx src/scripts/run-epoch.ts",
     "upload-epoch": "tsx src/scripts/upload-epoch.ts",
     "verify": "tsx src/scripts/verify-epoch.ts",
+    "dashboard:dev": "vite",
+    "dashboard:build": "vite build",
+    "dashboard:preview": "vite preview --outDir ../dashboard-dist",
     "cost-model": "tsx src/scripts/cost-model.ts",
     "contracts:build": "forge build",
     "contracts:test": "forge test",
@@ -33,7 +36,14 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "esbuild": "^0.28.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vite": "^8.2.2"
   }
 }

@@ -10,6 +10,7 @@
  */
 import { Contract, JsonRpcProvider } from 'ethers';
 import { MEASUREMENT_REGISTRY_ABI, PROVIDER_REGISTRY_ABI } from './abi.js';
+import { mapWithConcurrency } from './concurrency.js';
 
 /** Mirrors ProviderRegistry.Mode. Index 0 is Unknown so an unset slot never reads as real. */
 export const MODES = ['Unknown', 'TeeML', 'TeeTLS', 'standard'] as const;
@@ -59,6 +60,12 @@ export class ObservatoryReader {
   private readonly reg: Contract;
   private readonly mr: Contract;
 
+  /**
+   * Cached provider list, keyed by the registry's own count. `ProviderRegistry` is
+   * append-only, so a cache that still matches the current count cannot be stale.
+   */
+  #providers: { count: number; records: ProviderRecord[] } | null = null;
+
   constructor(rpcUrl: string, private readonly addresses: ObservatoryAddresses) {
     this.provider = new JsonRpcProvider(rpcUrl);
     this.reg = new Contract(addresses.providerRegistry, PROVIDER_REGISTRY_ABI, this.provider);
@@ -85,6 +92,7 @@ export class ObservatoryReader {
   async loadProviders(fromBlock = 0): Promise<ProviderRecord[]> {
     const count = Number(await this.reg.providerCount());
     if (count === 0) return [];
+    if (this.#providers?.count === count) return this.#providers.records;
 
     const names = new Map<number, string>();
     const logs = await this.reg.queryFilter(
@@ -97,19 +105,33 @@ export class ObservatoryReader {
       if (a) names.set(Number(a.id), a.model as string);
     }
 
-    const out: ProviderRecord[] = [];
-    for (let id = 1; id <= count; id++) {
+    const ids = Array.from({ length: count }, (_, i) => i + 1);
+    const records = await mapWithConcurrency(ids, 8, async (id) => {
       const p = await this.reg.get(id);
-      out.push({
+      return {
         id,
         address: p.addr,
         model: names.get(id) ?? null,
         modelHash: p.modelHash,
         declaredMode: modeName(Number(p.declaredMode)),
         registeredAt: new Date(Number(p.registeredAt) * 1000),
-      });
-    }
-    return out;
+      } satisfies ProviderRecord;
+    });
+
+    this.#providers = { count, records };
+    return records;
+  }
+
+  /**
+   * The transaction that published an epoch.
+   *
+   * `EpochHeader` stores no transaction hash — nothing on chain needs one — so it comes from
+   * the `EpochWritten` log. Needed because every number on the dashboard has to link back to
+   * the transaction that published it; a figure with no path to its source is an opinion.
+   */
+  async epochTxHash(epoch: number, prober: string): Promise<string | null> {
+    const logs = await this.mr.queryFilter(this.mr.filters.EpochWritten(epoch, prober), 0, 'latest');
+    return logs[0]?.transactionHash ?? null;
   }
 
   async epochsOf(prober: string): Promise<number[]> {
