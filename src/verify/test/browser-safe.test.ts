@@ -16,6 +16,7 @@ const BROWSER_ENTRYPOINTS = [
   'src/chain/abi.ts',
   'src/verify/recompute.ts',
   'src/verify/check.ts',
+  'src/storage/merkle.ts',
 ];
 
 const BUILTINS = new Set(builtinModules);

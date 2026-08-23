@@ -6,8 +6,10 @@
  * summary back to the evidence behind it, so accepting whatever value came back over the
  * network — without having derived it ourselves — would defeat the purpose.
  */
-import { Indexer, MemData, ZgFile } from '@0gfoundation/0g-storage-ts-sdk';
+import { Indexer, ZgFile } from '@0gfoundation/0g-storage-ts-sdk';
 import { JsonRpcProvider, Wallet } from 'ethers';
+
+export { merkleRootOf, MerkleFailed } from './merkle.js';
 
 export class RootMismatch extends Error {}
 export class UploadFailed extends Error {}
@@ -75,24 +77,6 @@ export async function uploadBundle(opts: {
     // per epoch.
     await file.close();
   }
-}
-
-/**
- * Merkle root of some bytes, derived locally and without touching a filesystem.
- *
- * The verifier needs this: fetching by root proves only that a gateway answered to that
- * root, and a hostile gateway could answer with anything. Recomputing the root over the
- * bytes actually received is what binds them to the record on chain.
- *
- * `MemData` rather than `ZgFile` because the same check has to run in a browser, where
- * there is no file path. Verified 2026-08-23 to produce an identical root.
- */
-export async function merkleRootOf(bytes: string | Uint8Array): Promise<string> {
-  const data = typeof bytes === 'string' ? new TextEncoder().encode(bytes) : bytes;
-  const [tree, err] = await new MemData(data).merkleTree();
-  const root = tree?.rootHash();
-  if (err || !root) throw new UploadFailed(`merkle tree failed: ${err?.message}`);
-  return root;
 }
 
 /**
