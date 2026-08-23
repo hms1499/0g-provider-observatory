@@ -8,6 +8,9 @@
  */
 import { Indexer, ZgFile } from '@0gfoundation/0g-storage-ts-sdk';
 import { JsonRpcProvider, Wallet } from 'ethers';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export class RootMismatch extends Error {}
 export class UploadFailed extends Error {}
@@ -78,6 +81,54 @@ export async function uploadBundle(opts: {
 }
 
 /**
+ * Merkle root of some bytes, derived locally.
+ *
+ * The verifier needs this: fetching by root proves only that a gateway answered to that
+ * root, and a hostile gateway could answer with anything. Recomputing the root over the
+ * bytes actually received is what binds them to the record on chain.
+ */
+export async function merkleRootOf(bytes: string): Promise<string> {
+  const dir = mkdtempSync(join(tmpdir(), 'og-verify-'));
+  const path = join(dir, 'bundle.json');
+  try {
+    writeFileSync(path, bytes);
+    const file = await ZgFile.fromFilePath(path);
+    try {
+      const [tree, err] = await file.merkleTree();
+      const root = tree?.rootHash();
+      if (err || !root) throw new UploadFailed(`merkle tree failed: ${err?.message}`);
+      return root;
+    } finally {
+      await file.close();
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The indexer reports a missing file as HTTP 200 with an error envelope in the body:
+ *
+ *     {"code":101,"message":"File not found","data":null}
+ *
+ * Measured live 2026-08-23. `res.ok` is therefore not enough — without this check a
+ * verifier would hand 51 bytes of JSON error to the recomputation and report that the
+ * evidence had been tampered with, when the truth is that it was never there.
+ */
+export function assertNotGatewayError(body: string): void {
+  if (!body.startsWith('{')) return;
+  let parsed: any;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return;
+  }
+  if (typeof parsed?.code === 'number' && parsed.code !== 0 && typeof parsed?.message === 'string') {
+    throw new UploadFailed(`the indexer has no file for this root: ${parsed.message}`);
+  }
+}
+
+/**
  * Fetch the bundle back by root and hand over the bytes.
  *
  * Run before the chain write, not after: a root that cannot be fetched is not evidence,
@@ -86,5 +137,7 @@ export async function uploadBundle(opts: {
 export async function fetchBundle(indexerUrl: string, rootHash: string): Promise<string> {
   const res = await fetch(gatewayUrl(indexerUrl, rootHash));
   if (!res.ok) throw new UploadFailed(`gateway returned ${res.status} for root ${rootHash}`);
-  return res.text();
+  const body = await res.text();
+  assertNotGatewayError(body);
+  return body;
 }

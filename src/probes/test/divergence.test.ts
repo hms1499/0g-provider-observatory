@@ -77,6 +77,13 @@ describe('normalisation', () => {
     assert.equal(extractNumber('no digits here'), null);
   });
 
+  it('takes the LAST number, because a reasoning model restates the question first', () => {
+    // Measured live: this exact shape made the comparator read 7 as the answer to
+    // (7^13) mod 1000, manufacturing divergence that did not exist.
+    assert.equal(extractNumber('Compute (7^13) mod 1000. The answer is 407.'), 407);
+    assert.equal(extractNumber('Counting position 1, 2, 3... there are 5 of them'), 5);
+  });
+
   it('treats key order and a markdown fence as noise, not difference', () => {
     assert.equal(canonicalJson('{"b":2,"a":1}'), canonicalJson('{"a":1,"b":2}'));
     assert.equal(canonicalJson('```json\n{"a":1}\n```'), '{"a":1}');

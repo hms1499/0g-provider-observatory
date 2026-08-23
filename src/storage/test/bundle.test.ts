@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import type { Target } from '../../probes/plan.js';
 import type { CallResult } from '../../probes/router-client.js';
 import { PROBES } from '../../probes/suite.js';
+import { ERROR_KINDS } from '../../probes/router-client.js';
 import { buildBundle, localDigest, serializeBundle, stableStringify } from '../bundle.js';
 
 const ADDR_A = '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB';
@@ -84,10 +85,27 @@ describe('buildBundle', () => {
 
   it('states the aggregation rules the numbers were derived under', () => {
     const b = buildBundle(input);
-    assert.equal(b.aggregation.minSamples, 5);
-    assert.match(b.aggregation.percentile, /nearest.rank/i);
-    assert.ok(b.aggregation.divergenceProbeIds.length > 0);
-    assert.equal(b.aggregation.noiseProbePair.length, 2);
+    assert.equal(b.rules.minSamples, 5);
+    assert.match(b.rules.percentile, /nearest.rank/i);
+    assert.ok(b.rules.divergenceProbeIds.length > 0);
+    assert.equal(b.rules.noiseProbePair.length, 2);
+  });
+
+  it('states which failures belong to the provider and which are ours', () => {
+    const { faultAttribution } = buildBundle(input).rules;
+    assert.ok(faultAttribution.provider.includes('upstream'));
+    assert.ok(faultAttribution.prober.includes('no_content'));
+    assert.ok(faultAttribution.unknown.includes('network'));
+    // Every kind must land somewhere, or a verifier cannot attribute it at all.
+    const all = [...faultAttribution.provider, ...faultAttribution.prober, ...faultAttribution.unknown];
+    assert.equal(new Set(all).size, ERROR_KINDS.length);
+  });
+
+  it('states the rules that would otherwise only exist in our code', () => {
+    const { rules } = buildBundle(input);
+    assert.equal(rules.numericExtraction, 'last');
+    assert.ok(rules.refusalPattern.length > 0);
+    assert.deepEqual(rules.truncationSafeComparators, ['categorical']);
   });
 
   it('keeps the raw results verbatim', () => {

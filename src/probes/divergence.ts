@@ -58,13 +58,24 @@ export function normalizeText(s: string): string {
 }
 
 /**
- * First number in the text, ignoring thousands separators.
+ * LAST number in the text, ignoring thousands separators.
+ *
+ * The last, not the first. A reasoning model opens by restating the problem, so the first
+ * number in a reply to `(7^13) mod 1000` is 7, and in a letter count it is the position
+ * index 1. Taking the first number read those as the answer and manufactured divergence
+ * that did not exist.
+ *
+ * Measured over the 38 numeric answers in the first live epoch: the last number matches
+ * the known answer 32 times, the first number 30. The remaining three are a provider
+ * genuinely computing the wrong product, and one reply truncated mid-working which
+ * `indexAnswers` already discards.
+ *
  * Returns null when there is none, which makes the probe incomparable rather than wrong.
  */
 export function extractNumber(s: string): number | null {
-  const m = s.replace(/[, ]/g, '').match(/-?\d+(?:\.\d+)?/);
+  const m = s.replace(/[, ]/g, '').match(/-?\d+(?:\.\d+)?/g);
   if (!m) return null;
-  const v = Number(m[0]);
+  const v = Number(m[m.length - 1]);
   return Number.isFinite(v) ? v : null;
 }
 
@@ -181,7 +192,8 @@ export const DIVERGENCE_PROBES = PROBES.filter(
  * opening words, so cutting the reply short changes nothing. Every other comparator reads
  * the answer itself, where truncation invents a difference that is ours, not theirs.
  */
-const TRUNCATION_SAFE = new Set<Comparator>(['categorical']);
+export const TRUNCATION_SAFE_COMPARATORS = ['categorical'] as const;
+const TRUNCATION_SAFE = new Set<Comparator>(TRUNCATION_SAFE_COMPARATORS);
 
 /** Answers by service then probe. Multiple epochs collapse to the last successful answer. */
 function indexAnswers(results: readonly CallResult[]) {

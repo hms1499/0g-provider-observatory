@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { assertRootMatches, gatewayUrl, RootMismatch } from '../upload.js';
+import { assertNotGatewayError, assertRootMatches, gatewayUrl, RootMismatch, UploadFailed } from '../upload.js';
 
 const ROOT = `0x${'ab'.repeat(32)}`;
 
@@ -27,5 +27,23 @@ describe('assertRootMatches', () => {
 
   it('refuses a root the indexer invented, since that root is what goes on chain', () => {
     assert.throws(() => assertRootMatches(ROOT, `0x${'cd'.repeat(32)}`), RootMismatch);
+  });
+});
+
+describe('assertNotGatewayError', () => {
+  it('rejects the indexer error envelope, which arrives as HTTP 200', () => {
+    // Measured live: an unknown root returns 200 with this body, so res.ok is not enough.
+    assert.throws(
+      () => assertNotGatewayError('{"code":101,"message":"File not found","data":null}'),
+      (e: Error) => e instanceof UploadFailed && /File not found/.test(e.message),
+    );
+  });
+
+  it('lets a real bundle through', () => {
+    assert.doesNotThrow(() => assertNotGatewayError('{"schema":"og-observatory-epoch/2"}'));
+  });
+
+  it('lets through a body that is not JSON at all', () => {
+    assert.doesNotThrow(() => assertNotGatewayError('plain bytes'));
   });
 });

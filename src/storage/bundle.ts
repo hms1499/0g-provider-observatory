@@ -15,12 +15,25 @@
  * different root and could not tell an honest rebuild from a tampered one.
  */
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { DIVERGENCE_PROBES, NOISE_PROBE_PAIR } from '../probes/divergence.js';
+import {
+  DIVERGENCE_PROBES,
+  NOISE_PROBE_PAIR,
+  REFUSAL_PATTERN,
+  TRUNCATION_SAFE_COMPARATORS,
+} from '../probes/divergence.js';
+import { faultSide } from '../probes/aggregate.js';
+import { ERROR_KINDS } from '../probes/router-client.js';
 import type { Mode, Target } from '../probes/plan.js';
 import type { CallResult } from '../probes/router-client.js';
 import { PROBES, type Comparator } from '../probes/suite.js';
 
-export const BUNDLE_SCHEMA = 'og-observatory-epoch/1';
+/**
+ * Bumped to /2 when building the verification CLI showed /1 was not actually verifiable:
+ * it stated minSamples and the percentile formula but not the fault-attribution table, the
+ * numeric extraction rule, the refusal regex or the truncation rule — so an error rate or a
+ * divergence figure could not be recomputed from it without reading this repository.
+ */
+export const BUNDLE_SCHEMA = 'og-observatory-epoch/2';
 
 export interface BundleProbe {
   id: string;
@@ -54,12 +67,21 @@ export interface EpochBundle {
   endedAt: string;
   probes: BundleProbe[];
   roster: BundleService[];
-  aggregation: {
+  /** Everything needed to recompute the published numbers without reading our code. */
+  rules: {
     minSamples: number;
     percentile: string;
     basisPoints: string;
+    /** Which end of the answer the numeric comparator reads. */
+    numericExtraction: 'first' | 'last';
+    /** Source of the refusal regex, applied case-insensitively. */
+    refusalPattern: string;
+    /** Comparators whose verdict survives a truncated answer. */
+    truncationSafeComparators: readonly string[];
     divergenceProbeIds: readonly string[];
     noiseProbePair: readonly string[];
+    /** Which failures count against the provider, which are ours, which are neither. */
+    faultAttribution: { provider: string[]; prober: string[]; unknown: string[] };
   };
   results: CallResult[];
 }
@@ -95,12 +117,22 @@ export function buildBundle(input: BundleInput): EpochBundle {
       onchainMode: t.onchainMode,
       droppedParams: t.params.dropped,
     })),
-    aggregation: {
+    rules: {
       minSamples: 5,
       percentile: 'nearest-rank, rank = ceil(k*n/100), no interpolation, integer arithmetic',
       basisPoints: 'round(part / whole * 10000), half-up, integer arithmetic',
+      numericExtraction: 'last',
+      refusalPattern: REFUSAL_PATTERN.source,
+      truncationSafeComparators: TRUNCATION_SAFE_COMPARATORS,
       divergenceProbeIds: DIVERGENCE_PROBES,
       noiseProbePair: NOISE_PROBE_PAIR,
+      // Derived from faultSide() rather than restated, so the bundle cannot claim an
+      // attribution the code does not apply.
+      faultAttribution: {
+        provider: ERROR_KINDS.filter((k) => faultSide(k) === 'provider'),
+        prober: ERROR_KINDS.filter((k) => faultSide(k) === 'prober'),
+        unknown: ERROR_KINDS.filter((k) => faultSide(k) === 'unknown'),
+      },
     },
     results: [...input.results],
   };

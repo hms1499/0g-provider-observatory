@@ -72,15 +72,15 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T5 | Divergence engine, calibrated on the TeeML reference | `src/probes/divergence.ts` |
 | T10 | Live epoch runner, run once against real providers | `src/scripts/run-epoch.ts`, `src/probes/epoch-run.ts` |
 | T11 | Storage wiring (F4): evidence bundle up, real merkle root on chain | `src/storage/`, `src/scripts/upload-epoch.ts` |
+| T8 | Verification CLI (F7): independent recomputation, verified live | `src/verify/`, `src/scripts/verify-epoch.ts` |
 
 ### Ready now — nothing blocks these, do them in any order
 
 | | Task | Notes |
 |---|---|---|
-| T8 | **Verification CLI** (F7) | Buildable against fixtures; needs no live data. Argumentatively load-bearing, do not cut |
 | T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; real measurements now exist in `data/epochs/` |
-| T10b | **Make the budget cap a real cap** | See "What the first live epoch found", defect 2. Costs nothing to fix |
-| T10c | **Re-measure the token profile** | Defect 3. `SUITE_MEASURED_TOKENS` came from one provider and is 2.15x low |
+| T10b | **Make the budget cap a real cap** | Overshot on BOTH live runs: $0.131 and $0.1388 against a $0.12 ceiling. Costs nothing to fix |
+| T10c | **Re-measure the token profile** | Projection was 2.15x low on run 1 and 1.83x low on run 2. `SUITE_MEASURED_TOKENS` came from one provider |
 
 ### How many epochs the project needs: 14
 
@@ -124,10 +124,18 @@ mainnet funds are now the only thing standing between here and a valid submissio
 
 ### Funding
 
-Topped up to **2.5 0G** on 2026-08-23 and the credit works: the first live epoch ran and
-was billed against it. At $0.1585/0G that is $0.396, and one full epoch is $0.6962, so the
-top-up never covered a whole epoch — it covered a deliberately reduced one. **$0.131 spent,
-~$0.265 (~1.67 0G) left**, which is one more reduced run and nothing after that.
+Topped up to **2.5 0G** on 2026-08-23 and the credit works: two live epochs ran and were
+billed against it. At $0.1585/0G that is $0.396, and one full epoch is $0.6962, so the
+top-up never covered a whole epoch — it covered two deliberately reduced ones.
+
+| | |
+|---|---|
+| Epoch 496515 (181 calls) | $0.1310 |
+| Epoch 496516 (172 calls) | $0.1388 |
+| **Left** | **~$0.126 (~0.80 0G)** |
+
+That is **less than one more reduced run**, since a reduced run costs ~$0.135 in practice
+against a $0.076 projection. Treat the inference credit as spent until B3.
 
 Reaching 14 epochs needs about **62 0G** at today's price. The credit is denominated in 0G
 while inference is priced in USD, so a falling 0G price shrinks the runway without anyone
@@ -294,6 +302,70 @@ fetchable.
 **Mainnet needs a different indexer** — `https://indexer-storage-turbo.0g.ai`. `config.ts`
 picks it from `CHAIN_ID`, so T12 needs no code change, but the mainnet path is unexercised
 until then.
+
+### What T8 established, and the bug it found before it was written
+
+`pnpm verify <epoch>` reads the chain, fetches the evidence the record points at,
+recomputes every published number, and reports every difference. Exit code is 0 only when
+all of them reproduce.
+
+**Verified live on epoch 496516**, 11 measurements, all reproduced exactly:
+
+```
+ok  fetched through the public gateway     96 KB, no wallet, no SDK
+ok  merkle root of the received bytes matches the record
+ok  schema og-observatory-epoch/2          172 calls, 15 services
+ok  the evidence claims the same epoch and prober
+VERIFIED  all 11 published measurements recomputed exactly.
+```
+
+**`src/verify/` imports nothing from `src/probes/`.** That is the whole point: a verifier
+that called `aggregate()` would re-run the code that produced the numbers, so it would
+agree with them even if the formula were wrong. It would check for tampering and nothing
+else. The rules come from the bundle; if the bundle does not state something, the verifier
+cannot compute it and says so rather than assuming a default.
+
+`src/verify/test/agreement.test.ts` asserts the two implementations produce identical
+figures for every service in a real epoch. A disagreement fails the build, and neither side
+is treated as automatically right.
+
+**Three things this work found, all fixed:**
+
+- **`extractNumber` was still taking the FIRST number.** HANDOFF and commit `1f334f2`
+  both claim it was changed to take the last, but `git show 1f334f2 -- src/probes/divergence.ts`
+  is empty — that commit never touched the file, and `git log -L` shows the function
+  unchanged since T5. Running it: `"Compute (7^13) mod 1000. The answer is 407."` returned
+  **7**. Measured across the 38 numeric answers with a known correct value, the last number
+  matches 32 times against 30 for the first. Recomputing epoch 496515's divergence under
+  both rules gave **identical published figures**, so nothing already on chain was wrong —
+  it was a latent defect, and the roster is getting more reasoning models, not fewer.
+  *The docs describing a fix that was never applied is exactly the drift F7 exists to catch.*
+
+- **Schema /1 was not actually verifiable.** It stated `minSamples` and the percentile
+  formula but not the fault-attribution table, the numeric extraction rule, the refusal
+  regex or the truncation rule — so an error rate could not be recomputed from it without
+  reading this repository. Schema **/2** states all of them, and `faultAttribution` is
+  derived from `faultSide()` rather than restated, so the bundle cannot claim an
+  attribution the code does not apply. `ERROR_KINDS` is now a runtime list with the type
+  derived from it, so a kind cannot exist in one and not the other.
+
+- **The indexer reports a missing file as HTTP 200.** Body:
+  `{"code":101,"message":"File not found","data":null}`. `res.ok` was therefore not enough,
+  and a verifier would have handed 51 bytes of JSON error to the recomputation and
+  concluded the evidence had been tampered with, when it was simply never there.
+
+**Fetching by root is not enough on its own.** A gateway answering to a root proves only
+that it answered; the verifier recomputes the merkle root over the bytes it actually
+received and compares. That is what binds the evidence to the record.
+
+**Running it on epoch 496515 fails, correctly.** That epoch predates T11, so its
+`storageRoot` is a keccak hash rather than a storage root and fetches nothing. The CLI
+reports exactly that. An epoch written before the evidence path existed is not verifiable,
+and saying so is the honest output.
+
+**TEE signature verification is deliberately out of scope.** Checking an enclave signature
+means calling `{providerURL}` per response — the prober's job at measurement time, not the
+verifier's. T8 answers one question: can the published numbers be derived from the evidence.
 
 ### Why the API key must be mainnet
 

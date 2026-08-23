@@ -91,17 +91,26 @@ export function buildPinnedRequest(input: PinnedRequestInput): PinnedRequest {
   return { url: `${ROUTER_API}/chat/completions`, method: 'POST', headers, body };
 }
 
-export type ErrorKind =
-  | 'bad_request'      // 400 — usually a malformed header
-  | 'auth'             // 401/403 — wrong key, or missing the inference scope
-  | 'payment'          // 402 — out of balance, or over the price ceiling we set
-  | 'not_found'        // 404 — this provider does not serve this model
-  | 'rate_limit'       // 429
-  | 'upstream'         // 5xx — provider-side failure, counts toward their error rate
-  | 'timeout'
-  | 'network'
-  | 'malformed'        // 200 but the body could not be read
-  | 'no_content';      // 200, but the whole output budget went on reasoning before any answer
+/**
+ * Every failure kind, as a runtime list. The type is derived from it rather than declared
+ * beside it, so a kind can never exist in one and not the other — the evidence bundle
+ * publishes the attribution of each of these, and a kind missing from the list would be a
+ * kind a verifier could not attribute.
+ */
+export const ERROR_KINDS = [
+  'bad_request',      // 400 — usually a malformed header
+  'auth',             // 401/403 — wrong key, or missing the inference scope
+  'payment',          // 402 — out of balance, or over the price ceiling we set
+  'not_found',        // 404 — this provider does not serve this model
+  'rate_limit',       // 429
+  'upstream',         // 5xx — provider-side failure, counts toward their error rate
+  'timeout',
+  'network',
+  'malformed',        // 200 but the body could not be read
+  'no_content',       // 200, but the whole output budget went on reasoning before any answer
+] as const;
+
+export type ErrorKind = (typeof ERROR_KINDS)[number];
 
 export interface CallResult {
   probeId: string;
