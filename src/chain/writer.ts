@@ -4,7 +4,7 @@
  * write is one less thing a verifier has to trust. This module is the only place a
  * private key is used.
  */
-import { Contract, JsonRpcProvider, Wallet, keccak256, parseUnits, toUtf8Bytes } from 'ethers';
+import { Contract, JsonRpcProvider, Wallet, parseUnits } from 'ethers';
 import type { OnchainMeasurement } from '../probes/aggregate.js';
 
 /**
@@ -25,19 +25,6 @@ export type MeasurementTuple = [number, number, number, number, number, number, 
 
 export function encodeMeasurement(m: OnchainMeasurement): MeasurementTuple {
   return [m.providerId, m.p50Ms, m.p95Ms, m.errorRateBps, m.divergenceBps, m.calls, m.observedMode];
-}
-
-/**
- * Content commitment for a transcript.
- *
- * `MeasurementRegistry` expects the 0G Storage merkle root here, and once T11 wires the
- * upload that is what it will get. Until then this is keccak256 over the exact transcript
- * bytes: it still binds the summary to the evidence it came from and still lets a verifier
- * check that a transcript they hold is the one that was measured. What it does not do is
- * tell them where to fetch it — which is why this is a testnet-only stand-in.
- */
-export function transcriptRoot(bytes: string): string {
-  return keccak256(toUtf8Bytes(bytes));
 }
 
 export class EpochDrift extends Error {}
@@ -83,6 +70,7 @@ export async function writeEpoch(opts: {
   rpcUrl: string;
   privateKey: string;
   measurementRegistry: string;
+  /** 0G Storage merkle root of the evidence bundle. The only path from summary to source. */
   storageRoot: string;
   rows: readonly OnchainMeasurement[];
   /** Epoch the measurements were taken in. The write is refused if the chain has moved on. */

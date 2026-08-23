@@ -1,22 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { assertEpoch, encodeMeasurement, EpochDrift, transcriptRoot } from '../writer.js';
-
-describe('transcriptRoot', () => {
-  it('commits to the exact bytes of the transcript', () => {
-    const a = transcriptRoot('{"probeId":"echo-exact"}\n');
-    assert.match(a, /^0x[0-9a-f]{64}$/);
-    assert.equal(a, transcriptRoot('{"probeId":"echo-exact"}\n'));
-  });
-
-  it('changes when a single byte of the transcript changes', () => {
-    assert.notEqual(transcriptRoot('a'), transcriptRoot('b'));
-  });
-
-  it('never returns the zero root, which the contract rejects', () => {
-    assert.notEqual(transcriptRoot(''), `0x${'0'.repeat(64)}`);
-  });
-});
+import { assertEpoch, encodeMeasurement, EpochDrift } from '../writer.js';
 
 describe('encodeMeasurement', () => {
   it('orders the tuple as MeasurementRegistry.Measurement declares it', () => {

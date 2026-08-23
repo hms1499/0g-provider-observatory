@@ -21,7 +21,7 @@
  *   EVIDENCE— every result is appended to the transcript the moment it arrives. A crash
  *             halfway through must not lose calls that were already paid for.
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { aggregate, toMeasurements, type ResolveContext } from '../probes/aggregate.js';
 import { computeDivergence, divergenceLookup, type ServiceKey } from '../probes/divergence.js';
 import {
@@ -36,8 +36,11 @@ import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
 import { callPinned, type CallResult } from '../probes/router-client.js';
 import { assertSuiteValid, PROBES, SUITE_MEASURED_TOKENS } from '../probes/suite.js';
 import { MODES, ObservatoryReader } from '../chain/registry.js';
-import { EpochDrift, transcriptRoot, writeEpoch } from '../chain/writer.js';
-import { RPC_URL } from '../config.js';
+import { EpochDrift, writeEpoch } from '../chain/writer.js';
+import { buildBundle, localDigest, serializeBundle } from '../storage/bundle.js';
+import { fetchBundle, uploadBundle } from '../storage/upload.js';
+import { RPC_URL, STORAGE_INDEXER } from '../config.js';
+import { Wallet } from 'ethers';
 
 const B = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -178,6 +181,7 @@ async function main() {
       }
     }),
   );
+  const endedAt = new Date();
   console.log('\n');
 
   if (abortReason()) console.log(`${YEL('run stopped early')} — ${abortReason()}\n`);
@@ -266,9 +270,47 @@ async function main() {
     return;
   }
 
-  const root = transcriptRoot(readFileSync(transcriptPath, 'utf8'));
-  console.log(`storageRoot ${root}`);
-  console.log(YEL('  keccak256 of the transcript, not a 0G Storage root. T11 replaces this.'));
+  // The evidence bundle, not the bare transcript: the probe definitions, the roster and the
+  // aggregation rules travel with the raw results, so recomputing these numbers never
+  // requires trusting this repository.
+  const bundlePath = transcriptPath.replace(/\.jsonl$/, '.bundle.json');
+  const bundle = buildBundle({
+    epoch,
+    prober: new Wallet(privateKey).address,
+    startedAt: startedAt.toISOString(),
+    endedAt: endedAt.toISOString(),
+    roster,
+    results,
+  });
+  const bytes = serializeBundle(bundle);
+  writeFileSync(bundlePath, bytes);
+  console.log(`bundle ${bundlePath}  ${DIM(`${(bytes.length / 1024).toFixed(0)} KB`)}`);
+  console.log(DIM(`local digest ${localDigest(bytes)}`));
+
+  const uploaded = await uploadBundle({
+    filePath: bundlePath,
+    indexerUrl: STORAGE_INDEXER,
+    rpcUrl: RPC_URL,
+    privateKey,
+  });
+  console.log(`storageRoot ${B(uploaded.rootHash)}`);
+  console.log(`gateway     ${uploaded.gatewayUrl}`);
+  console.log(DIM(`upload tx   ${uploaded.txHash}`));
+
+  // Prove it comes back before committing it to a write-once ledger. A root nobody can
+  // fetch is not evidence, and the record cannot be revised afterwards.
+  if (has('--verify-download')) {
+    const back = await fetchBundle(STORAGE_INDEXER, uploaded.rootHash);
+    const same = localDigest(back) === localDigest(bytes);
+    console.log(
+      same
+        ? `verified    ${DIM('fetched back through the public gateway, bytes identical')}`
+        : RED('verified    FETCHED BYTES DIFFER FROM WHAT WAS UPLOADED'),
+    );
+    if (!same) process.exit(1);
+  }
+
+  const root = uploaded.rootHash;
 
   try {
     const receipt = await writeEpoch({

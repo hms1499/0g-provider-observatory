@@ -170,7 +170,7 @@ const COMPARATORS = new Map(PROBES.map((p) => [p.id, p.comparator] as const));
  * 12 of 15 probes carry the divergence figure: the two freeform probes are not compared,
  * and the duplicated arithmetic probe is held out so its twin is not weighted twice.
  */
-const DIVERGENCE_PROBES = PROBES.filter(
+export const DIVERGENCE_PROBES = PROBES.filter(
   (p) => p.comparator !== 'freeform' && p.id !== NOISE_PROBE_DUPLICATE,
 ).map((p) => p.id);
 

@@ -71,6 +71,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T6 | Latency aggregation: results -> p50/p95/error rate | `src/probes/aggregate.ts` |
 | T5 | Divergence engine, calibrated on the TeeML reference | `src/probes/divergence.ts` |
 | T10 | Live epoch runner, run once against real providers | `src/scripts/run-epoch.ts`, `src/probes/epoch-run.ts` |
+| T11 | Storage wiring (F4): evidence bundle up, real merkle root on chain | `src/storage/`, `src/scripts/upload-epoch.ts` |
 
 ### Ready now — nothing blocks these, do them in any order
 
@@ -109,8 +110,7 @@ all `standard` mode with no TeeML reference, so already the weakest groups.
 
 | | Task | Waits on |
 |---|---|---|
-| T11 | Storage wiring (F4): transcript up, rootHash back | T10 for real transcripts — buildable against a fixture before that |
-| T12 | **Mainnet deploy + accumulate real epochs** | B2, T10 — contracts are ready |
+| T12 | **Mainnet deploy + accumulate real epochs** | B2 — contracts are ready, storage is wired, nothing else blocks it |
 | T13 | Submission pack: README, 3-min video, X post | T12 for the explorer link |
 
 ### Not in scope for Wave 3
@@ -236,6 +236,64 @@ Router — `rate_limit_error` with a `request_id`, concentrated in two operators
 **9.1%**. `glm-5.2`, the only group with a TeeML reference, compared just **2 probes** — rate
 limits and truncation consumed the rest — so the most important group in the design barely
 reported. Fixing defect 3 should recover most of those probes.
+
+### What T11 put in place, and what it proved
+
+`storageRoot` now carries a real 0G Storage merkle root. The placeholder keccak hash is
+gone from the write path.
+
+**What gets uploaded is a bundle, not the bare transcript.** The on-chain record is seven
+integers per service; everything needed to recheck them travels with the evidence:
+
+| | |
+|---|---|
+| `probes[]` | all 15, with prompt, comparator, maxTokens, expected answer |
+| `roster[]` | address, model, canonical id, mode, on-chain mode, **droppedParams** |
+| `aggregation` | minSamples, the exact percentile rule, the basis-point rule, which probes carry divergence, the noise pair |
+| `results[]` | every raw CallResult, in the order they happened |
+
+Shipping only the raw results would leave a verifier reading this repository to find the
+comparators and the percentile rule — which is trusting the measurer, the one thing the
+project exists to avoid. `droppedParams` rides in the roster because a service running at
+its own default temperature is not on the same baseline as one pinned to 0.
+
+Serialization is deterministic (keys sorted at every depth, array order untouched because
+the transcript is chronological). The same epoch built twice produces the same bytes and
+therefore the same root, so a verifier who rebuilds the bundle can tell an honest rebuild
+from a tampered one.
+
+**Proven on testnet 2026-08-23** with the 181-call transcript from the first live epoch:
+
+```
+root     0x53b8400b909e119d0dd5118572931579ebece6cfda73091a0088761a494dbaa2
+gateway  https://indexer-storage-testnet-turbo.0g.ai/file?root=0x53b8400b…
+tx       0xb231d0d661d588a67b24368e9d73161cb39e554dd0aa09edf3f42b2a9bf575a9
+```
+
+Fetched back with plain `curl`, no SDK and no wallet: **HTTP 200, 98,954 bytes, sha256
+identical to the local file.** That is the whole F7 argument, executed rather than asserted.
+
+**Storage cost is not a constraint either.** The fee for a 99 KB bundle was
+12,785,196,304,192 wei — 0.0000128 0G, about $0.000002. Fourteen epochs of evidence cost
+less than a thousandth of a cent.
+
+Two rules the wiring enforces:
+
+- **The root is computed locally before the upload and checked against what the indexer
+  reports.** Accepting whatever value came back over the network, without having derived it
+  ourselves, would defeat the purpose of the root.
+- **Upload failure refuses the chain write.** A record pointing at evidence nobody can fetch
+  is what T11 exists to eliminate, and the ledger is write-once. The transcript and bundle
+  stay on disk, so an upload can be retried with `pnpm upload-epoch` — though the epoch will
+  have drifted by then, so that path re-publishes evidence rather than rescuing a record.
+
+`--verify-download` does the round trip before the chain write: fetch by root through the
+public gateway, re-hash, compare. The root that goes on chain is one already proven
+fetchable.
+
+**Mainnet needs a different indexer** — `https://indexer-storage-turbo.0g.ai`. `config.ts`
+picks it from `CHAIN_ID`, so T12 needs no code change, but the mainnet path is unexercised
+until then.
 
 ### Why the API key must be mainnet
 
