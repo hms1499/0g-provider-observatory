@@ -30,8 +30,11 @@ noise. The epoch list ships now; the series is added when epochs exist to plot.
 
 ## Architecture
 
-One `package.json` at the repository root. Vite is a dev dependency; `dashboard/` holds
-only source. A single `pnpm typecheck` covers the dashboard and the prober together.
+One `package.json` at the repository root. Vite and React are dev dependencies; `dashboard/`
+holds only source. A single `pnpm typecheck` covers the dashboard and the prober together.
+
+The page is one route with two panels selected by a tab. No router: two views do not justify
+one, and a URL that survives a reload is not something this page needs.
 
 An earlier draft made `dashboard/` its own package with an alias into `../src`. That was
 rejected: the root typecheck would not have covered it, and one deliverable would have had
@@ -57,10 +60,16 @@ only `ethers`.
 `import { RPC_URL } from '../config.js'` inside `registry.ts` would silently break the
 dashboard build. Nothing in the type system prevents it.
 
-So: a test walks the import graph of the browser-bound modules and fails if any of them
-reaches a node-only module (`node:*`, `dotenv`, `fs`, `path`, `os`). It runs in the existing
-`pnpm test` suite. This is the kind of constraint that rots the moment it is only written
-down.
+So: a test reads the source of the browser-bound modules, follows their relative imports
+transitively, and fails if any file in that closure imports a node-only module — anything
+matching `node:*`, or bare `fs` / `path` / `os` / `crypto` / `dotenv`. It is a static scan of
+import statements, not a runtime probe, so it catches the bad import at test time rather than
+at build time. It runs inside the existing `pnpm test` suite.
+
+The closure starts at `src/chain/registry.ts`, `src/chain/abi.ts`, `src/verify/recompute.ts`
+and `src/verify/check.ts`. `ethers` is allowed; it ships a browser build.
+
+This is the kind of constraint that rots the moment it is only written down.
 
 ### Network selection
 
