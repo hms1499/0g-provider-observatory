@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { NETWORKS, type NetworkKey } from './networks.js';
 import { Providers } from './Providers.js';
 import { useObservatory } from './useObservatory.js';
+import { Verify } from './Verify.js';
 
 export default function App() {
   const [key, setKey] = useState<NetworkKey>('testnet');
+  const [panel, setPanel] = useState<'providers' | 'verify'>('providers');
   const net = NETWORKS[key];
   const data = useObservatory(net);
 
@@ -20,6 +22,14 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <nav>
+          <button onClick={() => setPanel('providers')} aria-pressed={panel === 'providers'}>
+            Providers
+          </button>
+          <button onClick={() => setPanel('verify')} aria-pressed={panel === 'verify'}>
+            Verify
+          </button>
+        </nav>
       </header>
 
       {data.state === 'loading' && <p>Reading the ledger from {net.rpcUrl}…</p>}
@@ -32,7 +42,7 @@ export default function App() {
       {data.state === 'error' && (
         <p>Could not read {net.name}: {data.error}. This is a read failure, not a measurement.</p>
       )}
-      {data.state === 'ready' && data.latest && (
+      {data.state === 'ready' && panel === 'providers' && data.latest && (
         <Providers
           net={net}
           epoch={data.latest}
@@ -40,8 +50,11 @@ export default function App() {
           txHash={data.latestTxHash ?? null}
         />
       )}
-      {data.state === 'ready' && !data.latest && (
+      {data.state === 'ready' && panel === 'providers' && !data.latest && (
         <p>No epochs have been written on {net.name} yet.</p>
+      )}
+      {data.state === 'ready' && panel === 'verify' && (
+        <Verify net={net} epochs={data.epochs} providers={data.providers} />
       )}
     </main>
   );
