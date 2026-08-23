@@ -3,6 +3,11 @@ import { ObservatoryReader, type ProviderRecord } from '../src/chain/registry.js
 import { bundleUrl, type NetworkConfig } from './networks.js';
 import { verifyEpochInBrowser, type VerifyOutcome } from './verifyEpoch.js';
 
+/** How long to wait for the storage gateway before treating the fetch as failed. Chain reads
+ * get this for free from ethers' own AbortController; a bare `fetch` does not, so a hanging
+ * indexer would otherwise leave the button disabled forever with no error and no timeout. */
+const GATEWAY_TIMEOUT_MS = 30_000;
+
 export function Verify(props: {
   net: NetworkConfig;
   epochs: readonly number[];
@@ -32,11 +37,22 @@ export function Verify(props: {
         await verifyEpochInBrowser({
           epoch: record,
           providers: props.providers,
-          indexerUrl: props.net.indexerUrl,
+          net: props.net,
           fetchBytes: async (url) => {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`gateway returned ${res.status}`);
-            return res.text();
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
+            try {
+              const res = await fetch(url, { signal: controller.signal });
+              if (!res.ok) throw new Error(`gateway returned ${res.status}`);
+              return await res.text();
+            } catch (e: any) {
+              if (e?.name === 'AbortError') {
+                throw new Error(`gateway did not respond within ${GATEWAY_TIMEOUT_MS / 1000}s`);
+              }
+              throw e;
+            } finally {
+              clearTimeout(timer);
+            }
           },
         }),
       );
@@ -61,16 +77,20 @@ export function Verify(props: {
         prober that produced them.
       </p>
 
-      <ul>
-        {props.epochs.map((e) => (
-          <li key={e}>
-            <button onClick={() => run(e)} disabled={busy}>
-              epoch {e}
-            </button>
-            {selected === e && busy && <span> checking…</span>}
-          </li>
-        ))}
-      </ul>
+      {props.epochs.length === 0 ? (
+        <p>No epochs have been written on {props.net.name} yet.</p>
+      ) : (
+        <ul>
+          {props.epochs.map((e) => (
+            <li key={e}>
+              <button onClick={() => run(e)} disabled={busy}>
+                epoch {e}
+              </button>
+              {selected === e && busy && <span> checking…</span>}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {outcome && (
         <div>

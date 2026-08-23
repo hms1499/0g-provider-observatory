@@ -75,9 +75,9 @@ function OperatorBlock({ group, net }: { group: OperatorGroup; net: NetworkConfi
       )}
       {group.unmeasured.length > 0 && (
         <p>
-          Registered but not measured this epoch: {group.unmeasured.join(', ')}. A service
-          with too few successful calls is left out rather than published with a number the
-          samples do not support.
+          Registered but not measured this epoch: {group.unmeasured.join(', ')}. A service is
+          left out when we could not reach it, or when too few calls succeeded to support a
+          number.
         </p>
       )}
     </article>

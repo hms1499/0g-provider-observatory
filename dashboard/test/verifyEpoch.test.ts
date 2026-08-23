@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import type { EpochRecord, ProviderRecord } from '../../src/chain/registry.js';
+import { NETWORKS } from '../networks.js';
 import { verifyEpochInBrowser } from '../verifyEpoch.js';
 
 const BUNDLE = readFileSync('data/epochs/496516-2026-08-23T040342956Z.bundle.json', 'utf8');
@@ -34,7 +35,7 @@ describe('verifyEpochInBrowser', () => {
     const out = await verifyEpochInBrowser({
       epoch: epochRecord({ storageRoot: '0xdead' }),
       providers: [],
-      indexerUrl: 'https://indexer.example',
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
       fetchBytes: async () => '{"code":101,"message":"File not found","data":null}',
     });
     assert.equal(out.verdict, 'failed');
@@ -45,7 +46,7 @@ describe('verifyEpochInBrowser', () => {
     const out = await verifyEpochInBrowser({
       epoch: epochRecord(),
       providers: [],
-      indexerUrl: 'https://indexer.example',
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
       fetchBytes: async () => `${BUNDLE} tampered`,
     });
     assert.equal(out.verdict, 'failed');
@@ -56,7 +57,7 @@ describe('verifyEpochInBrowser', () => {
     const out = await verifyEpochInBrowser({
       epoch: epochRecord(),
       providers: providersFromBundle(),
-      indexerUrl: 'https://indexer.example',
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
       fetchBytes: async () => BUNDLE,
     });
     assert.ok(out.steps.filter((s) => s.status === 'ok').length >= 3, 'early steps should pass');
@@ -71,7 +72,7 @@ describe('verifyEpochInBrowser', () => {
     const out = await verifyEpochInBrowser({
       epoch: epochRecord({ epoch: 1 }),
       providers: providersFromBundle(),
-      indexerUrl: 'https://indexer.example',
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
       fetchBytes: async () => BUNDLE,
     });
     assert.equal(

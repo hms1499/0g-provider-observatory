@@ -78,7 +78,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 
 | | Task | Notes |
 |---|---|---|
-| T9 | **Dashboard shell** (F5) | Renders from `data/snapshot-2026-08-21.json` today; real measurements now exist in `data/epochs/` |
+| T9 | **Dashboard shell** (F5) | Reads live from 0G Chain and 0G Storage in the browser, no backend and no build-time snapshot |
 | T10b | **Make the budget cap a real cap** | Overshot on BOTH live runs: $0.131 and $0.1388 against a $0.12 ceiling. Costs nothing to fix |
 | T10c | **Re-measure the token profile** | Projection was 2.15x low on run 1 and 1.83x low on run 2. `SUITE_MEASURED_TOKENS` came from one provider |
 

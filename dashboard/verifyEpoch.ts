@@ -2,6 +2,7 @@ import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
 import { merkleRootOf } from '../src/storage/merkle.js';
 import { compareToChain, type Finding, type ProviderLookup } from '../src/verify/check.js';
 import { recompute, type VerifiableBundle } from '../src/verify/recompute.js';
+import { bundleUrl, type NetworkConfig } from './networks.js';
 
 export interface VerifyStep {
   label: string;
@@ -27,7 +28,7 @@ export interface VerifyOutcome {
 export async function verifyEpochInBrowser(args: {
   epoch: EpochRecord;
   providers: readonly ProviderRecord[];
-  indexerUrl: string;
+  net: NetworkConfig;
   fetchBytes: (url: string) => Promise<string>;
 }): Promise<VerifyOutcome> {
   const steps: VerifyStep[] = [];
@@ -38,9 +39,7 @@ export async function verifyEpochInBrowser(args: {
 
   let bytes: string;
   try {
-    bytes = await args.fetchBytes(
-      `${args.indexerUrl.replace(/\/+$/, '')}/file?root=${args.epoch.storageRoot}`,
-    );
+    bytes = await args.fetchBytes(bundleUrl(args.net, args.epoch.storageRoot));
     // The indexer answers a missing file with HTTP 200 and an error envelope.
     const maybe = bytes.startsWith('{') ? safeParse(bytes) : null;
     if (maybe && typeof maybe.code === 'number' && maybe.code !== 0) {
