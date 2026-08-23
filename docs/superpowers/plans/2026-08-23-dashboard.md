@@ -1216,17 +1216,13 @@ Run F7 in the page. This is the half that distinguishes the project from a leade
 - Create: `dashboard/test/verifyEpoch.test.ts`
 - Create: `dashboard/Verify.tsx`
 - Modify: `dashboard/App.tsx`
-- Modify: `src/verify/test/browser-safe.test.ts` (extend the entrypoint list)
-
-**Extend the guard first.** This task makes browser code import `src/storage/upload.ts`, so
-that module joins the set the boundary test protects. Add `'src/storage/upload.ts'` to
-`BROWSER_ENTRYPOINTS` in `src/verify/test/browser-safe.test.ts` and run
-`node --import tsx --test src/verify/test/browser-safe.test.ts` before writing anything
-else. It passes only because Task 2 removed that file's filesystem use; if it fails, stop
-and report rather than weakening the guard.
+**Note:** Task 2 already split `merkleRootOf` into `src/storage/merkle.ts` and added that
+module to the browser-safe guard, so nothing here needs to extend it. Import
+`merkleRootOf` from `'../src/storage/merkle.js'` — NOT from `upload.ts`, which carries the
+wallet and indexer the browser must never load.
 
 **Interfaces:**
-- Consumes: `merkleRootOf` from Task 2; `recompute` and `VerifiableBundle` from `src/verify/recompute.ts`; `compareToChain`, `ProviderLookup`, `Finding` from `src/verify/check.ts`; `bundleUrl` from Task 5.
+- Consumes: `merkleRootOf` from `src/storage/merkle.js` (Task 2); `recompute` and `VerifiableBundle` from `src/verify/recompute.ts`; `compareToChain`, `ProviderLookup`, `Finding` from `src/verify/check.ts`; `bundleUrl` from Task 5.
 - Produces:
   - `type VerifyStep = { label: string; status: 'pending' | 'ok' | 'fail'; detail?: string }`
   - `type VerifyOutcome = { steps: VerifyStep[]; findings: Finding[]; checked: number; verdict: 'verified' | 'failed' }`
@@ -1316,7 +1312,7 @@ Create `dashboard/verifyEpoch.ts`:
 
 ```typescript
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
-import { merkleRootOf } from '../src/storage/upload.js';
+import { merkleRootOf } from '../src/storage/merkle.js';
 import { compareToChain, type Finding, type ProviderLookup } from '../src/verify/check.js';
 import { recompute, type VerifiableBundle } from '../src/verify/recompute.js';
 
