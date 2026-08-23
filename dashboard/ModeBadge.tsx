@@ -1,3 +1,10 @@
+import { modeNote } from './modes.js';
+
 export function ModeBadge({ mode }: { mode: string }) {
-  return <span>{mode}</span>;
+  const note = modeNote(mode);
+  return (
+    <span title={note.means} data-mode={mode}>
+      {note.label}
+    </span>
+  );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Caveats } from './Caveats.js';
 import { NETWORKS, type NetworkKey } from './networks.js';
 import { Providers } from './Providers.js';
 import { useObservatory } from './useObservatory.js';
@@ -56,6 +57,8 @@ export default function App() {
       {data.state === 'ready' && panel === 'verify' && (
         <Verify net={net} epochs={data.epochs} providers={data.providers} />
       )}
+
+      <Caveats />
     </main>
   );
 }
