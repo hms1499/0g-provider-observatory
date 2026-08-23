@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm dashboard:build",
+  "outputDirectory": "dashboard-dist",
+  "framework": null
+}
