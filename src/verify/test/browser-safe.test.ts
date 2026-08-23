@@ -53,7 +53,12 @@ function walk(entry: string): { files: string[]; bare: Array<{ from: string; spe
         bare.push({ from: file, spec });
         continue;
       }
-      queue.push(resolve(dirname(file), spec.replace(/\.js$/, '.ts')));
+      const resolved = resolve(dirname(file), spec.replace(/\.js$/, '.ts'));
+      // Skip relative imports that point into node_modules; these are external packages
+      // accessed by their real path, and the bundler handles them, not the walker.
+      if (!resolved.includes('node_modules')) {
+        queue.push(resolved);
+      }
     }
   }
   return { files: [...seen], bare };

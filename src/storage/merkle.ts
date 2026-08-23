@@ -11,7 +11,14 @@
  * dynamic imports, so entangling this with the upload path would break the dashboard
  * build when Task 7 imports `merkleRootOf` into browser code.
  */
-import { MemData } from '@0gfoundation/0g-storage-ts-sdk/browser';
+// The SDK's package exports offer two entries and neither works here. The default "." is a
+// barrel that re-exports Indexer, ZgFile and Downloader, so importing anything from it drags
+// the whole node-only upload path into a browser bundle. The "./browser" entry is not in fact
+// browser-safe — it still fails to resolve fs, path and node:fs/promises. MemData's own module
+// bundles clean at 53 KB, but the exports map refuses a subpath specifier, so the only way to
+// reach it is by real path. Worth reporting to 0G DevRel alongside the other SDK issues.
+// The bundling test in src/verify/test/browser-safe.test.ts is what keeps this honest.
+import { MemData } from '../../node_modules/@0gfoundation/0g-storage-ts-sdk/lib.esm/file/MemData.js';
 
 export class MerkleFailed extends Error {}
 
