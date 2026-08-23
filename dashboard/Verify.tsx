@@ -97,7 +97,7 @@ export function Verify(props: {
           <ol>
             {outcome.steps.map((s, i) => (
               <li key={i}>
-                <strong>{s.status === 'ok' ? 'ok' : 'FAIL'}</strong> {s.label}
+                <strong data-status={s.status}>{s.status === 'ok' ? 'ok' : 'FAIL'}</strong> {s.label}
                 {s.detail && <span> — {s.detail}</span>}
               </li>
             ))}
