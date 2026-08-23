@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, it } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
 import { builtinModules } from 'node:module';
 
@@ -58,6 +59,24 @@ function walk(entry: string): { files: string[]; bare: Array<{ from: string; spe
   return { files: [...seen], bare };
 }
 
+/**
+ * The import scan cannot see through a package barrel: a bare specifier that is not itself
+ * node-only still drags in whatever that package's entry re-exports. That is exactly how a
+ * broken bundle passed this guard once already, so the guard bundles for real.
+ */
+function bundles(entry: string): { ok: boolean; output: string } {
+  try {
+    execFileSync(
+      'npx',
+      ['esbuild', entry, '--bundle', '--platform=browser', '--format=esm', '--outfile=/dev/null'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    return { ok: true, output: '' };
+  } catch (e: any) {
+    return { ok: false, output: String(e.stderr ?? e.stdout ?? e.message) };
+  }
+}
+
 describe('the modules the dashboard imports stay browser-safe', () => {
   for (const entry of BROWSER_ENTRYPOINTS) {
     it(`${entry} reaches nothing node-only`, () => {
@@ -77,4 +96,16 @@ describe('the modules the dashboard imports stay browser-safe', () => {
     const { files } = walk('src/chain/registry.ts');
     assert.ok(files.length > 1, 'the walk did not follow any relative import');
   });
+});
+
+describe('the browser entrypoints actually bundle for real', { timeout: 60000 }, () => {
+  for (const entry of BROWSER_ENTRYPOINTS) {
+    it(`${entry} bundles with esbuild for browser`, () => {
+      const result = bundles(entry);
+      assert.ok(
+        result.ok,
+        result.output ? `bundle failed:\n${result.output}` : 'bundle failed with no error message',
+      );
+    });
+  }
 });

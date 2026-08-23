@@ -11,7 +11,7 @@
  * dynamic imports, so entangling this with the upload path would break the dashboard
  * build when Task 7 imports `merkleRootOf` into browser code.
  */
-import { MemData } from '@0gfoundation/0g-storage-ts-sdk';
+import { MemData } from '@0gfoundation/0g-storage-ts-sdk/browser';
 
 export class MerkleFailed extends Error {}
 
