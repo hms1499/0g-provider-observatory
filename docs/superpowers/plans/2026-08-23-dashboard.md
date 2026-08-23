@@ -6,7 +6,7 @@
 
 **Architecture:** Vite + React + TypeScript under `dashboard/`, built from the repository's single root `package.json`. The page imports the same reader and recomputation modules the CLI uses — no copies, no backend, no build-time data snapshot. Two panels: Providers and Verify.
 
-**Tech Stack:** TypeScript 5.6, React 18, Vite 5, ethers 6, `@0gfoundation/0g-storage-ts-sdk` (for `MemData` only), `node:test` for all logic tests.
+**Tech Stack:** TypeScript 5.6, React 19, Vite 8, ethers 6, `@0gfoundation/0g-storage-ts-sdk` (for `MemData` only), `node:test` for all logic tests.
 
 **Spec:** `docs/superpowers/specs/2026-08-23-dashboard-design.md`
 
