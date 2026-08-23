@@ -2,6 +2,8 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, it } from 'node:test';
+import ts from 'typescript';
+import { builtinModules } from 'node:module';
 
 /**
  * The dashboard runs in a browser and imports these four modules. Everything they reach,
@@ -16,10 +18,21 @@ const BROWSER_ENTRYPOINTS = [
   'src/verify/check.ts',
 ];
 
-/** Bare specifiers that cannot run in a browser. `ethers` is fine — it ships a browser build. */
-const NODE_ONLY = /^(node:|fs$|fs\/|path$|os$|crypto$|dotenv$|dotenv\/)/;
+const BUILTINS = new Set(builtinModules);
 
-const IMPORT_RE = /^\s*import\s+(?:type\s+)?(?:[^'"]*from\s+)?['"]([^'"]+)['"]/gm;
+/** Cannot run in a browser. `ethers` is fine — it ships a browser build. */
+function isNodeOnly(spec: string): boolean {
+  if (spec.startsWith('node:')) return true;
+  if (spec === 'dotenv' || spec.startsWith('dotenv/')) return true;
+  return BUILTINS.has(spec.split('/')[0]);
+}
+
+/** Every module specifier a file references — imports, `export … from`, and dynamic
+ * `import()` alike. Hand-rolled regexes miss re-exports, which is precisely the shape
+ * that would smuggle `config.ts` into browser-bound code. */
+function specifiersOf(source: string): string[] {
+  return ts.preProcessFile(source, true, true).importedFiles.map((f) => f.fileName);
+}
 
 /** Every module reachable from an entrypoint, plus every bare specifier it pulls in. */
 function walk(entry: string): { files: string[]; bare: Array<{ from: string; spec: string }> } {
@@ -33,8 +46,7 @@ function walk(entry: string): { files: string[]; bare: Array<{ from: string; spe
     seen.add(file);
 
     const source = readFileSync(file, 'utf8');
-    for (const m of source.matchAll(IMPORT_RE)) {
-      const spec = m[1];
+    for (const spec of specifiersOf(source)) {
       if (!spec.startsWith('.')) {
         bare.push({ from: file, spec });
         continue;
@@ -49,7 +61,7 @@ describe('the modules the dashboard imports stay browser-safe', () => {
   for (const entry of BROWSER_ENTRYPOINTS) {
     it(`${entry} reaches nothing node-only`, () => {
       const { bare } = walk(entry);
-      const offenders = bare.filter((b) => NODE_ONLY.test(b.spec));
+      const offenders = bare.filter((b) => isNodeOnly(b.spec));
       assert.deepEqual(
         offenders,
         [],
