@@ -12,12 +12,18 @@ export async function mapWithConcurrency<T, R>(
 ): Promise<R[]> {
   const out = new Array<R>(items.length);
   let next = 0;
+  let failed = false;
 
   const worker = async (): Promise<void> => {
-    while (true) {
+    while (!failed) {
       const i = next++;
       if (i >= items.length) return;
-      out[i] = await fn(items[i], i);
+      try {
+        out[i] = await fn(items[i], i);
+      } catch (e) {
+        failed = true;
+        throw e;
+      }
     }
   };
 

@@ -44,4 +44,25 @@ describe('mapWithConcurrency', () => {
   it('handles an empty list without hanging', async () => {
     assert.deepEqual(await mapWithConcurrency([], 4, async () => 1), []);
   });
+
+  it('stops pulling new items once one has rejected, instead of orphaning workers', async () => {
+    // item 0 rejects instantly on worker A. Item 1 is already in flight on worker B
+    // when that happens, so it still runs — that is unavoidable and fine. Items 2
+    // and 3 have not started yet: a correct implementation must never reach them,
+    // because worker B should stop instead of looping past the failure to grab them.
+    const fired: number[] = [];
+    await assert.rejects(
+      mapWithConcurrency([1, 2, 3, 4], 2, async (v, i) => {
+        if (i === 0) throw new Error('boom');
+        await new Promise((r) => setTimeout(r, 30));
+        fired.push(v);
+        return v;
+      }),
+      /boom/,
+    );
+    // Give a wrongly-still-looping worker B enough time to reach items 2 and 3
+    // before asserting they were never touched.
+    await new Promise((r) => setTimeout(r, 100));
+    assert.deepEqual(fired, [2]);
+  });
 });
