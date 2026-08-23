@@ -1,0 +1,415 @@
+/*
+ * The Observatory reads as an instrument, not a scoreboard.
+ *
+ * One rule governs everything below: no colour anywhere encodes how well a provider
+ * performed. p50, p95, error rate and divergence are all the same ink whatever their
+ * value, because colouring them would rank the operators — and the operators here are
+ * the 0G Foundation, Alibaba Cloud, Tencent, ByteDance, MiniMax and OpenRouter. Colour
+ * appears only where it carries state rather than judgement: a verification step that
+ * passed or failed, and the muted treatment of a measurement gap.
+ *
+ * Mode badges differ from each other by outline, never by severity. `standard` is not
+ * a warning — nobody can place a closed third-party API inside their own enclave.
+ */
+
+:root {
+  --bg: #fbfbfa;
+  --ink: #1a1a18;
+  --muted: #6b6b66;
+  --faint: #93938c;
+  --rule: #e2e2dd;
+  --panel: #f4f4f1;
+  --accent: #1c5d99;
+  --ok: #2d6a4f;
+  --fail: #9b2c2c;
+
+  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131312;
+    --ink: #e8e8e3;
+    --muted: #9a9a93;
+    --faint: #6f6f68;
+    --rule: #2c2c29;
+    --panel: #1c1c1a;
+    --accent: #7fb3e0;
+    --ok: #74c69d;
+    --fail: #e58a8a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 6rem;
+}
+
+/* ── header ─────────────────────────────────────────────────────────────── */
+
+header {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+h1 {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 0.35rem;
+}
+
+header > p {
+  color: var(--muted);
+  margin: 0 0 1.25rem;
+  max-width: 46rem;
+}
+
+header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+header nav button {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+header nav button:hover {
+  color: var(--ink);
+  border-color: var(--faint);
+}
+
+header nav button[aria-pressed='true'] {
+  color: var(--bg);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+/* ── headings and prose ─────────────────────────────────────────────────── */
+
+h2 {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.75rem;
+}
+
+section > p {
+  max-width: 46rem;
+  color: var(--muted);
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 2px;
+}
+
+/* ── operator blocks ────────────────────────────────────────────────────── */
+
+article {
+  margin: 2rem 0;
+}
+
+article h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.4rem;
+  margin: 0 0 0.5rem;
+}
+
+article h3 a {
+  text-decoration: none;
+  word-break: break-all;
+}
+
+article h3 a:hover {
+  text-decoration: underline;
+}
+
+/* The "N measured" / "not measured this epoch" counter. */
+article h3 span {
+  font-size: 0.75rem;
+  color: var(--faint);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* The measurement gap. Visibly present, clearly not data. */
+article > p {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--faint);
+  max-width: 52rem;
+  margin: 0.6rem 0 0;
+}
+
+/* ── tables ─────────────────────────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+th {
+  text-align: right;
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 0.4rem 0.9rem 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+td {
+  text-align: right;
+  padding: 0.35rem 0.9rem 0.35rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Model and mode read as labels; everything after them is a measurement. */
+th:first-child,
+td:first-child,
+th:nth-child(2),
+td:nth-child(2) {
+  text-align: left;
+}
+
+/*
+ * The model column absorbs the slack so the measurement columns sit against the right
+ * edge and the row rules run the full width of the block. Without this the columns size
+ * to their content and the rules stop short, which reads as a rendering fault.
+ */
+th:first-child,
+td:first-child {
+  width: 100%;
+}
+
+td:first-child {
+  padding-right: 1.5rem;
+  white-space: normal;
+  word-break: break-word;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── mode badges ────────────────────────────────────────────────────────── */
+
+/*
+ * These differentiate the KIND of guarantee, never its quality. Each mode gets its own
+ * outline weight so they are told apart at a glance without one reading as worse.
+ */
+[data-mode] {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 0.08rem 0.4rem;
+  border-radius: 2px;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  cursor: help;
+}
+
+[data-mode='TeeML'] {
+  border-style: solid;
+  border-color: var(--faint);
+  color: var(--ink);
+}
+
+[data-mode='TeeTLS'] {
+  border-style: dashed;
+}
+
+[data-mode='standard'] {
+  border-style: dotted;
+}
+
+/* ── verify ─────────────────────────────────────────────────────────────── */
+
+/* The epoch picker: buttons, not a bulleted list. */
+ul:has(> li > button) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0;
+}
+
+ul:has(> li > button) li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+ul:has(> li > button) button {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+ul:has(> li > button) button:hover:not(:disabled) {
+  border-color: var(--faint);
+}
+
+ul:has(> li > button) button:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+
+/* The verification trace. */
+ol {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0;
+  border-left: 1px solid var(--rule);
+}
+
+ol li {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding: 0.3rem 0 0.3rem 1rem;
+  color: var(--muted);
+}
+
+ol li span {
+  color: var(--faint);
+  word-break: break-all;
+}
+
+/*
+ * The one place colour means something. It reports the outcome of a check, not a
+ * quality of whoever was measured.
+ */
+[data-status] {
+  display: inline-block;
+  min-width: 3.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+[data-status='ok'] {
+  color: var(--ok);
+}
+
+[data-status='fail'] {
+  color: var(--fail);
+}
+
+/* ── caveats ────────────────────────────────────────────────────────────── */
+
+section:last-of-type {
+  margin-top: 4rem;
+  border-top: 1px solid var(--rule);
+  padding-top: 1.5rem;
+}
+
+h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 1.75rem 0 0.5rem;
+}
+
+dl {
+  margin: 0;
+}
+
+dl div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+dt {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+
+dd {
+  margin: 0;
+  font-size: 0.87rem;
+  color: var(--muted);
+  max-width: 44rem;
+}
+
+section:last-of-type ul {
+  padding-left: 1.1rem;
+  max-width: 48rem;
+}
+
+section:last-of-type li {
+  font-size: 0.87rem;
+  color: var(--muted);
+  margin: 0.5rem 0;
+}
+
+@media (max-width: 34rem) {
+  main {
+    padding: 1.75rem 1rem 4rem;
+  }
+
+  dl div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}

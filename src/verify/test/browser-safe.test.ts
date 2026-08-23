@@ -57,6 +57,19 @@ function resolveRelative(fromFile: string, spec: string): string {
   return base + '.ts';
 }
 
+/**
+ * Assets a bundler turns into something other than a module — a stylesheet, an image, a
+ * font. `dashboard/main.tsx` imports `./styles.css` the way Vite expects, and there is no
+ * `styles.css.ts` to read, so the walker has to recognise these rather than build a
+ * dangling path and die on `readFileSync`.
+ *
+ * They are skipped rather than followed because they carry no import statements and cannot
+ * reach a node-only module. Note this list is deliberately explicit: an unrecognised
+ * relative specifier that resolves to nothing still fails loudly, which is what keeps a
+ * genuinely missing module from slipping past as an assumed asset.
+ */
+const ASSET_EXTENSIONS = /\.(css|json|svg|png|jpe?g|gif|webp|avif|woff2?|ttf|otf)$/i;
+
 /** Every module reachable from an entrypoint, plus every bare specifier it pulls in. */
 function walk(entry: string): { files: string[]; bare: Array<{ from: string; spec: string }> } {
   const seen = new Set<string>();
@@ -74,6 +87,7 @@ function walk(entry: string): { files: string[]; bare: Array<{ from: string; spe
         bare.push({ from: file, spec });
         continue;
       }
+      if (ASSET_EXTENSIONS.test(spec)) continue;
       const resolved = resolveRelative(file, spec);
       // Skip relative imports that point into node_modules; these are external packages
       // accessed by their real path, and the bundler handles them, not the walker.
@@ -104,6 +118,12 @@ function bundles(entry: string): { ok: boolean; output: string } {
         // build (vite + @vitejs/plugin-react) uses, so a .tsx entrypoint like main.tsx
         // bundles the same way here as it does for real.
         '--jsx=automatic',
+        // The page imports its stylesheet the way Vite expects. This guard asks whether the
+        // JavaScript is browser-safe, and a stylesheet cannot answer that question either
+        // way, so it is emptied rather than compiled — without this, esbuild refuses the
+        // import outright and the guard fails for a reason that has nothing to do with what
+        // it exists to catch.
+        '--loader:.css=empty',
         '--outfile=/dev/null',
       ],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
