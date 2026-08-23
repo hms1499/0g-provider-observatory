@@ -48,29 +48,31 @@ function OperatorBlock({ group, net }: { group: OperatorGroup; net: NetworkConfi
         <a href={explorerAddress(net, group.address)} target="_blank" rel="noreferrer">
           {group.address}
         </a>{' '}
-        <span>{group.rows.length} measured</span>
+        <span>{group.rows.length > 0 ? `${group.rows.length} measured` : 'not measured this epoch'}</span>
       </h3>
-      <table>
-        <thead>
-          <tr>
-            <th>model</th><th>mode</th><th>p50</th><th>p95</th>
-            <th>errors</th><th>divergence</th><th>calls</th>
-          </tr>
-        </thead>
-        <tbody>
-          {group.rows.map((r) => (
-            <tr key={r.providerId}>
-              <td>{r.model}</td>
-              <td><ModeBadge mode={r.mode} /></td>
-              <td>{formatMs(r.p50Ms)}</td>
-              <td>{formatMs(r.p95Ms)}</td>
-              <td>{formatBps(r.errorRateBps)}</td>
-              <td>{formatBps(r.divergenceBps)}</td>
-              <td>{r.calls}</td>
+      {group.rows.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>model</th><th>mode</th><th>p50</th><th>p95</th>
+              <th>errors</th><th>divergence</th><th>calls</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {group.rows.map((r) => (
+              <tr key={r.providerId}>
+                <td>{r.model}</td>
+                <td><ModeBadge mode={r.mode} /></td>
+                <td>{formatMs(r.p50Ms)}</td>
+                <td>{formatMs(r.p95Ms)}</td>
+                <td>{formatBps(r.errorRateBps)}</td>
+                <td>{formatBps(r.divergenceBps)}</td>
+                <td>{r.calls}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {group.unmeasured.length > 0 && (
         <p>
           Registered but not measured this epoch: {group.unmeasured.join(', ')}. A service

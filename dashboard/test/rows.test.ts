@@ -62,6 +62,24 @@ describe('groupByOperator', () => {
     const groups = groupByOperator(epoch([measurement(99, 100)]), providers);
     assert.deepEqual(groups.flatMap((g) => g.rows), []);
   });
+
+  it('still shows an operator that this epoch measured nothing for, as a full gap rather than dropping it', () => {
+    const groups = groupByOperator(epoch([]), providers);
+    const aaa = groups.find((g) => g.address === '0xAAA')!;
+    assert.ok(aaa, 'operator 0xAAA must still appear even with zero measured rows');
+    assert.deepEqual(aaa.rows, []);
+    assert.deepEqual(aaa.unmeasured, ['model-one', 'model-two']);
+  });
+
+  it('shows both a fully measured and a fully unmeasured operator in the same epoch', () => {
+    const groups = groupByOperator(epoch([measurement(3, 300)]), providers);
+    const aaa = groups.find((g) => g.address === '0xAAA')!;
+    const bbb = groups.find((g) => g.address === '0xBBB')!;
+    assert.deepEqual(aaa.rows, []);
+    assert.deepEqual(aaa.unmeasured, ['model-one', 'model-two']);
+    assert.equal(bbb.rows.length, 1);
+    assert.deepEqual(bbb.unmeasured, []);
+  });
 });
 
 describe('formatting', () => {

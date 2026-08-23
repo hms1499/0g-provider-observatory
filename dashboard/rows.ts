@@ -59,7 +59,9 @@ export function groupByOperator(
 
   for (const p of providers) {
     if (measured.has(p.id) || p.model === null) continue;
-    if (!groups.has(p.address)) continue; // operator absent from this epoch entirely
+    // Every registered service reaches the output, even one whose operator this epoch
+    // measured nothing for — a missing measurement must stay visible as missing, never
+    // vanish as if the service had never registered.
     group(p.address).unmeasured.push(p.model);
   }
 
