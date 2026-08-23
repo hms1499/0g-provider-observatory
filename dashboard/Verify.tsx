@@ -84,7 +84,24 @@ export function Verify(props: {
           </ol>
 
           {outcome.verdict === 'verified' ? (
-            <p>Verified. All {outcome.checked} published measurements recomputed exactly.</p>
+            <>
+              <p>Verified. All {outcome.checked} published measurements recomputed exactly.</p>
+              {outcome.findings.length > 0 && (
+                <>
+                  <p>
+                    Advisory — not blocking the verdict. The evidence supports these
+                    measurements, but the chain never published them.
+                  </p>
+                  <ul>
+                    {outcome.findings.map((f, i) => (
+                      <li key={i}>
+                        {f.severity} — {f.service}: {f.message}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
           ) : (
             <>
               <p>Not verified.</p>

@@ -62,5 +62,22 @@ describe('verifyEpochInBrowser', () => {
     assert.ok(out.steps.filter((s) => s.status === 'ok').length >= 3, 'early steps should pass');
     // No measurements were supplied, so nothing is checked and nothing can mismatch.
     assert.equal(out.findings.filter((f) => f.severity === 'mismatch').length, 0);
+    assert.equal(out.verdict, 'verified');
+  });
+
+  it('fails the verdict when the evidence does not claim this epoch, even though fetch and merkle both pass', async () => {
+    // Real bytes, real root — fetch and the merkle check both succeed. Only the epoch
+    // number is wrong, so only the "claims this epoch" step should fail.
+    const out = await verifyEpochInBrowser({
+      epoch: epochRecord({ epoch: 1 }),
+      providers: providersFromBundle(),
+      indexerUrl: 'https://indexer.example',
+      fetchBytes: async () => BUNDLE,
+    });
+    assert.equal(
+      out.steps.find((s) => /claims this epoch/i.test(s.label))?.status,
+      'fail',
+    );
+    assert.equal(out.verdict, 'failed');
   });
 });

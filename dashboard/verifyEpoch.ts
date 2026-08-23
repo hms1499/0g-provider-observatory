@@ -55,7 +55,15 @@ export async function verifyEpochInBrowser(args: {
     detail: `${(bytes.length / 1024).toFixed(0)} KB through the public gateway, no wallet`,
   });
 
-  const root = await merkleRootOf(bytes);
+  let root: string;
+  try {
+    root = await merkleRootOf(bytes);
+  } catch (e: any) {
+    // A throw here means the bytes could not be hashed at all, not that reading the epoch
+    // failed — that distinction matters, so it must not fall through to the caller's
+    // generic "read the epoch from chain" handler.
+    return fail('the merkle root of the bytes matches the record', String(e?.message ?? e));
+  }
   if (root.toLowerCase() !== args.epoch.storageRoot.toLowerCase()) {
     return fail('the merkle root of the bytes matches the record', root);
   }
