@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-24
+**Updated:** 2026-08-24 (second pass)
 
 ---
 
@@ -76,6 +76,8 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T9 | Public dashboard (F5), reading chain + storage live in the browser | `dashboard/` |
 | T10b | Budget cap is now a real cap: reserve before the call, settle on what was billed | `src/probes/epoch-run.ts` |
 | T10c | Per-probe token profile measured over 353 real calls, regenerable | `src/probes/suite.ts`, `src/scripts/token-profile.ts` |
+| T14 | Divergence is withheld when its noise floor was never measured | `src/probes/divergence.ts`, `src/chain/encoding.ts` |
+| T15 | Roster fitted to the budget before sending, so no run is cut mid-suite | `src/probes/epoch-run.ts` |
 
 ### Ready now
 
@@ -111,7 +113,7 @@ before mainnet, or accept that the floor stays coarse and say so.
 |---|---|---|---|
 | B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | pc.0g.ai -> connect wallet -> fund ~$5 of 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. See "Why the API key must be mainnet" below |
 | B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission** |
-| B3 | Top up Router credit — **~$2-3 is now enough**, not $10 | T10 | See "Cost" below. ~$0.09 left, about one lean epoch |
+| B3 | Top up Router credit — **~$2-3 is now enough**, not $10 | T10 | See "Cost" below. ~$0.09 left, under one epoch |
 
 ### Blocked on other tasks
 
@@ -132,40 +134,76 @@ mainnet funds are now the only thing standing between here and a valid submissio
 ### Cost — remeasured 2026-08-24, and the earlier figures were wrong
 
 The old $0.6962/epoch came from a token profile measured against one provider. Measured over
-353 real calls across both live epochs, a full 38-service epoch projects at **$2.82**, not
-$0.70. `pnpm dry-run` prints this and flags the gap.
+353 real calls, a full 38-service epoch projects at **$3.12**, not $0.70. `pnpm dry-run`
+prints it.
 
 The reason is that **`max_tokens` does not bound what gets billed.** Reasoning models bill
 their thinking as completion tokens: 45 of 176 billed calls exceeded the limit they were
-sent, `arith-mod` by 10x, and that overage was **51% of epoch 496516**.
+sent, `arith-mod` by 10x (512 declared, 5223 billed).
 
-**Roster choice is worth far more than epoch count.** Projected per epoch under the measured
-profile:
+**Roster choice is worth far more than epoch count.** With the roster now fitted to the
+budget before anything is sent, the default $0.13 cap buys:
 
-| Group | services | $/epoch | TeeML ref | What it produced |
-|---|---|---|---|---|
-| glm-5.1 | 2 | $0.1001 | no | — |
-| glm-5 | 3 | $0.0796 | no | — |
-| **glm-5.2** | 2 | $0.0556 | **yes** | the only calibration group |
-| qwen3.7-plus | 2 | $0.0359 | no | — |
-| **deepseek-v4-flash** | 4 | $0.0112 | no | largest group |
-| **qwen3-vl-30b** | 2 | $0.0060 | no | the only non-zero divergence (9.1%) |
+    10 services · 150 calls · $0.1199 projected
+    glm-5.2 (TeeML reference), qwen3-vl-30b, deepseek-v4-flash, qwen3.7-plus
 
-The three bolded groups are **$0.073/epoch — 14 epochs for about $1** — and they carry the
-TeeML reference, the largest group, and the only divergence figure the project has ever
-produced. The three dropped ones cost 3x as much and produced nothing published.
+14 epochs of that is about **$1.70**. Compare the two shapes rather than the service counts:
 
-Also free to drop: `zai-org/GLM-5-FP8` had 3 successful calls out of 15, below the 5-sample
-floor, so it was **excluded from the epoch after being paid for**.
+| | Before | Now |
+|---|---|---|
+| Services | 15 | 10 |
+| Calls planned / sent | 225 / 172 | 150 / 150 |
+| Full suite per service | no, cut around probe 8 | yes |
+| Noise floor measurable | 9 of 29 | expected for nearly all |
+| Spend | $0.139 actual | $0.120 projected |
+
+Fewer services, measured properly, for less money.
 
 **`reasoning_effort` is not the lever it looked like.** Tried live against glm-5 on
 `arith-mod` (expected 407): no parameter gave 3263 completion tokens and the right answer;
 `low` gave 7724 and the right answer; `minimal` gave 2 tokens and **the wrong answer, 243**.
-Both values are accepted by the Router, so this is not a compatibility problem — `minimal`
-simply turns thinking off, and a starved model's wrong answer is indistinguishable from
-provider divergence. The flag exists (`--reasoning-effort`), is recorded in the bundle, and
-is **off by default**. Leave it off unless someone measures a value that is both cheaper and
-still correct.
+Both values are accepted, so this is not a compatibility problem — `minimal` turns thinking
+off, and a starved model's wrong answer is indistinguishable from provider divergence. The
+flag exists (`--reasoning-effort`), is recorded in the bundle, and is **off by default**.
+
+### The divergence work, and what it cost us to be honest
+
+Three defects found by measuring rather than reasoning, all fixed.
+
+**1. The suite was being cut off by position, not by chance.** Counting calls actually sent,
+both epochs have the same shape: probe 1 landed 15/15, probe 5 landed 15/15, probe 14 landed
+8/15, probe 15 landed 8/15. The runner walks `PROBES` in order for every service and all the
+workers advance together, so a budget abort stops them at the same index.
+
+That is a crooked measurement, not a smaller one. `policy-boundary` was measured on 8 of 15
+services. And the two halves of the byte-identical noise pair sit at positions 5 and 14, so
+the half that got cut was always the second — which is what left 20 of 29 services with no
+measurable noise floor.
+
+Nearly drew the opposite conclusion from this: the plan was to repeat `arith-mult` twice more
+for extra samples. That would have added calls at the tail of the suite, had them cut too,
+and cost 45% more for nothing. `fitToBudget()` fixes it instead, for free.
+
+**2. Divergence was published with no floor behind it.** glm-5 published 2000 bps — 20%
+against a named operator — with `noiseSamples = 0`. We had no evidence whether that model
+agrees with itself. It now writes `DIVERGENCE_UNMEASURED` (65535), which the `uint16` field
+has room for, so no contract change. Writing 0 was the alternative, and 0 is a claim: it says
+the provider matched its peers.
+
+**3. The provider that honoured `max_tokens` was the one being dropped.** At a 512 ceiling,
+glm-5.2 was truncated on 8 of 8 noise-pair calls while glm-5 ran to 3213 tokens unchecked.
+glm-5.2 is the only TeeML reference in the roster. Ceiling raised to 4096 for the pair;
+measured extra cost $0.0165 an epoch.
+
+**What this costs.** The divergence column on the dashboard will be sparse, and honestly so —
+a dash means unmeasured, not zero, and `Caveats` says that. Whether it fills in depends on
+whether the noise pair now lands, which is the first thing to check after the first mainnet
+epoch.
+
+**Still open:** the noise floor is 0 or 10000 from a single pair per epoch even when it does
+land. Pooling epochs would fix the granularity but breaks verifiability — the bundle is
+per-epoch, so a verifier holding one bundle could not recompute a pooled figure. Extra
+samples have to come from inside the epoch. Not solved; not blocking a submission.
 
 ### Funding
 
