@@ -9,6 +9,7 @@
   },
   "scripts": {
     "snapshot": "tsx src/scripts/snapshot.ts",
+    "register-providers": "tsx src/scripts/register-providers.ts",
     "compare": "tsx src/scripts/compare-sources.ts",
     "diff-verifiability": "tsx src/scripts/diff-verifiability.ts",
     "inspect-meta": "tsx src/scripts/inspect-onchain-meta.ts",

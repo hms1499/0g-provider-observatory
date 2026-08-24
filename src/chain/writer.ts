@@ -1,11 +1,13 @@
 /**
- * Write side of the measurement ledger. Deliberately a separate file from `registry.ts`,
- * which promises in its own header that nothing in it can write — a reader that cannot
- * write is one less thing a verifier has to trust. This module is the only place a
- * private key is used.
+ * Write side of both registries. Deliberately a separate file from `registry.ts`, which
+ * promises in its own header that nothing in it can write — a reader that cannot write is
+ * one less thing a verifier has to trust. This module is the only place a private key is
+ * used.
  */
 import { Contract, JsonRpcProvider, Wallet, parseUnits } from 'ethers';
 import type { OnchainMeasurement } from '../probes/aggregate.js';
+import { MODES } from './registry.js';
+import type { ResolvedRegistration } from './register.js';
 
 /**
  * Only the write function. Kept out of `abi.ts` so the read ABI stays read-only.
@@ -98,4 +100,68 @@ export async function writeEpoch(opts: {
   const receipt = await tx.wait();
 
   return { epoch, txHash: tx.hash, gasUsed: receipt?.gasUsed ?? 0n, count: opts.rows.length };
+}
+
+
+/** Only the write function, for the same reason MEASUREMENT_WRITE_ABI is kept out of abi.ts. */
+export const PROVIDER_WRITE_ABI = [
+  'function registerBatch(address[] addrs, string[] models, uint8[] declaredModes) returns (uint16[])',
+  'function idOf(address addr, string model) view returns (uint16)',
+  'function providerCount() view returns (uint16)',
+] as const;
+
+export interface RegisterResult {
+  txHash: string;
+  gasUsed: bigint;
+  /** Registered pairs with the id each was given, read back from the chain. */
+  ids: { address: string; modelId: string; id: number }[];
+}
+
+/**
+ * Register a batch of (address, model) pairs.
+ *
+ * One transaction for the whole batch: 38 pairs cost about 4.0M gas against a 36M block
+ * limit, so splitting buys nothing and would leave the registry half-populated if a later
+ * chunk failed. `planRegistrations` must have filtered out anything already on chain —
+ * `register` reverts on a duplicate and would take the batch with it.
+ *
+ * Ids are read back rather than parsed from the return value: `registerBatch` returns them,
+ * but a returned value from a state-changing call is only visible to another contract, and
+ * reading the registry is what any verifier would do anyway.
+ */
+export async function registerProviders(opts: {
+  rpcUrl: string;
+  privateKey: string;
+  providerRegistry: string;
+  candidates: readonly ResolvedRegistration[];
+  gasPriceGwei?: string;
+}): Promise<RegisterResult> {
+  if (opts.candidates.length === 0) throw new Error('nothing to register');
+
+  const provider = new JsonRpcProvider(opts.rpcUrl);
+  const wallet = new Wallet(opts.privateKey, provider);
+  const registry = new Contract(opts.providerRegistry, PROVIDER_WRITE_ABI, wallet);
+
+  const addrs = opts.candidates.map((c) => c.address);
+  const models = opts.candidates.map((c) => c.modelId);
+  const modes = opts.candidates.map((c) => {
+    const i = MODES.indexOf(c.declaredMode as never);
+    if (i <= 0) throw new Error(`mode ${c.declaredMode} is not registrable for ${c.modelId}`);
+    return i;
+  });
+
+  const tx = await registry.registerBatch(addrs, models, modes, {
+    gasPrice: parseUnits(opts.gasPriceGwei ?? GAS_PRICE_GWEI, 'gwei'),
+  });
+  const receipt = await tx.wait();
+
+  const ids = [];
+  for (const c of opts.candidates) {
+    ids.push({
+      address: c.address,
+      modelId: c.modelId,
+      id: Number(await registry.idOf(c.address, c.modelId)),
+    });
+  }
+  return { txHash: tx.hash, gasUsed: receipt?.gasUsed ?? 0n, ids };
 }

@@ -1,0 +1,3492 @@
+{
+  "at": "2026-08-24T02:57:21.747Z",
+  "router": {
+    "count": 42,
+    "services": [
+      {
+        "address": "0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9",
+        "model_id": "0GM-1.0-35B-A3B",
+        "canonical_id": "0gm-1.0-35b-a3b",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 1651,
+        "tee_acknowledged": true,
+        "name": "0GM-1.0-35B-A3B",
+        "pricing": {
+          "prompt": "499000000000",
+          "completion": "2990000000000",
+          "cached_prompt": "166333333333"
+        },
+        "pricing_usd": {
+          "prompt": "0.00000008",
+          "completion": "0.00000048",
+          "cached_prompt": "0.00000002666666666667"
+        },
+        "type": "chatbot",
+        "context_length": 262144,
+        "max_completion_tokens": 32768,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "qwen"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai",
+          "anthropic"
+        ],
+        "default_parameters": {
+          "temperature": 1,
+          "top_k": 20,
+          "top_p": 0.95
+        },
+        "verifiability": "TeeML",
+        "trust_mode": "private",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "0G Foundation"
+      },
+      {
+        "address": "0xf56fAaf9989aDafDDf26fa5Ffdd03a9A27b38fAE",
+        "model_id": "0GM-1.0-35B-A3B-SIA",
+        "canonical_id": "0gm-1.0-35b-a3b-sia",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 2656,
+        "tee_acknowledged": true,
+        "name": "0GM-1.0-35B-A3B-SIA",
+        "pricing": {
+          "prompt": "3330000000000",
+          "completion": "20010000000000",
+          "cached_prompt": "1110000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000000536",
+          "completion": "0.000003216",
+          "cached_prompt": "0.00000017866666666667"
+        },
+        "type": "chatbot",
+        "context_length": 32768,
+        "max_completion_tokens": 8192,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "qwen"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 1,
+          "top_k": 20,
+          "top_p": 0.95
+        },
+        "verifiability": "TeeML",
+        "trust_mode": "private",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack"
+      },
+      {
+        "address": "0xE29a72c7629815Eb480aE5b1F2dfA06f06cdF974",
+        "model_id": "z-image-turbo",
+        "canonical_id": "z-image-turbo",
+        "service_type": "text-to-image",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 2613,
+        "tee_acknowledged": true,
+        "name": "z-image-turbo",
+        "pricing": {
+          "prompt": "0",
+          "completion": "0",
+          "image": "54359570000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0",
+          "completion": "0",
+          "image": "0.0088"
+        },
+        "type": "text-to-image",
+        "context_length": 2048,
+        "architecture": {
+          "modality": "text->image",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "image"
+          ]
+        },
+        "supported_parameters": [
+          "prompt",
+          "n",
+          "size",
+          "response_format"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "n": 1,
+          "size": "1024x1024"
+        },
+        "verifiability": "TeeML",
+        "trust_mode": "private",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "0G Foundation"
+      },
+      {
+        "address": "0x992e6396157Dc4f22E74F2231235D7DE62696db5",
+        "model_id": "qwen3.6-plus",
+        "canonical_id": "qwen3.6-plus",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 8856,
+        "tee_acknowledged": true,
+        "name": "qwen3.6-plus",
+        "pricing": {
+          "prompt": "4000000000000",
+          "completion": "24020000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 256000,
+              "prompt": "4000000000000",
+              "completion": "24020000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "16000000000000",
+              "completion": "96080000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.00000065",
+          "completion": "0.0000039",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 256000,
+              "prompt": "0.00000065",
+              "completion": "0.0000039"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.0000026",
+              "completion": "0.0000156"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 65536,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.8
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xd9966e13a6026Fcca4b13E7ff95c94DE268C471C",
+        "model_id": "zai-org/GLM-5-FP8",
+        "canonical_id": "glm-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 4959,
+        "tee_acknowledged": true,
+        "name": "zai-org/GLM-5-FP8",
+        "pricing": {
+          "prompt": "4640000000000",
+          "completion": "14860000000000",
+          "cached_prompt": "928000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.00000075",
+          "completion": "0.0000024",
+          "cached_prompt": "0.00000015"
+        },
+        "type": "chatbot",
+        "context_length": 202752,
+        "max_completion_tokens": 32768,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "seed",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "reasoning",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai",
+          "anthropic"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.9
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "OpenRouter",
+        "provider_country": "US",
+        "serving_domain": "openrouter.ai"
+      },
+      {
+        "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "model_id": "glm-5",
+        "canonical_id": "glm-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 4184,
+        "tee_acknowledged": true,
+        "name": "glm-5",
+        "pricing": {
+          "prompt": "7650000000000",
+          "completion": "20530000000000",
+          "cached_prompt": "1530000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "7650000000000",
+              "completion": "20530000000000",
+              "cached_prompt": "1530000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "15300000000000",
+              "completion": "20530000000000",
+              "cached_prompt": "3060000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.000001235",
+          "completion": "0.000003315",
+          "cached_prompt": "0.000000247",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "0.000001235",
+              "completion": "0.000003315",
+              "cached_prompt": "0.000000247"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00000247",
+              "completion": "0.000003315",
+              "cached_prompt": "0.000000494"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 202752,
+        "max_completion_tokens": 16384,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.9
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "model_id": "deepseek-v4-flash-0731",
+        "canonical_id": "deepseek-v4-flash",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 100,
+        "latency": 3136,
+        "tee_acknowledged": true,
+        "name": "deepseek-v4-flash-0731",
+        "pricing": {
+          "prompt": "854000000000",
+          "completion": "1700000000000",
+          "cached_prompt": "170800000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000000138",
+          "completion": "0.000000275",
+          "cached_prompt": "0.0000000276"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 393216,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "frequency_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "kimi-k3",
+        "canonical_id": "kimi-k3",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 5840,
+        "tee_acknowledged": true,
+        "name": "kimi-k3",
+        "pricing": {
+          "prompt": "18540000000000",
+          "completion": "92710000000000",
+          "cached_prompt": "1854000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000003",
+          "completion": "0.000015",
+          "cached_prompt": "0.0000003"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "max_completion_tokens",
+          "stream",
+          "stop",
+          "response_format",
+          "tools",
+          "tool_choice"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0x1B3AAef3ae5050EEE04ea38cD4B087472BD85EB0",
+        "model_id": "qwen3.7-plus",
+        "canonical_id": "qwen3.7-plus",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 9693,
+        "tee_acknowledged": true,
+        "name": "qwen3.7-plus",
+        "pricing": {
+          "prompt": "3210000000000",
+          "completion": "12840000000000",
+          "cached_prompt": "321000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 256000,
+              "prompt": "3210000000000",
+              "completion": "12840000000000",
+              "cached_prompt": "321000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "9630000000000",
+              "completion": "38520000000000",
+              "cached_prompt": "963000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.00000052",
+          "completion": "0.00000208",
+          "cached_prompt": "0.000000052",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 256000,
+              "prompt": "0.00000052",
+              "completion": "0.00000208",
+              "cached_prompt": "0.000000052"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00000156",
+              "completion": "0.00000624",
+              "cached_prompt": "0.000000156"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 65536,
+        "architecture": {
+          "modality": "text+image+video->text",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0x36aCffCEa3CCe07cAdd1740Ad992dB16Ab324517",
+        "model_id": "openai/whisper-large-v3",
+        "canonical_id": "whisper-large-v3",
+        "service_type": "speech-to-text",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 3103,
+        "tee_acknowledged": true,
+        "name": "openai/whisper-large-v3",
+        "pricing": {
+          "prompt": "803920000000000",
+          "completion": "0"
+        },
+        "pricing_usd": {
+          "prompt": "0.00013",
+          "completion": "0"
+        },
+        "type": "speech-to-text",
+        "context_length": 448,
+        "max_completion_tokens": 448,
+        "architecture": {
+          "modality": "audio->text",
+          "input_modalities": [
+            "audio"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        },
+        "supported_parameters": [
+          "file",
+          "model",
+          "language",
+          "response_format"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "language": "en",
+          "response_format": "json"
+        },
+        "verifiability": "TeeML",
+        "trust_mode": "private",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "0G Foundation"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "openai/gpt-5.6-sol",
+        "canonical_id": "gpt-5.6-sol",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 3871,
+        "tee_acknowledged": true,
+        "name": "openai/gpt-5.6-sol",
+        "pricing": {
+          "prompt": "30900000000000",
+          "completion": "185420000000000",
+          "cached_prompt": "3090000000000",
+          "cache_write": "38625000000000",
+          "cache_write_1h": "61800000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "30900000000000",
+              "completion": "185420000000000",
+              "cached_prompt": "3090000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "61800000000000",
+              "completion": "278130000000000",
+              "cached_prompt": "6180000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.000005",
+          "completion": "0.00003",
+          "cached_prompt": "0.0000005",
+          "cache_write": "0.00000625",
+          "cache_write_1h": "0.00001",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "0.000005",
+              "completion": "0.00003",
+              "cached_prompt": "0.0000005"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00001",
+              "completion": "0.000045",
+              "cached_prompt": "0.000001"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "GPT"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "max_completion_tokens",
+          "temperature",
+          "top_p",
+          "stream",
+          "tools",
+          "tool_choice",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0xd9966e13a6026Fcca4b13E7ff95c94DE268C471C",
+        "model_id": "deepseek-v4-flash-0731",
+        "canonical_id": "deepseek-v4-flash",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 3274,
+        "tee_acknowledged": true,
+        "name": "deepseek-v4-flash-0731",
+        "pricing": {
+          "prompt": "1230000000000",
+          "completion": "2470000000000",
+          "cached_prompt": "246000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.0000002",
+          "completion": "0.0000004",
+          "cached_prompt": "0.00000004"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 65536,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "reasoning",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "OpenRouter",
+        "provider_country": "US",
+        "serving_domain": "openrouter.ai"
+      },
+      {
+        "address": "0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb",
+        "model_id": "kimi-k3",
+        "canonical_id": "kimi-k3",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 6297,
+        "tee_acknowledged": true,
+        "name": "kimi-k3",
+        "pricing": {
+          "prompt": "18560000000000",
+          "completion": "92820000000000",
+          "cached_prompt": "1856000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000003",
+          "completion": "0.000015",
+          "cached_prompt": "0.0000003"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "max_completion_tokens",
+          "stream",
+          "stop",
+          "response_format",
+          "tools",
+          "tool_choice"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Tencent",
+        "provider_country": "CN",
+        "serving_domain": "tokenhub.tencentcloudmaas.com"
+      },
+      {
+        "address": "0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb",
+        "model_id": "glm-5.3",
+        "canonical_id": "glm-5.3",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 6333,
+        "tee_acknowledged": true,
+        "name": "glm-5.3",
+        "pricing": {
+          "prompt": "8660000000000",
+          "completion": "27220000000000",
+          "cached_prompt": "1732000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.0000014",
+          "completion": "0.0000044",
+          "cached_prompt": "0.00000028"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "max_tokens",
+          "max_completion_tokens",
+          "presence_penalty",
+          "frequency_penalty",
+          "seed",
+          "n",
+          "logprobs",
+          "stream",
+          "response_format",
+          "tools",
+          "tool_choice",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Tencent",
+        "provider_country": "CN",
+        "serving_domain": "tokenhub.tencentcloudmaas.com"
+      },
+      {
+        "address": "0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb",
+        "model_id": "hy3",
+        "canonical_id": "hy3",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 3386,
+        "tee_acknowledged": true,
+        "name": "hy3",
+        "pricing": {
+          "prompt": "816000000000",
+          "completion": "3260000000000",
+          "cached_prompt": "204000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000000132",
+          "completion": "0.000000528",
+          "cached_prompt": "0.000000033"
+        },
+        "type": "chatbot",
+        "context_length": 262144,
+        "max_completion_tokens": 32768,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "max_tokens",
+          "presence_penalty",
+          "frequency_penalty",
+          "stop",
+          "stream",
+          "response_format",
+          "tools",
+          "tool_choice"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Tencent",
+        "provider_country": "CN",
+        "serving_domain": "tokenhub.tencentcloudmaas.com"
+      },
+      {
+        "address": "0x7DCFe6AEa70350C2090041524c9B4A9262DCe87D",
+        "model_id": "glm-5.2",
+        "canonical_id": "glm-5.2",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 3219,
+        "tee_acknowledged": true,
+        "name": "glm-5.2",
+        "pricing": {
+          "prompt": "5610000000000",
+          "completion": "18720000000000",
+          "cached_prompt": "1122000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.0000009",
+          "completion": "0.000003",
+          "cached_prompt": "0.00000018"
+        },
+        "type": "chatbot",
+        "context_length": 1048576,
+        "max_completion_tokens": 32768,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "glm4"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai",
+          "anthropic"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.9
+        },
+        "verifiability": "TeeML",
+        "trust_mode": "private",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "0G Foundation"
+      },
+      {
+        "address": "0xDB7B465300B0acf454867683c5481055f698b2e8",
+        "model_id": "glm-5.1",
+        "canonical_id": "glm-5.1",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 5197,
+        "tee_acknowledged": true,
+        "name": "glm-5.1",
+        "pricing": {
+          "prompt": "11230000000000",
+          "completion": "35300000000000",
+          "cached_prompt": "2246000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.00000182",
+          "completion": "0.00000572",
+          "cached_prompt": "0.000000364"
+        },
+        "type": "chatbot",
+        "context_length": 206848,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.9
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "model_id": "glm-5.1",
+        "canonical_id": "glm-5.1",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 99,
+        "latency": 5796,
+        "tee_acknowledged": true,
+        "name": "glm-5.1",
+        "pricing": {
+          "prompt": "11270000000000",
+          "completion": "35430000000000",
+          "cached_prompt": "2254000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.00000182",
+          "completion": "0.00000572",
+          "cached_prompt": "0.000000364"
+        },
+        "type": "chatbot",
+        "context_length": 206848,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.9
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xb1242816181a87F597B01CE673cdadEb1c723bbF",
+        "model_id": "glm-5",
+        "canonical_id": "glm-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 4728,
+        "tee_acknowledged": true,
+        "name": "glm-5",
+        "pricing": {
+          "prompt": "7560000000000",
+          "completion": "20310000000000",
+          "cached_prompt": "1512000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "7560000000000",
+              "completion": "20310000000000",
+              "cached_prompt": "1512000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "15120000000000",
+              "completion": "20310000000000",
+              "cached_prompt": "3024000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.000001235",
+          "completion": "0.000003315",
+          "cached_prompt": "0.000000247",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "0.000001235",
+              "completion": "0.000003315",
+              "cached_prompt": "0.000000247"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00000247",
+              "completion": "0.000003315",
+              "cached_prompt": "0.000000494"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 202752,
+        "max_completion_tokens": 16384,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "instruct_type": "chatml",
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.9
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xa6581CfDc65278cC539e94d864012ce4B35c5D56",
+        "model_id": "MiniMax-M3",
+        "canonical_id": "minimax-m3",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 4495,
+        "tee_acknowledged": true,
+        "name": "MiniMax-M3",
+        "pricing": {
+          "prompt": "1660000000000",
+          "completion": "6650000000000",
+          "cached_prompt": "332000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 512000,
+              "prompt": "1660000000000",
+              "completion": "6650000000000",
+              "cached_prompt": "332000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "3320000000000",
+              "completion": "13300000000000",
+              "cached_prompt": "664000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.00000027",
+          "completion": "0.00000108",
+          "cached_prompt": "0.000000054",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 512000,
+              "prompt": "0.00000027",
+              "completion": "0.00000108",
+              "cached_prompt": "0.000000054"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00000054",
+              "completion": "0.00000216",
+              "cached_prompt": "0.000000108"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image+video->text",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "BPE"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "max_tokens",
+          "stream",
+          "tools",
+          "tool_choice",
+          "thinking",
+          "reasoning_split",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "MiniMax",
+        "provider_country": "CN",
+        "serving_domain": "api.minimax.io"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "openai/gpt-5.5",
+        "canonical_id": "gpt-5.5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 3185,
+        "tee_acknowledged": true,
+        "name": "openai/gpt-5.5",
+        "pricing": {
+          "prompt": "30900000000000",
+          "completion": "185420000000000",
+          "cached_prompt": "3090000000000",
+          "cache_write": "38625000000000",
+          "cache_write_1h": "61800000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "30900000000000",
+              "completion": "185420000000000",
+              "cached_prompt": "3090000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "61800000000000",
+              "completion": "278130000000000",
+              "cached_prompt": "6180000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.000005",
+          "completion": "0.00003",
+          "cached_prompt": "0.0000005",
+          "cache_write": "0.00000625",
+          "cache_write_1h": "0.00001",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "0.000005",
+              "completion": "0.00003",
+              "cached_prompt": "0.0000005"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00001",
+              "completion": "0.000045",
+              "cached_prompt": "0.000001"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "GPT"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "max_completion_tokens",
+          "temperature",
+          "top_p",
+          "stream",
+          "tools",
+          "tool_choice",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "openai/gpt-5.6-luna",
+        "canonical_id": "gpt-5.6-luna",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 3635,
+        "tee_acknowledged": true,
+        "name": "openai/gpt-5.6-luna",
+        "pricing": {
+          "prompt": "1230000000000",
+          "completion": "7410000000000",
+          "cached_prompt": "123000000000",
+          "cache_write": "1537500000000",
+          "cache_write_1h": "2460000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "1230000000000",
+              "completion": "7410000000000",
+              "cached_prompt": "123000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "2460000000000",
+              "completion": "11115000000000",
+              "cached_prompt": "246000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.0000002",
+          "completion": "0.0000012",
+          "cached_prompt": "0.00000002",
+          "cache_write": "0.00000025",
+          "cache_write_1h": "0.0000004",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "0.0000002",
+              "completion": "0.0000012",
+              "cached_prompt": "0.00000002"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.0000004",
+              "completion": "0.0000018",
+              "cached_prompt": "0.00000004"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "GPT"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "max_completion_tokens",
+          "temperature",
+          "top_p",
+          "stream",
+          "tools",
+          "tool_choice",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0x61C0007197E7D4d6A842d6768E8035728877B9F6",
+        "model_id": "deepseek-v4-flash-0731",
+        "canonical_id": "deepseek-v4-flash",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 3088,
+        "tee_acknowledged": true,
+        "name": "deepseek-v4-flash-0731",
+        "pricing": {
+          "prompt": "851000000000",
+          "completion": "1690000000000",
+          "cached_prompt": "170200000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000000138",
+          "completion": "0.000000275",
+          "cached_prompt": "0.0000000276"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 393216,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "frequency_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0x4415ef5CBb415347bb18493af7cE01f225Fc0868",
+        "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
+        "canonical_id": "qwen3-vl-30b",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 3303,
+        "tee_acknowledged": true,
+        "name": "qwen/qwen3-vl-30b-a3b-instruct",
+        "pricing": {
+          "prompt": "221000000000",
+          "completion": "2210000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "221000000000",
+              "completion": "2210000000000"
+            },
+            {
+              "max_input_tokens": 128000,
+              "prompt": "442000000000",
+              "completion": "4420000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "884000000000",
+              "completion": "8840000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.0000000359",
+          "completion": "0.0000003587",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "0.0000000359",
+              "completion": "0.0000003587"
+            },
+            {
+              "max_input_tokens": 128000,
+              "prompt": "0.0000000718",
+              "completion": "0.0000007174"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.0000001436",
+              "completion": "0.0000014348"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 262144,
+        "max_completion_tokens": 32768,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice",
+          "response_format"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.8
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "model_id": "qwen/qwen3-vl-30b-a3b-instruct",
+        "canonical_id": "qwen3-vl-30b",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 2284,
+        "tee_acknowledged": true,
+        "name": "qwen/qwen3-vl-30b-a3b-instruct",
+        "pricing": {
+          "prompt": "222000000000",
+          "completion": "2220000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "222000000000",
+              "completion": "2220000000000"
+            },
+            {
+              "max_input_tokens": 128000,
+              "prompt": "444000000000",
+              "completion": "4440000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "888000000000",
+              "completion": "8880000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.0000000359",
+          "completion": "0.0000003587",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 32000,
+              "prompt": "0.0000000359",
+              "completion": "0.0000003587"
+            },
+            {
+              "max_input_tokens": 128000,
+              "prompt": "0.0000000718",
+              "completion": "0.0000007174"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.0000001436",
+              "completion": "0.0000014348"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 262144,
+        "max_completion_tokens": 32768,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice",
+          "response_format"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "temperature": 0.7,
+          "top_p": 0.8
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xd3f02c1a04160389d98D2192AE2034159f731011",
+        "model_id": "claude-sonnet-5",
+        "canonical_id": "claude-sonnet-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 5226,
+        "tee_acknowledged": true,
+        "name": "claude-sonnet-5",
+        "pricing": {
+          "prompt": "12400000000000",
+          "completion": "62010000000000",
+          "cached_prompt": "1240000000000",
+          "cache_write": "15500000000000",
+          "cache_write_1h": "24800000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000002",
+          "completion": "0.00001",
+          "cached_prompt": "0.0000002",
+          "cache_write": "0.0000025",
+          "cache_write_1h": "0.000004"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "stop_sequences",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "thinking",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "model_id": "qwen3.8-max",
+        "canonical_id": "qwen3.8-max",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 4083,
+        "tee_acknowledged": true,
+        "name": "qwen3.8-max",
+        "pricing": {
+          "prompt": "10220000000000",
+          "completion": "30670000000000",
+          "cached_prompt": "1277500000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.00000165",
+          "completion": "0.000004951",
+          "cached_prompt": "0.00000020625"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image+video->text",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "frequency_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "claude-fable-5",
+        "canonical_id": "claude-fable-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 5207,
+        "tee_acknowledged": true,
+        "name": "claude-fable-5",
+        "pricing": {
+          "prompt": "55620000000000",
+          "completion": "278130000000000",
+          "cached_prompt": "5562000000000",
+          "cache_write": "69525000000000",
+          "cache_write_1h": "111240000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000009",
+          "completion": "0.000045",
+          "cached_prompt": "0.0000009",
+          "cache_write": "0.00001125",
+          "cache_write_1h": "0.000018"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "stop_sequences",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "claude-sonnet-5",
+        "canonical_id": "claude-sonnet-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 98,
+        "latency": 4159,
+        "tee_acknowledged": true,
+        "name": "claude-sonnet-5",
+        "pricing": {
+          "prompt": "11740000000000",
+          "completion": "58710000000000",
+          "cached_prompt": "1174000000000",
+          "cache_write": "14675000000000",
+          "cache_write_1h": "23480000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.0000019",
+          "completion": "0.0000095",
+          "cached_prompt": "0.00000019",
+          "cache_write": "0.000002375",
+          "cache_write_1h": "0.0000038"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "stop_sequences",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "thinking",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "claude-opus-5",
+        "canonical_id": "claude-opus-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 3873,
+        "tee_acknowledged": true,
+        "name": "claude-opus-5",
+        "pricing": {
+          "prompt": "30900000000000",
+          "completion": "154510000000000",
+          "cached_prompt": "3090000000000",
+          "cache_write": "38625000000000",
+          "cache_write_1h": "61800000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000005",
+          "completion": "0.000025",
+          "cached_prompt": "0.0000005",
+          "cache_write": "0.00000625",
+          "cache_write_1h": "0.00001"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "thinking",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+        "model_id": "glm-5.2",
+        "canonical_id": "glm-5.2",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 9196,
+        "tee_acknowledged": true,
+        "name": "glm-5.2",
+        "pricing": {
+          "prompt": "5990000000000",
+          "completion": "20990000000000",
+          "cached_prompt": "1497500000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000000968",
+          "completion": "0.00000338888",
+          "cached_prompt": "0.000000242"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "tools",
+          "tool_choice",
+          "response_format",
+          "chat_template_kwargs",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xd3f02c1a04160389d98D2192AE2034159f731011",
+        "model_id": "claude-opus-4-8",
+        "canonical_id": "claude-opus-4-8",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 3589,
+        "tee_acknowledged": true,
+        "name": "claude-opus-4-8",
+        "pricing": {
+          "prompt": "31000000000000",
+          "completion": "155020000000000",
+          "cached_prompt": "3100000000000",
+          "cache_write": "38750000000000",
+          "cache_write_1h": "62000000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000005",
+          "completion": "0.000025",
+          "cached_prompt": "0.0000005",
+          "cache_write": "0.00000625",
+          "cache_write_1h": "0.00001"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "stop_sequences",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "thinking",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+        "model_id": "kimi-k2.7-code",
+        "canonical_id": "kimi-k2.7-code",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 9196,
+        "tee_acknowledged": true,
+        "name": "kimi-k2.7-code",
+        "pricing": {
+          "prompt": "7640000000000",
+          "completion": "32200000000000",
+          "cached_prompt": "1528000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000001235",
+          "completion": "0.0000052",
+          "cached_prompt": "0.000000247"
+        },
+        "type": "chatbot",
+        "context_length": 262144,
+        "max_completion_tokens": 16384,
+        "architecture": {
+          "modality": "text+image+video->text",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "frequency_penalty",
+          "presence_penalty",
+          "stop",
+          "stream",
+          "tools",
+          "tool_choice"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "claude-opus-4-8",
+        "canonical_id": "claude-opus-4-8",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 3893,
+        "tee_acknowledged": true,
+        "name": "claude-opus-4-8",
+        "pricing": {
+          "prompt": "30900000000000",
+          "completion": "154510000000000",
+          "cached_prompt": "3090000000000",
+          "cache_write": "38625000000000",
+          "cache_write_1h": "61800000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000005",
+          "completion": "0.000025",
+          "cached_prompt": "0.0000005",
+          "cache_write": "0.00000625",
+          "cache_write_1h": "0.00001"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 131072,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "stop_sequences",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "thinking",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+        "model_id": "qwen3.7-max",
+        "canonical_id": "qwen3.7-max",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 9196,
+        "tee_acknowledged": true,
+        "name": "qwen3.7-max",
+        "pricing": {
+          "prompt": "5110000000000",
+          "completion": "15330000000000",
+          "cached_prompt": "1022000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000000825",
+          "completion": "0.0000024755",
+          "cached_prompt": "0.000000165"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 65536,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+        "model_id": "qwen3.7-plus",
+        "canonical_id": "qwen3.7-plus",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 97,
+        "latency": 9196,
+        "tee_acknowledged": true,
+        "name": "qwen3.7-plus",
+        "pricing": {
+          "prompt": "3220000000000",
+          "completion": "12880000000000",
+          "cached_prompt": "322000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 256000,
+              "prompt": "3220000000000",
+              "completion": "12880000000000",
+              "cached_prompt": "322000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "9660000000000",
+              "completion": "38640000000000",
+              "cached_prompt": "966000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.00000052",
+          "completion": "0.00000208",
+          "cached_prompt": "0.000000052",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 256000,
+              "prompt": "0.00000052",
+              "completion": "0.00000208",
+              "cached_prompt": "0.000000052"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.00000156",
+              "completion": "0.00000624",
+              "cached_prompt": "0.000000156"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 65536,
+        "architecture": {
+          "modality": "text+image+video->text",
+          "input_modalities": [
+            "text",
+            "image",
+            "video"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "qwen-bpe"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "model_id": "deepseek-v4-pro",
+        "canonical_id": "deepseek-v4-pro",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 96,
+        "latency": 4293,
+        "tee_acknowledged": true,
+        "name": "deepseek-v4-pro",
+        "pricing": {
+          "prompt": "8990000000000",
+          "completion": "17990000000000",
+          "cached_prompt": "749166666666"
+        },
+        "pricing_usd": {
+          "prompt": "0.000001452",
+          "completion": "0.00000290488",
+          "cached_prompt": "0.000000121"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 393216,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ]
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "repetition_penalty",
+          "seed",
+          "stop",
+          "stream",
+          "tools",
+          "response_format",
+          "enable_thinking",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Aliyun",
+        "provider_country": "CN",
+        "serving_domain": "ws-ck3ccdg8ka3n5uvy.cn-beijing.maas.aliyuncs.com"
+      },
+      {
+        "address": "0xd3f02c1a04160389d98D2192AE2034159f731011",
+        "model_id": "claude-opus-5",
+        "canonical_id": "claude-opus-5",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 96,
+        "latency": 3943,
+        "tee_acknowledged": true,
+        "name": "claude-opus-5",
+        "pricing": {
+          "prompt": "31000000000000",
+          "completion": "155020000000000",
+          "cached_prompt": "3100000000000",
+          "cache_write": "38750000000000",
+          "cache_write_1h": "62000000000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.000005",
+          "completion": "0.000025",
+          "cached_prompt": "0.0000005",
+          "cache_write": "0.00000625",
+          "cache_write_1h": "0.00001"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Claude"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "stream",
+          "system",
+          "stop_sequences",
+          "tools",
+          "tool_choice",
+          "metadata",
+          "thinking",
+          "output_config",
+          "cache_control"
+        ],
+        "supported_formats": [
+          "anthropic"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "model_id": "openai/gpt-5.6-terra",
+        "canonical_id": "gpt-5.6-terra",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 96,
+        "latency": 4052,
+        "tee_acknowledged": true,
+        "name": "openai/gpt-5.6-terra",
+        "pricing": {
+          "prompt": "12360000000000",
+          "completion": "74160000000000",
+          "cached_prompt": "1236000000000",
+          "cache_write": "15450000000000",
+          "cache_write_1h": "24720000000000",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "12360000000000",
+              "completion": "74160000000000",
+              "cached_prompt": "1236000000000"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "24720000000000",
+              "completion": "111240000000000",
+              "cached_prompt": "2472000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0.000002",
+          "completion": "0.000012",
+          "cached_prompt": "0.0000002",
+          "cache_write": "0.0000025",
+          "cache_write_1h": "0.000004",
+          "tiered_pricing": [
+            {
+              "max_input_tokens": 272000,
+              "prompt": "0.000002",
+              "completion": "0.000012",
+              "cached_prompt": "0.0000002"
+            },
+            {
+              "max_input_tokens": 0,
+              "prompt": "0.000004",
+              "completion": "0.000018",
+              "cached_prompt": "0.0000004"
+            }
+          ]
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 128000,
+        "architecture": {
+          "modality": "text+image->text",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "GPT"
+        },
+        "supported_parameters": [
+          "max_tokens",
+          "max_completion_tokens",
+          "temperature",
+          "top_p",
+          "stream",
+          "tools",
+          "tool_choice",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "trust_mode": "standard",
+        "provider_name": "0G Foundation",
+        "provider_country": "US"
+      },
+      {
+        "address": "0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb",
+        "model_id": "deepseek-v4-flash-0731",
+        "canonical_id": "deepseek-v4-flash",
+        "service_type": "chatbot",
+        "is_healthy": true,
+        "uptime": 95,
+        "latency": 3028,
+        "tee_acknowledged": true,
+        "name": "deepseek-v4-flash-0731",
+        "pricing": {
+          "prompt": "866000000000",
+          "completion": "1730000000000",
+          "cached_prompt": "17320000000"
+        },
+        "pricing_usd": {
+          "prompt": "0.00000014",
+          "completion": "0.00000028",
+          "cached_prompt": "0.0000000028"
+        },
+        "type": "chatbot",
+        "context_length": 1000000,
+        "max_completion_tokens": 393216,
+        "architecture": {
+          "modality": "text->text",
+          "input_modalities": [
+            "text"
+          ],
+          "output_modalities": [
+            "text"
+          ],
+          "tokenizer": "Other"
+        },
+        "supported_parameters": [
+          "temperature",
+          "top_p",
+          "top_k",
+          "max_tokens",
+          "presence_penalty",
+          "frequency_penalty",
+          "repetition_penalty",
+          "seed",
+          "n",
+          "logprobs",
+          "stop",
+          "stream",
+          "response_format",
+          "tools",
+          "tool_choice",
+          "reasoning_effort"
+        ],
+        "supported_formats": [
+          "openai",
+          "anthropic"
+        ],
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "Tencent",
+        "provider_country": "CN",
+        "serving_domain": "tokenhub.tencentcloudmaas.com"
+      },
+      {
+        "address": "0xdBaf69721F1cEa392aE78cEeD588B73cedb54998",
+        "model_id": "dreamina-seedance-2-5-260628",
+        "canonical_id": "bytedance/seedance-2.5",
+        "service_type": "video-generation",
+        "is_healthy": false,
+        "uptime": null,
+        "latency": null,
+        "tee_acknowledged": true,
+        "name": "dreamina-seedance-2-5-260628",
+        "pricing": {
+          "prompt": "0",
+          "completion": "66460000000000",
+          "video_unit": "video_token",
+          "variants": [
+            {
+              "dimensions": {
+                "has_video_input": "false",
+                "resolution": "480p"
+              },
+              "unit": "video_token",
+              "unit_price": "66460000000000"
+            },
+            {
+              "dimensions": {
+                "has_video_input": "false",
+                "resolution": "720p"
+              },
+              "unit": "video_token",
+              "unit_price": "66460000000000"
+            },
+            {
+              "dimensions": {
+                "has_video_input": "false",
+                "resolution": "1080p"
+              },
+              "unit": "video_token",
+              "unit_price": "52323274766355"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0",
+          "completion": "0",
+          "video_unit": "video_token",
+          "variants": [
+            {
+              "dimensions": {
+                "has_video_input": "false",
+                "resolution": "480p"
+              },
+              "unit": "video_token",
+              "unit_price": "0.0000107"
+            },
+            {
+              "dimensions": {
+                "has_video_input": "false",
+                "resolution": "720p"
+              },
+              "unit": "video_token",
+              "unit_price": "0.0000107"
+            },
+            {
+              "dimensions": {
+                "has_video_input": "false",
+                "resolution": "1080p"
+              },
+              "unit": "video_token",
+              "unit_price": "0.000008424"
+            }
+          ]
+        },
+        "type": "video-generation",
+        "architecture": {
+          "modality": "text+image->video",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ]
+        },
+        "supported_parameters": [
+          "prompt",
+          "seconds",
+          "size",
+          "input_reference"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "seconds": 5,
+          "size": "720p"
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "ByteDance",
+        "provider_country": "CN",
+        "serving_domain": "ark.ap-southeast.bytepluses.com"
+      },
+      {
+        "address": "0x12414b77184675e2DFbD09d7F53AF4200EFaa8C2",
+        "model_id": "MiniMax-H3",
+        "canonical_id": "minimax-h3",
+        "service_type": "video-generation",
+        "is_healthy": false,
+        "uptime": null,
+        "latency": null,
+        "tee_acknowledged": true,
+        "name": "MiniMax-H3",
+        "pricing": {
+          "prompt": "0",
+          "completion": "1209204830000000000",
+          "video": "1209204830000000000",
+          "variants": [
+            {
+              "dimensions": {
+                "resolution": "2K"
+              },
+              "unit": "video_second",
+              "unit_price": "1209204830000000000"
+            }
+          ]
+        },
+        "pricing_usd": {
+          "prompt": "0",
+          "completion": "0",
+          "video": "0.195",
+          "variants": [
+            {
+              "dimensions": {
+                "resolution": "2K"
+              },
+              "unit": "video_second",
+              "unit_price": "0.195"
+            }
+          ]
+        },
+        "type": "video-generation",
+        "architecture": {
+          "modality": "text+image->video",
+          "input_modalities": [
+            "text",
+            "image"
+          ],
+          "output_modalities": [
+            "video"
+          ]
+        },
+        "supported_parameters": [
+          "prompt",
+          "seconds",
+          "size",
+          "input_reference"
+        ],
+        "supported_formats": [
+          "openai"
+        ],
+        "default_parameters": {
+          "seconds": 4,
+          "size": "2K"
+        },
+        "verifiability": "TeeTLS",
+        "trust_mode": "verified",
+        "tee_attested": true,
+        "tee_type": "TDX",
+        "tee_verifier": "dstack",
+        "provider_name": "MiniMax",
+        "provider_country": "CN",
+        "serving_domain": "api.minimax.io"
+      }
+    ]
+  },
+  "onchain": {
+    "count": 23,
+    "services": [
+      {
+        "provider": "0xd9966e13a6026Fcca4b13E7ff95c94DE268C471C",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-1.integratenetwork.work",
+        "inputPrice": "4640000000000",
+        "outputPrice": "14860000000000",
+        "updatedAt": "1787538390",
+        "model": "zai-org/GLM-5-FP8",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "openrouter",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4",
+          "cacheTokenBilling": {
+            "divisor": 5
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0x36aCffCEa3CCe07cAdd1740Ad992dB16Ab324517",
+        "serviceType": "speech-to-text",
+        "url": "https://compute-network-16.integratenetwork.work",
+        "inputPrice": "803920000000000",
+        "outputPrice": "0",
+        "updatedAt": "1787536446",
+        "model": "openai/whisper-large-v3",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": false,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4"
+        },
+        "mode": "TeeML"
+      },
+      {
+        "provider": "0x992e6396157Dc4f22E74F2231235D7DE62696db5",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-18.integratenetwork.work",
+        "inputPrice": "4000000000000",
+        "outputPrice": "24020000000000",
+        "updatedAt": "1787535485",
+        "model": "qwen3.6-plus",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.8",
+          "tieredPricing": {
+            "tiers": [
+              {
+                "inputMultiplier": 1,
+                "maxInputTokens": 256000,
+                "outputMultiplier": 1
+              },
+              {
+                "inputMultiplier": 4,
+                "maxInputTokens": 0,
+                "outputMultiplier": 4
+              }
+            ]
+          }
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0x4415ef5CBb415347bb18493af7cE01f225Fc0868",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-3.integratenetwork.work",
+        "inputPrice": "221000000000",
+        "outputPrice": "2210000000000",
+        "updatedAt": "1787538920",
+        "model": "qwen/qwen3-vl-30b-a3b-instruct",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.8",
+          "tieredPricing": {
+            "tiers": [
+              {
+                "inputMultiplier": 1,
+                "maxInputTokens": 32000,
+                "outputMultiplier": 1
+              },
+              {
+                "inputMultiplier": 2,
+                "maxInputTokens": 128000,
+                "outputMultiplier": 2
+              },
+              {
+                "inputMultiplier": 4,
+                "maxInputTokens": 0,
+                "outputMultiplier": 4
+              }
+            ]
+          }
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0x1B3AAef3ae5050EEE04ea38cD4B087472BD85EB0",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-4.integratenetwork.work",
+        "inputPrice": "9630000000000",
+        "outputPrice": "38530000000000",
+        "updatedAt": "1787539024",
+        "model": "qwen3.7-plus",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4",
+          "cacheTokenBilling": {
+            "divisor": 10
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xE29a72c7629815Eb480aE5b1F2dfA06f06cdF974",
+        "serviceType": "text-to-image",
+        "url": "https://compute-network-15.integratenetwork.work",
+        "inputPrice": "0",
+        "outputPrice": "54359570000000000",
+        "updatedAt": "1787536348",
+        "model": "z-image-turbo",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": false,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4"
+        },
+        "mode": "TeeML"
+      },
+      {
+        "provider": "0x25F8f01cA76060ea40895472b1b79f76613Ca497",
+        "serviceType": "chatbot",
+        "url": "https://5259ae0f38365b27c0bab6301b73691206e32dce-80.dstack-pha-prod5.phala.network",
+        "inputPrice": "1600000000000",
+        "outputPrice": "9000000000000",
+        "updatedAt": "1775715696",
+        "model": "openai/gpt-5.4-mini",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "ghcr.io/0gfoundation/0g-serving-broker@sha256:6c0cea3093b8cfa27a15002351b7d819dc2f648ef9f3be0c5d2a2e1f7582c818",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": false,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4"
+        },
+        "mode": "TeeML"
+      },
+      {
+        "provider": "0x7DCFe6AEa70350C2090041524c9B4A9262DCe87D",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-19.integratenetwork.work",
+        "inputPrice": "5610000000000",
+        "outputPrice": "18720000000000",
+        "updatedAt": "1787537129",
+        "model": "glm-5.2",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": false,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4",
+          "cacheTokenBilling": {
+            "divisor": 5
+          }
+        },
+        "mode": "TeeML"
+      },
+      {
+        "provider": "0x4870CbC4D07d6Ac2EE5aA865588e5985FE77a4E9",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-20.integratenetwork.work",
+        "inputPrice": "499000000000",
+        "outputPrice": "2990000000000",
+        "updatedAt": "1787536895",
+        "model": "0GM-1.0-35B-A3B",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "sha256:ec5df8347f91c3b28a6638db4e24dba343799c0a3a7e2cdd44845a3a27f2e734",
+          "ImageName": "ghcr.io/0gfoundation/0g-serving-broker",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": false,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.9",
+          "cacheTokenBilling": {
+            "divisor": 3
+          }
+        },
+        "mode": "TeeML"
+      },
+      {
+        "provider": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-21.integratenetwork.work",
+        "inputPrice": "15250000000000",
+        "outputPrice": "35330000000000",
+        "updatedAt": "1787535683",
+        "model": "deepseek-v4-pro",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.8",
+          "cacheTokenBilling": {
+            "divisor": 5
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0x61C0007197E7D4d6A842d6768E8035728877B9F6",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-22.integratenetwork.work",
+        "inputPrice": "851000000000",
+        "outputPrice": "1690000000000",
+        "updatedAt": "1787535787",
+        "model": "deepseek-v4-flash-0731",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4",
+          "cacheTokenBilling": {
+            "divisor": 5
+          }
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xDB7B465300B0acf454867683c5481055f698b2e8",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-23.integratenetwork.work",
+        "inputPrice": "11230000000000",
+        "outputPrice": "35300000000000",
+        "updatedAt": "1787535847",
+        "model": "glm-5.1",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4",
+          "cacheTokenBilling": {
+            "divisor": 5
+          }
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-24.integratenetwork.work",
+        "inputPrice": "9620000000000",
+        "outputPrice": "38510000000000",
+        "updatedAt": "1787535934",
+        "model": "qwen3.7-max",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "cacheTokenBilling": {
+            "divisor": 5
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xb1242816181a87F597B01CE673cdadEb1c723bbF",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-25.integratenetwork.work",
+        "inputPrice": "7560000000000",
+        "outputPrice": "20310000000000",
+        "updatedAt": "1787532420",
+        "model": "glm-5",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "ProviderIdentity": "aliyun",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "cacheTokenBilling": {
+            "divisor": 5
+          },
+          "tieredPricing": {
+            "tiers": [
+              {
+                "inputMultiplier": 1,
+                "maxInputTokens": 32000,
+                "outputMultiplier": 1
+              },
+              {
+                "inputMultiplier": 2,
+                "maxInputTokens": 0,
+                "outputMultiplier": 1
+              }
+            ]
+          }
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xa6581CfDc65278cC539e94d864012ce4B35c5D56",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-26.integratenetwork.work",
+        "inputPrice": "3310000000000",
+        "outputPrice": "13260000000000",
+        "updatedAt": "1787532492",
+        "model": "MiniMax-M3",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "minimax",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "cacheTokenBilling": {
+            "divisor": 5
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0x1F444c8A8D0b8e99A50e9f165806d28B01916E04",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-27.integratenetwork.work",
+        "inputPrice": "62200000000000",
+        "outputPrice": "279910000000000",
+        "updatedAt": "1787537212",
+        "model": "claude-fable-5",
+        "rawVerifiability": "standard",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderType": "standard",
+          "TEEVerifier": "",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "",
+          "cacheTokenBilling": {
+            "divisor": 10,
+            "write1hMultiplierDenominator": 1,
+            "write1hMultiplierNumerator": 2,
+            "writeMultiplierDenominator": 4,
+            "writeMultiplierNumerator": 5
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "standard"
+      },
+      {
+        "provider": "0x8Bd36FA1918FF251AC369F3df8758A2FA66c5d0a",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-28.integratenetwork.work",
+        "inputPrice": "11160000000000",
+        "outputPrice": "35090000000000",
+        "updatedAt": "1787532666",
+        "model": "glm-5.2",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "zhipu",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "cacheTokenBilling": {
+            "divisor": 4
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xf56fAaf9989aDafDDf26fa5Ffdd03a9A27b38fAE",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-29.integratenetwork.work",
+        "inputPrice": "3330000000000",
+        "outputPrice": "20010000000000",
+        "updatedAt": "1787537301",
+        "model": "0GM-1.0-35B-A3B-SIA",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": false,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.5",
+          "cacheTokenBilling": {
+            "divisor": 3
+          }
+        },
+        "mode": "TeeML"
+      },
+      {
+        "provider": "0x9199237477dD2591623feA2AFA17fD91d874eef7",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-30.integratenetwork.work",
+        "inputPrice": "18580000000000",
+        "outputPrice": "92910000000000",
+        "updatedAt": "1787536529",
+        "model": "kimi-k3",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "moonshot",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "cacheTokenBilling": {
+            "divisor": 10
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-31.integratenetwork.work",
+        "inputPrice": "18560000000000",
+        "outputPrice": "92820000000000",
+        "updatedAt": "1787536601",
+        "model": "hy3",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "tencent",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "cacheTokenBilling": {
+            "divisor": 4
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0x12414b77184675e2DFbD09d7F53AF4200EFaa8C2",
+        "serviceType": "video-generation",
+        "url": "https://compute-network-32.integratenetwork.work",
+        "inputPrice": "0",
+        "outputPrice": "1209204830000000000",
+        "updatedAt": "1787536689",
+        "model": "MiniMax-H3",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "minimax",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xdBaf69721F1cEa392aE78cEeD588B73cedb54998",
+        "serviceType": "video-generation",
+        "url": "https://compute-network-33.integratenetwork.work",
+        "inputPrice": "0",
+        "outputPrice": "66460000000000",
+        "updatedAt": "1787536761",
+        "model": "dreamina-seedance-2-5-260628",
+        "rawVerifiability": "TeeML",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderIdentity": "bytedance",
+          "ProviderType": "centralized",
+          "TEEVerifier": "dstack",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "https://github.com/Dstack-TEE/dstack/releases/tag/verifier-v0.5.4.1",
+          "priceDenomination": "USD"
+        },
+        "mode": "TeeTLS"
+      },
+      {
+        "provider": "0xd3f02c1a04160389d98D2192AE2034159f731011",
+        "serviceType": "chatbot",
+        "url": "https://compute-network-34.integratenetwork.work",
+        "inputPrice": "31000000000000",
+        "outputPrice": "155020000000000",
+        "updatedAt": "1787536685",
+        "model": "claude-opus-5",
+        "rawVerifiability": "standard",
+        "meta": {
+          "ImageDigest": "",
+          "ImageName": "",
+          "MultiModel": true,
+          "ProviderType": "standard",
+          "TEEVerifier": "",
+          "TargetSeparated": true,
+          "TargetTeeAddress": "",
+          "VerifierURL": "",
+          "cacheTokenBilling": {
+            "divisor": 10,
+            "write1hMultiplierDenominator": 1,
+            "write1hMultiplierNumerator": 2,
+            "writeMultiplierDenominator": 4,
+            "writeMultiplierNumerator": 5
+          },
+          "priceDenomination": "USD"
+        },
+        "mode": "standard"
+      }
+    ]
+  }
+}

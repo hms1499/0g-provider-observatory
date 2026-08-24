@@ -10,7 +10,9 @@
     "MeasurementRegistry": "0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333"
   },
   "owner": "0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD",
-  "probers": ["0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD"],
+  "probers": [
+    "0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD"
+  ],
   "epochSeconds": 3600,
   "transactions": {
     "deployProviderRegistry": "0x6e959dcdd0a150da3f725ce08394500ec202dbfc60801766ccc69d59ccfc14ee",
@@ -25,8 +27,16 @@
     "note": "Read back after the fact: 1.700000 0G before, 1.690183 after."
   },
   "seeded": {
-    "providerCount": 0,
-    "note": "Nothing registered yet. Unlike the testnet deployment this ledger carries no stand-in values — every measurement written here will come from a real prober run."
+    "providerCount": 38,
+    "registeredAt": "2026-08-24T03:01:50.816Z",
+    "snapshot": "data/snapshot-2026-08-24.json",
+    "tx": "0x233bc8f8cd9a70810c9d461f3b55a8b6c6b411436dcf6a27973ecd31364772b3",
+    "modeSources": {
+      "both": 16,
+      "onchain": 0,
+      "router": 22
+    },
+    "note": "Real services from the snapshot. No stand-in values on this ledger."
   },
   "verifiedOnChain": {
     "MeasurementRegistry.REGISTRY": "0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6",
