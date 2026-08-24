@@ -29,6 +29,7 @@ import {
   BudgetExceeded,
   callCostUsd,
   pinHeld,
+  fitToBudget,
   projectedCostUsd,
   reservationUsd,
   selectRoster,
@@ -88,8 +89,16 @@ async function main() {
     skipUnhealthy: true,
     ...(REASONING_EFFORT ? { reasoningEffort: REASONING_EFFORT } : {}),
   });
-  const roster = selectRoster(plan.targets, { groupsOnly: !has('--all'), exclude: EXCLUDE });
+  const candidates = selectRoster(plan.targets, { groupsOnly: !has('--all'), exclude: EXCLUDE });
+  // Fit the roster to the money BEFORE sending anything. Starting a roster the budget cannot
+  // finish does not measure less, it measures crookedly: every service gets probes 1..k, so
+  // the late probes are systematically under-sampled and the noise pair — positions 5 and 14
+  // — loses its second half. Measured on both live epochs.
+  const roster = has('--no-fit') ? candidates : fitToBudget(candidates, BUDGET_USD);
   const projected = projectedCostUsd(roster);
+  const droppedGroups = [...new Set(candidates.map((t) => t.canonicalId))].filter(
+    (id) => !roster.some((t) => t.canonicalId === id),
+  );
 
   // ── 01 roster ─────────────────────────────────────────────────────────────
   head('01', 'ROSTER');
@@ -102,6 +111,17 @@ async function main() {
       String(ts.length).padStart(2),
       (ts.some((t) => t.mode === 'TeeML') ? 'TeeML' : '—').padEnd(6),
       `$${projectedCostUsd(ts).toFixed(4)}`.padStart(9),
+    );
+  }
+  if (droppedGroups.length > 0) {
+    console.log(
+      `\n${YEL('left out to fit the budget')}: ${droppedGroups.join(', ')}`,
+    );
+    console.log(
+      DIM('  A full suite for fewer services beats a partial suite for more: a run that stops'),
+    );
+    console.log(
+      DIM('  mid-suite under-samples every probe near the end, the noise pair included.'),
     );
   }
   console.log(
@@ -203,7 +223,20 @@ async function main() {
   const endedAt = new Date();
   console.log('\n');
 
-  if (abortReason()) console.log(`${YEL('run stopped early')} — ${abortReason()}\n`);
+  if (abortReason()) {
+    console.log(`${YEL('run stopped early')} — ${abortReason()}\n`);
+    if (abortReason()?.startsWith('budget')) {
+      console.log(
+        YEL('  The roster was fitted to the budget before starting, so this should not happen.'),
+      );
+      console.log(
+        YEL('  Real spend exceeded the projection: re-measure with `pnpm token-profile`.'),
+      );
+      console.log(
+        DIM('  The probes near the end of the suite are now under-sampled for every service.\n'),
+      );
+    }
+  }
   console.log(
     `${results.length} calls · ${results.filter((r) => r.ok).length} ok · ` +
       `spent ${B(`$${budget.spentUsd.toFixed(6)}`)} of $${BUDGET_USD.toFixed(4)}`,

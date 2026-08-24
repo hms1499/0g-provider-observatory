@@ -7,6 +7,7 @@ import {
   BudgetExceeded,
   callCostUsd,
   pinHeld,
+  fitToBudget,
   projectedCostUsd,
   reservationUsd,
   selectRoster,
@@ -16,6 +17,7 @@ import { PROBES, SUITE_MAX_OUTPUT_TOKENS, SUITE_MEASURED_TOKENS } from '../suite
 const ADDR_A = '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB';
 const ADDR_B = '0xF203A388e9E70F09ece38046a6D40a89cf896309';
 const ADDR_C = '0x7DCF7Bc0Ee1B5eD8Cbb0Cef0dcC1eF1c3B0Ce87D';
+const ADDR_D = '0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb';
 
 function target(address: string, canonicalId: string, rate = 1e-8): Target {
   return {
@@ -81,6 +83,54 @@ describe('selectRoster', () => {
   it('keeps a single-provider model when groupsOnly is off', () => {
     const targets = [target(ADDR_C, 'lonely-model')];
     assert.equal(selectRoster(targets).length, 1);
+  });
+});
+
+describe('fitToBudget', () => {
+  /** One service's full suite at the rates `target()` uses. */
+  const perService = () => projectedCostUsd([target(ADDR_A, 'x')]);
+
+  it('drops whole groups rather than leaving half a group behind', () => {
+    // Half a pair is worthless: the survivor becomes ungrouped and has nothing to diverge
+    // from, so it costs money and produces no divergence figure at all.
+    const targets = [
+      target(ADDR_A, 'cheap'), target(ADDR_B, 'cheap'),
+      target(ADDR_C, 'dear', 1e-6), target(ADDR_D, 'dear', 1e-6),
+    ];
+    const kept = fitToBudget(targets, perService() * 3);
+    const counts = new Map<string, number>();
+    for (const t of kept) counts.set(t.canonicalId, (counts.get(t.canonicalId) ?? 0) + 1);
+    for (const [id, n] of counts) assert.equal(n % 2, 0, `${id} was left half-measured`);
+  });
+
+  it('fits the whole suite for everything it keeps', () => {
+    const targets = [
+      target(ADDR_A, 'cheap'), target(ADDR_B, 'cheap'),
+      target(ADDR_C, 'dear', 1e-6), target(ADDR_D, 'dear', 1e-6),
+    ];
+    const budget = perService() * 3;
+    const kept = fitToBudget(targets, budget);
+    assert.ok(kept.length > 0, 'something must fit');
+    assert.ok(
+      projectedCostUsd(kept) <= budget,
+      `kept roster projects ${projectedCostUsd(kept)} against a budget of ${budget}`,
+    );
+  });
+
+  it('prefers the group carrying a TeeML reference when not everything fits', () => {
+    const withRef = { ...target(ADDR_C, 'anchored', 1e-6), mode: 'TeeML' as const };
+    const targets = [
+      target(ADDR_A, 'cheap'), target(ADDR_B, 'cheap'),
+      withRef, target(ADDR_D, 'anchored', 1e-6),
+    ];
+    // Only the expensive anchored pair fits, and it is the one that calibrates.
+    const kept = fitToBudget(targets, projectedCostUsd([withRef, target(ADDR_D, 'anchored', 1e-6)]));
+    assert.deepEqual(new Set(kept.map((t) => t.canonicalId)), new Set(['anchored']));
+  });
+
+  it('returns nothing when not even the cheapest group fits', () => {
+    const targets = [target(ADDR_A, 'cheap'), target(ADDR_B, 'cheap')];
+    assert.deepEqual(fitToBudget(targets, perService() / 2), []);
   });
 });
 

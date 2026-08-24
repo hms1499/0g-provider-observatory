@@ -35,6 +35,50 @@ export function selectRoster(
 }
 
 /**
+ * Trim a roster so the FULL suite fits the budget for everything left in it.
+ *
+ * Measured on epochs 496514/496516: the runner started with more services than the budget
+ * could cover and aborted mid-suite, so every service was measured on probes 1..k. Probe 5
+ * landed 15 times out of 15 and probe 14 landed 8. That is not a smaller measurement, it is
+ * a biased one — and it destroyed the noise floor specifically, because the two halves of
+ * the byte-identical pair sit at positions 5 and 14, so the second half was the part that
+ * got cut.
+ *
+ * So the budget is spent on measuring fewer services completely rather than more services
+ * partially. Whole groups only: half a pair leaves a service with nothing to diverge
+ * against, which costs money and publishes no divergence figure.
+ *
+ * Groups holding a TeeML reference go first — they are the only ones that calibrate against
+ * ground truth — and the rest follow cheapest-first, which fits the most groups into what
+ * is left.
+ */
+export function fitToBudget(targets: readonly Target[], budgetUsd: number): Target[] {
+  const groups = new Map<string, Target[]>();
+  for (const t of targets) {
+    const arr = groups.get(t.canonicalId);
+    if (arr) arr.push(t);
+    else groups.set(t.canonicalId, [t]);
+  }
+
+  const ranked = [...groups.values()]
+    .map((members) => ({
+      members,
+      cost: projectedCostUsd(members),
+      anchored: members.some((m) => m.mode === 'TeeML'),
+    }))
+    .sort((a, b) => Number(b.anchored) - Number(a.anchored) || a.cost - b.cost);
+
+  const kept: Target[] = [];
+  let spent = 0;
+  for (const g of ranked) {
+    if (spent + g.cost > budgetUsd) continue;
+    spent += g.cost;
+    kept.push(...g.members);
+  }
+  return kept;
+}
+
+/**
  * What the roster is expected to cost, from the token profile a real run measured
  * rather than from the max_tokens ceiling. `max_tokens` is a ceiling, not a charge:
  * pricing the ceiling overstates an epoch by about 70%.
