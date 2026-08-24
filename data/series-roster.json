@@ -1,0 +1,47 @@
+{
+  "epoch": 496539,
+  "establishedAt": "2026-08-24T03:30:58.273Z",
+  "note": "The set of services this series measures. Taken from the roster of the first mainnet epoch rather than typed by hand. fitToBudget picks whatever fits, so a price move alone can admit a new group; the series needs the same set every epoch for the noise floor to pool and for week-over-week comparison to mean anything. The lock can only remove services from what fitting chose.",
+  "services": [
+    {
+      "address": "0x61C0007197E7D4d6A842d6768E8035728877B9F6",
+      "modelId": "deepseek-v4-flash-0731"
+    },
+    {
+      "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+      "modelId": "deepseek-v4-flash-0731"
+    },
+    {
+      "address": "0xd9966e13a6026Fcca4b13E7ff95c94DE268C471C",
+      "modelId": "deepseek-v4-flash-0731"
+    },
+    {
+      "address": "0xe4d9768112BFe24112e2E0433FE1F4F452fcB6eb",
+      "modelId": "deepseek-v4-flash-0731"
+    },
+    {
+      "address": "0x7DCFe6AEa70350C2090041524c9B4A9262DCe87D",
+      "modelId": "glm-5.2"
+    },
+    {
+      "address": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+      "modelId": "glm-5.2"
+    },
+    {
+      "address": "0x4415ef5CBb415347bb18493af7cE01f225Fc0868",
+      "modelId": "qwen/qwen3-vl-30b-a3b-instruct"
+    },
+    {
+      "address": "0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB",
+      "modelId": "qwen/qwen3-vl-30b-a3b-instruct"
+    },
+    {
+      "address": "0x1B3AAef3ae5050EEE04ea38cD4B087472BD85EB0",
+      "modelId": "qwen3.7-plus"
+    },
+    {
+      "address": "0xF203A388e9E70F09ece38046a6D40a89cf896309",
+      "modelId": "qwen3.7-plus"
+    }
+  ]
+}

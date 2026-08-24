@@ -40,6 +40,7 @@ import { assertSuiteValid, PROBES, SUITE_MEASURED_TOKENS } from '../probes/suite
 import { MODES, ObservatoryReader } from '../chain/registry.js';
 import { CHAIN_ID } from '../config.js';
 import { assertDeploymentChain, deploymentFor, latestSnapshot } from '../paths.js';
+import { applyRosterLock, type RosterLock } from '../probes/roster-lock.js';
 import { EpochDrift, writeEpoch } from '../chain/writer.js';
 import { buildBundle, localDigest, serializeBundle } from '../storage/bundle.js';
 import { fetchBundle, uploadBundle } from '../storage/upload.js';
@@ -85,6 +86,12 @@ const EXCLUDE = opt('--exclude', DEFAULT_EXCLUDE.join(',')).split(',').filter(Bo
  * inheriting it, and the bundle records it per service.
  */
 const REASONING_EFFORT = opt('--reasoning-effort', '') as ReasoningEffort | '';
+/**
+ * Pins the series to one set of services. `--no-lock` measures whatever fits instead, which
+ * is right for exploring and wrong for a series: the noise floor pools across epochs and the
+ * product answers week-over-week questions, and neither survives a roster that moves.
+ */
+const ROSTER_LOCK = opt('--roster-lock', 'data/series-roster.json');
 
 const modeIndex = (name: string) => Math.max(0, MODES.indexOf(name as never));
 
@@ -114,7 +121,17 @@ async function main() {
   // finish does not measure less, it measures crookedly: every service gets probes 1..k, so
   // the late probes are systematically under-sampled and the noise pair — positions 5 and 14
   // — loses its second half. Measured on both live epochs.
-  const roster = has('--no-fit') ? candidates : fitToBudget(candidates, BUDGET_USD);
+  const fitted = has('--no-fit') ? candidates : fitToBudget(candidates, BUDGET_USD);
+
+  // The lock narrows what fitting chose; it can never widen it.
+  let roster = fitted;
+  let lockReport: ReturnType<typeof applyRosterLock<Target>> | null = null;
+  if (!has('--no-lock') && existsSync(ROSTER_LOCK)) {
+    const lock = JSON.parse(readFileSync(ROSTER_LOCK, 'utf8')) as RosterLock;
+    lockReport = applyRosterLock(fitted, lock);
+    roster = lockReport.roster;
+  }
+
   const projected = projectedCostUsd(roster);
   const droppedGroups = [...new Set(candidates.map((t) => t.canonicalId))].filter(
     (id) => !roster.some((t) => t.canonicalId === id),
@@ -132,6 +149,17 @@ async function main() {
       (ts.some((t) => t.mode === 'TeeML') ? 'TeeML' : '—').padEnd(6),
       `$${projectedCostUsd(ts).toFixed(4)}`.padStart(9),
     );
+  }
+  if (lockReport) {
+    console.log(
+      DIM(`\nroster locked to ${ROSTER_LOCK} — the series measures one fixed set of services`),
+    );
+    for (const m of lockReport.missing) {
+      console.log(YEL(`  locked but absent this epoch: ${m.modelId} · ${m.address}`));
+    }
+    for (const e of lockReport.extra) {
+      console.log(DIM(`  affordable but not in the series: ${e.modelId} · ${e.address}`));
+    }
   }
   if (droppedGroups.length > 0) {
     console.log(
