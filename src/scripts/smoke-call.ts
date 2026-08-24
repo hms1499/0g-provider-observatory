@@ -10,6 +10,7 @@
 import { callPinned } from '../probes/router-client.js';
 import { buildPlan, loadSnapshot } from '../probes/plan.js';
 import { PROBES } from '../probes/suite.js';
+import { latestSnapshot } from '../paths.js';
 
 const B = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -21,7 +22,7 @@ async function main() {
     process.exit(1);
   }
 
-  const plan = buildPlan(loadSnapshot('data/snapshot-2026-08-21.json'), {
+  const plan = buildPlan(loadSnapshot(latestSnapshot() ?? ''), {
     priceMultiplier: 3,
     temperature: 0,
     skipUnhealthy: true,

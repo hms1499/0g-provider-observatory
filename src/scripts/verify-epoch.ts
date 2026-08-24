@@ -15,7 +15,8 @@ import { ObservatoryReader } from '../chain/registry.js';
 import { fetchBundle, merkleRootOf } from '../storage/upload.js';
 import { compareToChain, type ProviderLookup } from '../verify/check.js';
 import { recompute, type VerifiableBundle } from '../verify/recompute.js';
-import { RPC_URL, STORAGE_INDEXER } from '../config.js';
+import { CHAIN_ID, RPC_URL, STORAGE_INDEXER } from '../config.js';
+import { deploymentFor } from '../paths.js';
 
 const B = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -40,7 +41,7 @@ async function main() {
     process.exit(1);
   }
 
-  const deployment = JSON.parse(readFileSync(opt('--deployment', 'deployments/galileo-16602.json')!, 'utf8'));
+  const deployment = JSON.parse(readFileSync(opt('--deployment', deploymentFor(CHAIN_ID))!, 'utf8'));
   const prober = opt('--prober', deployment.probers[0])!;
 
   console.log(`\n${B('VERIFY EPOCH')} ${epoch}  ${DIM(deployment.network)}`);

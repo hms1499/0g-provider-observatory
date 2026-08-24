@@ -12,10 +12,11 @@
 import { Contract, JsonRpcProvider, NonceManager, Wallet } from 'ethers';
 import { ObservatoryReader, MODES } from '../chain/registry.js';
 import { buildPlan, loadSnapshot } from '../probes/plan.js';
+import { latestSnapshot } from '../paths.js';
 
 const RPC = process.env.LOCAL_RPC ?? 'http://127.0.0.1:8546';
 const PK = process.env.LOCAL_PK ?? '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-const SNAPSHOT = process.env.SNAPSHOT ?? 'data/snapshot-2026-08-21.json';
+const SNAPSHOT = process.env.SNAPSHOT ?? latestSnapshot() ?? '';
 
 const REG = process.env.PROVIDER_REGISTRY;
 const MR = process.env.MEASUREMENT_REGISTRY;

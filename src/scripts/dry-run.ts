@@ -9,6 +9,7 @@
 import { existsSync } from 'node:fs';
 import { buildPinnedRequest } from '../probes/router-client.js';
 import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
+import { latestSnapshot } from '../paths.js';
 import {
   assertSuiteValid,
   PROBES,
@@ -21,7 +22,7 @@ const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const YEL = (s: string) => `\x1b[33m${s}\x1b[0m`;
 const head = (n: string, t: string) => console.log(`\n${B(n)} ${B(t)}\n${'─'.repeat(78)}`);
 
-const SNAPSHOT = process.argv[2] ?? 'data/snapshot-2026-08-21.json';
+const SNAPSHOT = process.argv[2] ?? latestSnapshot() ?? '';
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 function main() {

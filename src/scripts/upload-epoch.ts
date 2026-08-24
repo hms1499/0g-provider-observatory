@@ -16,7 +16,8 @@ import { buildBundle, localDigest, serializeBundle } from '../storage/bundle.js'
 import { fetchBundle, uploadBundle } from '../storage/upload.js';
 import { buildPlan, loadSnapshot } from '../probes/plan.js';
 import type { CallResult } from '../probes/router-client.js';
-import { RPC_URL, STORAGE_INDEXER } from '../config.js';
+import { CHAIN_ID, RPC_URL, STORAGE_INDEXER } from '../config.js';
+import { deploymentFor, latestSnapshot } from '../paths.js';
 
 const B = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -44,7 +45,7 @@ async function main() {
     .map((l) => JSON.parse(l) as CallResult);
 
   // Rebuild the roster from the plan, keeping only services this transcript actually holds.
-  const plan = buildPlan(loadSnapshot(opt('--snapshot', 'data/snapshot-2026-08-21.json')), {
+  const plan = buildPlan(loadSnapshot(opt('--snapshot', latestSnapshot() ?? '')), {
     priceMultiplier: 3,
     temperature: 0,
     skipUnhealthy: true,
@@ -53,7 +54,7 @@ async function main() {
   const roster = plan.targets.filter((t) => seen.has(`${t.address.toLowerCase()}|${t.modelId}`));
 
   const epochSeconds = JSON.parse(
-    readFileSync(opt('--deployment', 'deployments/galileo-16602.json'), 'utf8'),
+    readFileSync(opt('--deployment', deploymentFor(CHAIN_ID)), 'utf8'),
   ).epochSeconds as number;
   const times = results.map((r) => new Date(r.at).getTime()).sort((a, b) => a - b);
   const epoch = Math.floor(times[0] / 1000 / epochSeconds);

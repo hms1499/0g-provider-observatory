@@ -38,6 +38,8 @@ import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
 import { callPinned, type CallResult, type ReasoningEffort } from '../probes/router-client.js';
 import { assertSuiteValid, PROBES, SUITE_MEASURED_TOKENS } from '../probes/suite.js';
 import { MODES, ObservatoryReader } from '../chain/registry.js';
+import { CHAIN_ID } from '../config.js';
+import { assertDeploymentChain, deploymentFor, latestSnapshot } from '../paths.js';
 import { EpochDrift, writeEpoch } from '../chain/writer.js';
 import { buildBundle, localDigest, serializeBundle } from '../storage/bundle.js';
 import { fetchBundle, uploadBundle } from '../storage/upload.js';
@@ -55,7 +57,7 @@ const argv = process.argv.slice(2);
 const has = (f: string) => argv.includes(f);
 const opt = (f: string, d: string) => argv.find((a) => a.startsWith(`${f}=`))?.slice(f.length + 1) ?? d;
 
-const SNAPSHOT = opt('--snapshot', 'data/snapshot-2026-08-21.json');
+const SNAPSHOT = opt('--snapshot', latestSnapshot() ?? '');
 /**
  * $0.13 rather than $0.12, purely for headroom. The roster is trimmed to this figure before
  * anything is sent, so it is a plan rather than just a ceiling — and the default roster
@@ -67,7 +69,7 @@ const SNAPSHOT = opt('--snapshot', 'data/snapshot-2026-08-21.json');
  * abort mid-suite — the exact failure this fitting exists to prevent.
  */
 const BUDGET_USD = Number(opt('--budget-usd', '0.13'));
-const DEPLOYMENT = opt('--deployment', 'deployments/galileo-16602.json');
+const DEPLOYMENT = opt('--deployment', deploymentFor(CHAIN_ID));
 /**
  * The four most expensive multi-provider groups. All four are peer-to-peer — none holds a
  * TeeML reference — so dropping them removes 80% of the cost without removing a code path
@@ -88,10 +90,18 @@ const modeIndex = (name: string) => Math.max(0, MODES.indexOf(name as never));
 
 async function main() {
   assertSuiteValid();
-  if (!existsSync(SNAPSHOT)) {
-    console.error(`Snapshot not found: ${SNAPSHOT}\nRun \`pnpm snapshot\` first.`);
+  if (!SNAPSHOT || !existsSync(SNAPSHOT)) {
+    console.error(`Snapshot not found: ${SNAPSHOT || '(none on disk)'}\nRun \`pnpm snapshot\` first.`);
     process.exit(1);
   }
+  if (!existsSync(DEPLOYMENT)) {
+    console.error(`Deployment not found: ${DEPLOYMENT}`);
+    process.exit(1);
+  }
+  // Checked before a single call is paid for: the run is worthless if it cannot be written,
+  // and writing it to the wrong ledger is worse than not writing it at all.
+  assertDeploymentChain(JSON.parse(readFileSync(DEPLOYMENT, 'utf8')), CHAIN_ID, DEPLOYMENT);
+  console.log(DIM(`snapshot ${SNAPSHOT} · deployment ${DEPLOYMENT} · chain ${CHAIN_ID}`));
 
   const plan = buildPlan(loadSnapshot(SNAPSHOT), {
     priceMultiplier: 3,
@@ -294,7 +304,15 @@ async function main() {
   }
 
   if (!has('--write-chain')) {
-    console.log(DIM('\nNot written on chain. Add --write-chain to publish this epoch.\n'));
+    // Deliberately loud. The calls are already paid for at this point, and the obvious
+    // reading of "add --write-chain" is to re-run the whole suite — which spends a second
+    // epoch's worth of credit to publish measurements that are already sitting on disk.
+    console.log(YEL('\nNot written on chain. The calls above are already paid for.'));
+    console.log(`Publish THIS run without spending again:\n  ${B(`pnpm upload-epoch ${transcriptPath}`)}`);
+    console.log(
+      DIM('Re-running with --write-chain would measure again and bill again. Only do that if\n') +
+        DIM('you want a fresh measurement — and note the epoch may have moved on by then.\n'),
+    );
     return;
   }
 
