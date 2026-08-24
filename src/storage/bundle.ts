@@ -24,7 +24,7 @@ import {
 import { faultSide } from '../probes/aggregate.js';
 import { ERROR_KINDS } from '../probes/router-client.js';
 import type { Mode, Target } from '../probes/plan.js';
-import type { CallResult } from '../probes/router-client.js';
+import type { CallResult, NegotiatedParams, ReasoningEffort } from '../probes/router-client.js';
 import { PROBES, type Comparator } from '../probes/suite.js';
 
 /**
@@ -32,8 +32,22 @@ import { PROBES, type Comparator } from '../probes/suite.js';
  * it stated minSamples and the percentile formula but not the fault-attribution table, the
  * numeric extraction rule, the refusal regex or the truncation rule — so an error rate or a
  * divergence figure could not be recomputed from it without reading this repository.
+ *
+ * Bumped to /3 when `reasoning_effort` entered the request. /2 recorded only the parameters
+ * a service REFUSED, which was enough while every accepted parameter was the same for
+ * everyone. It is not enough once a parameter changes how much a model thinks: two epochs
+ * measured at different efforts are not comparable, and nothing in /2 would have said so.
  */
-export const BUNDLE_SCHEMA = 'og-observatory-epoch/2';
+export const BUNDLE_SCHEMA = 'og-observatory-epoch/3';
+
+/**
+ * Everything in the negotiated params except the bookkeeping list of what was dropped.
+ * Derived rather than restated, so the bundle cannot claim a parameter the request omitted.
+ */
+function sentParamsOf(params: NegotiatedParams): SentParams {
+  const { dropped: _dropped, ...sent } = params;
+  return sent;
+}
 
 export interface BundleProbe {
   id: string;
@@ -57,6 +71,22 @@ export interface BundleService {
    * would be comparing two different things.
    */
   droppedParams: string[];
+  /**
+   * The generation parameters this service was actually sent.
+   *
+   * `droppedParams` says what was refused; this says what was applied. A verifier needs
+   * both to know the baseline: a service at `reasoning_effort: 'low'` and the same service
+   * at its own default are two different measurements of two different things.
+   */
+  sentParams: SentParams;
+}
+
+/** Applied generation parameters. A key is absent when the parameter was not sent at all. */
+export interface SentParams {
+  temperature?: number;
+  seed?: number;
+  top_p?: number;
+  reasoning_effort?: ReasoningEffort;
 }
 
 export interface EpochBundle {
@@ -116,6 +146,7 @@ export function buildBundle(input: BundleInput): EpochBundle {
       mode: t.mode,
       onchainMode: t.onchainMode,
       droppedParams: t.params.dropped,
+      sentParams: sentParamsOf(t.params),
     })),
     rules: {
       minSamples: 5,

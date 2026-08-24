@@ -8,8 +8,10 @@ import {
   callCostUsd,
   pinHeld,
   projectedCostUsd,
+  reservationUsd,
   selectRoster,
 } from '../epoch-run.js';
+import { PROBES, SUITE_MAX_OUTPUT_TOKENS, SUITE_MEASURED_TOKENS } from '../suite.js';
 
 const ADDR_A = '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB';
 const ADDR_B = '0xF203A388e9E70F09ece38046a6D40a89cf896309';
@@ -84,9 +86,20 @@ describe('selectRoster', () => {
 
 describe('projectedCostUsd', () => {
   it('prices the measured token profile, not the max_tokens ceiling', () => {
-    // 1753 input x 1e-8 + 1740 output x 2e-8 = 0.00001753 + 0.0000348
     const t = target(ADDR_A, 'glm-5.2');
-    assert.equal(projectedCostUsd([t]).toFixed(8), '0.00005233');
+    assert.equal(
+      projectedCostUsd([t]),
+      1e-8 * SUITE_MEASURED_TOKENS.input + 2e-8 * SUITE_MEASURED_TOKENS.output,
+    );
+  });
+
+  it('projects above the declared ceiling, because thinking is billed past max_tokens', () => {
+    // Measured across epochs 496514/496516: 45 of 176 billed calls exceeded the ceiling
+    // they were sent. An estimate capped at SUITE_MAX_OUTPUT_TOKENS cannot be honest.
+    assert.ok(
+      SUITE_MEASURED_TOKENS.output > SUITE_MAX_OUTPUT_TOKENS,
+      `profile ${SUITE_MEASURED_TOKENS.output} should exceed ceiling ${SUITE_MAX_OUTPUT_TOKENS}`,
+    );
   });
 });
 
@@ -103,24 +116,34 @@ describe('callCostUsd', () => {
 });
 
 describe('Budget', () => {
+  /** Reserve and settle in one step, the way a completed call moves through the cap. */
+  const spend = (b: Budget, usd: number) => {
+    const held = b.reserve(usd);
+    assert.ok(held, `expected $${usd} to fit`);
+    held.settle(usd);
+  };
+
   it('refuses a call that would carry spending past the cap', () => {
     const b = new Budget(0.001);
-    b.record(0.0009);
-    assert.equal(b.canAfford(0.0002), false);
-    assert.equal(b.canAfford(0.00005), true);
+    spend(b, 0.0009);
+    assert.equal(b.reserve(0.0002), null);
+    assert.ok(b.reserve(0.00005));
   });
 
   it('accumulates what was actually spent', () => {
     const b = new Budget(1);
-    b.record(0.25);
-    b.record(0.5);
+    spend(b, 0.25);
+    spend(b, 0.5);
     assert.equal(b.spentUsd, 0.75);
     assert.equal(b.remainingUsd, 0.25);
   });
 
   it('throws when spending passes the cap, so a run cannot quietly overshoot', () => {
     const b = new Budget(0.001);
-    assert.throws(() => b.record(0.002), BudgetExceeded);
+    // The estimate fitted; what the provider actually billed did not.
+    const held = b.reserve(0.0005);
+    assert.ok(held);
+    assert.throws(() => held.settle(0.002), BudgetExceeded);
   });
 });
 
@@ -135,5 +158,111 @@ describe('pinHeld', () => {
 
   it('rejects a response with no x-provider header, since the pin is unproven', () => {
     assert.equal(pinHeld(result({ servedBy: null }), ADDR_A), false);
+  });
+});
+
+describe('reservationUsd', () => {
+  const probeById = (id: string) => {
+    const p = PROBES.find((x) => x.id === id);
+    assert.ok(p, `no probe ${id}`);
+    return p;
+  };
+
+  it('prices each probe at its own measured profile, not at a suite average', () => {
+    const t = target(ADDR_A, 'glm-5');
+    const oneWord = reservationUsd(t, probeById('word-count-7'));
+    const reasoning = reservationUsd(t, probeById('arith-mod'));
+    assert.ok(
+      reasoning > oneWord * 10,
+      `a reasoning probe must reserve far more than a one-word one, got ${reasoning} vs ${oneWord}`,
+    );
+  });
+
+  it('reserves above what the probe declared as max_tokens', () => {
+    // Measured on epochs 496514/496516: arith-mod declares a 512-token ceiling and was
+    // billed up to 5223. A reservation pinned to the ceiling would under-reserve 10x.
+    const t = target(ADDR_A, 'glm-5');
+    const probe = probeById('arith-mod');
+    const atCeiling = t.usdPerCompletionToken * probe.maxTokens;
+    assert.ok(reservationUsd(t, probe) > atCeiling);
+  });
+
+  it('covers every probe in the suite, so none is estimated at zero', () => {
+    const t = target(ADDR_A, 'glm-5');
+    for (const probe of PROBES) {
+      assert.ok(reservationUsd(t, probe) > 0, `probe ${probe.id} has no token profile`);
+    }
+  });
+});
+
+describe('Budget reservations', () => {
+  it('holds a reservation against the cap so a concurrent call cannot slip past it', () => {
+    const b = new Budget(0.001);
+    // Two workers, each about to send a call estimated at $0.0006. Only one fits.
+    const first = b.reserve(0.0006);
+    const second = b.reserve(0.0006);
+    assert.ok(first, 'the first call fits and must be admitted');
+    assert.equal(second, null, 'the second must be refused while the first is still in flight');
+  });
+
+  it('frees the unspent remainder when a call settles for less than it reserved', () => {
+    const b = new Budget(0.001);
+    const held = b.reserve(0.0006);
+    assert.ok(held);
+    held.settle(0.0001);
+    assert.equal(b.spentUsd, 0.0001);
+    // $0.0009 of the cap is free again, so a second call of this size now fits.
+    assert.ok(b.reserve(0.0006), 'the remainder must return to the cap on settle');
+  });
+
+  it('returns the whole hold when a call fails without spending', () => {
+    const b = new Budget(0.001);
+    const held = b.reserve(0.0006);
+    assert.ok(held);
+    held.release();
+    assert.equal(b.spentUsd, 0);
+    assert.equal(b.remainingUsd, 0.001);
+  });
+
+  it('counts outstanding reservations as committed, not as spent', () => {
+    const b = new Budget(0.001);
+    assert.ok(b.reserve(0.0006));
+    assert.equal(b.spentUsd, 0, 'nothing has been billed yet');
+    assert.equal(b.committedUsd, 0.0006, 'but the cap is already committed');
+  });
+
+  it('records the real cost when a call settles for more than it reserved', () => {
+    const b = new Budget(1);
+    const held = b.reserve(0.1);
+    assert.ok(held);
+    // A reasoning model bills past the max_tokens we asked for.
+    held.settle(0.3);
+    assert.equal(b.spentUsd, 0.3);
+    assert.equal(b.committedUsd, 0.3, 'the hold must not linger once it is settled');
+  });
+
+  it('refuses a reservation once settled spend has reached the cap', () => {
+    const b = new Budget(0.001);
+    const held = b.reserve(0.0005);
+    assert.ok(held);
+    held.settle(0.001);
+    assert.equal(b.reserve(0.000001), null);
+  });
+
+  it('still books an overspend before reporting it, so the ledger stays consistent', () => {
+    const b = new Budget(0.001);
+    const held = b.reserve(0.0005);
+    assert.ok(held);
+    assert.throws(() => held.settle(0.002), BudgetExceeded);
+    assert.equal(b.spentUsd, 0.002, 'what was billed is spent, whether or not it fit');
+    assert.equal(b.committedUsd, 0.002, 'and the hold is released even on the throwing path');
+  });
+
+  it('rejects settling the same reservation twice', () => {
+    const b = new Budget(1);
+    const held = b.reserve(0.1);
+    assert.ok(held);
+    held.settle(0.05);
+    assert.throws(() => held.settle(0.05));
   });
 });

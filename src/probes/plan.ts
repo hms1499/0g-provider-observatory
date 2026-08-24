@@ -5,7 +5,7 @@
  * produces the plan, and the dry run only prints it instead of sending it.
  */
 import { readFileSync } from 'node:fs';
-import type { NegotiatedParams } from './router-client.js';
+import type { NegotiatedParams, ReasoningEffort } from './router-client.js';
 import { PROBES, SUITE_EST_INPUT_TOKENS, SUITE_MAX_OUTPUT_TOKENS } from './suite.js';
 
 export type Mode = 'TeeML' | 'TeeTLS' | 'standard';
@@ -81,6 +81,13 @@ export interface PlanOptions {
   priceMultiplier?: number;
   temperature?: number;
   seed?: number;
+  /**
+   * Cap on reasoning spend, sent to every service that declares `reasoning_effort`.
+   *
+   * Opt-in rather than defaulted: it changes the baseline a measurement was taken at, so a
+   * run must state it deliberately and the bundle must record it.
+   */
+  reasoningEffort?: ReasoningEffort;
   /** Skip services the Router currently reports as unhealthy. */
   skipUnhealthy?: boolean;
 }
@@ -109,6 +116,11 @@ export function negotiateParams(
   if (opts.seed !== undefined) {
     if (supported.has('seed')) p.seed = opts.seed;
     else dropped.push('seed');
+  }
+
+  if (opts.reasoningEffort !== undefined) {
+    if (supported.has('reasoning_effort')) p.reasoning_effort = opts.reasoningEffort;
+    else dropped.push('reasoning_effort');
   }
   return p;
 }

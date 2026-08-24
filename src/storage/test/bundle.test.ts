@@ -83,6 +83,22 @@ describe('buildBundle', () => {
     assert.deepEqual(b.roster[0].droppedParams, ['temperature']);
   });
 
+  it('records the generation parameters a service was actually sent', () => {
+    const b = buildBundle({
+      ...input,
+      roster: [target({ params: { temperature: 0, reasoning_effort: 'low', dropped: [] } })],
+    });
+    assert.deepEqual(b.roster[0].sentParams, { temperature: 0, reasoning_effort: 'low' });
+  });
+
+  it('omits a parameter that was never sent rather than inventing a default', () => {
+    const b = buildBundle({
+      ...input,
+      roster: [target({ params: { dropped: ['temperature'] } })],
+    });
+    assert.deepEqual(b.roster[0].sentParams, {});
+  });
+
   it('states the aggregation rules the numbers were derived under', () => {
     const b = buildBundle(input);
     assert.equal(b.rules.minSamples, 5);

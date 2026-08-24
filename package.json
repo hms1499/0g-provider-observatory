@@ -16,6 +16,7 @@
     "test": "node --import tsx --test \"src/**/test/*.test.ts\" \"dashboard/test/*.test.ts\"",
     "dry-run": "tsx src/scripts/dry-run.ts",
     "epoch": "tsx src/scripts/run-epoch.ts",
+    "token-profile": "tsx src/scripts/token-profile.ts",
     "upload-epoch": "tsx src/scripts/upload-epoch.ts",
     "verify": "tsx src/scripts/verify-epoch.ts",
     "dashboard:dev": "vite",

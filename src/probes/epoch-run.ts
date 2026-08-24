@@ -7,7 +7,8 @@
  */
 import type { CallResult } from './router-client.js';
 import type { Target } from './plan.js';
-import { SUITE_MEASURED_TOKENS } from './suite.js';
+import { PROBE_TOKEN_PROFILE, SUITE_MEASURED_TOKENS } from './suite.js';
+import type { Probe } from './suite.js';
 
 export interface RosterOptions {
   /**
@@ -48,6 +49,27 @@ export function projectedCostUsd(targets: readonly Target[]): number {
   );
 }
 
+/**
+ * What to hold against the cap before sending one probe to one service.
+ *
+ * Priced from the probe's own measured profile rather than from a suite average: the
+ * probes differ by two orders of magnitude in output, so an average over-reserves the
+ * cheap ones and under-reserves exactly the reasoning-heavy ones that overspend.
+ *
+ * A probe with no profile entry falls back to its declared ceiling, which is a floor on
+ * the truth rather than zero — an unpriced call must never look free.
+ */
+export function reservationUsd(
+  t: Pick<Target, 'usdPerPromptToken' | 'usdPerCompletionToken'>,
+  probe: Probe,
+): number {
+  const profile = PROBE_TOKEN_PROFILE[probe.id] ?? {
+    input: Math.ceil(probe.prompt.length / 4) + 8,
+    output: probe.maxTokens,
+  };
+  return t.usdPerPromptToken * profile.input + t.usdPerCompletionToken * profile.output;
+}
+
 /** What one completed call actually cost, from the usage the Router reported. */
 export function callCostUsd(
   r: CallResult,
@@ -63,38 +85,82 @@ export function callCostUsd(
 export class BudgetExceeded extends Error {}
 
 /**
- * A running total with a hard ceiling.
+ * A hold placed on the cap before a call goes out, settled against what it really cost.
  *
- * The credit behind the key is worth a fraction of a full epoch, so the run has to
- * stop on measured spend rather than on an estimate made before it started. Passing
- * the cap throws instead of warning — a run that quietly overshoots leaves nothing to
- * retry with.
+ * The hold is the whole point. Testing an estimate and then spending is not a cap: under
+ * concurrency every worker passes the same test before any of them has recorded anything,
+ * so N workers can each be admitted against the same remaining dollar.
+ */
+export interface Reservation {
+  /** What this hold took out of the cap while the call was in flight. */
+  readonly heldUsd: number;
+  /** Release the hold and book what the Router actually billed. */
+  settle(actualUsd: number): void;
+  /** Release the hold having spent nothing — a call that never billed. */
+  release(): void;
+}
+
+/**
+ * A running total with a hard ceiling, reserved before spending.
+ *
+ * The credit behind the key is worth a fraction of a full epoch, so the run has to stop on
+ * measured spend rather than on an estimate made before it started. `reserve()` refuses
+ * rather than throwing, because a refused call is a normal end to a run; `settle()` throws
+ * only when what was actually billed lands past the cap, which no estimate could have
+ * prevented.
  */
 export class Budget {
-  #spent = 0;
+  #settled = 0;
+  #reserved = 0;
 
   constructor(readonly capUsd: number) {}
 
+  /** What has actually been billed. Outstanding holds are not spend. */
   get spentUsd(): number {
-    return this.#spent;
+    return this.#settled;
+  }
+
+  /** Spend plus every hold still in flight — what the cap is measured against. */
+  get committedUsd(): number {
+    return this.#settled + this.#reserved;
   }
 
   get remainingUsd(): number {
-    return this.capUsd - this.#spent;
+    return this.capUsd - this.committedUsd;
   }
 
-  /** Whether one more call of roughly this size still fits. */
-  canAfford(estUsd: number): boolean {
-    return this.#spent + estUsd <= this.capUsd;
-  }
+  /**
+   * Hold `estUsd` against the cap, or refuse when it no longer fits.
+   *
+   * Refusing returns null instead of throwing: reaching the cap is the expected way a
+   * constrained run ends, and the caller stops the roster rather than handling an error.
+   */
+  reserve(estUsd: number): Reservation | null {
+    const held = Math.max(0, estUsd);
+    if (this.committedUsd + held > this.capUsd) return null;
+    this.#reserved += held;
 
-  record(usd: number): void {
-    this.#spent += usd;
-    if (this.#spent > this.capUsd) {
-      throw new BudgetExceeded(
-        `spent $${this.#spent.toFixed(6)} against a cap of $${this.capUsd.toFixed(6)}`,
-      );
-    }
+    let open = true;
+    const close = () => {
+      if (!open) throw new Error('this reservation has already been settled or released');
+      open = false;
+      this.#reserved -= held;
+    };
+
+    return {
+      heldUsd: held,
+      release: close,
+      settle: (actualUsd: number) => {
+        close();
+        // Booked before the check, so a run that overshoots still reports what it spent.
+        this.#settled += Math.max(0, actualUsd);
+        if (this.#settled > this.capUsd) {
+          throw new BudgetExceeded(
+            `spent $${this.#settled.toFixed(6)} against a cap of $${this.capUsd.toFixed(6)}`,
+          );
+        }
+      },
+    };
   }
 }
 

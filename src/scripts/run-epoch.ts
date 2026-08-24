@@ -30,10 +30,11 @@ import {
   callCostUsd,
   pinHeld,
   projectedCostUsd,
+  reservationUsd,
   selectRoster,
 } from '../probes/epoch-run.js';
 import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
-import { callPinned, type CallResult } from '../probes/router-client.js';
+import { callPinned, type CallResult, type ReasoningEffort } from '../probes/router-client.js';
 import { assertSuiteValid, PROBES, SUITE_MEASURED_TOKENS } from '../probes/suite.js';
 import { MODES, ObservatoryReader } from '../chain/registry.js';
 import { EpochDrift, writeEpoch } from '../chain/writer.js';
@@ -63,6 +64,14 @@ const DEPLOYMENT = opt('--deployment', 'deployments/galileo-16602.json');
  */
 const DEFAULT_EXCLUDE = ['claude-opus-4-8', 'claude-opus-5', 'claude-sonnet-5', 'kimi-k3'];
 const EXCLUDE = opt('--exclude', DEFAULT_EXCLUDE.join(',')).split(',').filter(Boolean);
+/**
+ * Sent to every service that declares `reasoning_effort`. Empty means send nothing and let
+ * each model run at its own default — the baseline epochs 496514/496516 were measured at.
+ *
+ * Opt-in on purpose: this changes what is being measured, so a run states it rather than
+ * inheriting it, and the bundle records it per service.
+ */
+const REASONING_EFFORT = opt('--reasoning-effort', '') as ReasoningEffort | '';
 
 const modeIndex = (name: string) => Math.max(0, MODES.indexOf(name as never));
 
@@ -77,6 +86,7 @@ async function main() {
     priceMultiplier: 3,
     temperature: 0,
     skipUnhealthy: true,
+    ...(REASONING_EFFORT ? { reasoningEffort: REASONING_EFFORT } : {}),
   });
   const roster = selectRoster(plan.targets, { groupsOnly: !has('--all'), exclude: EXCLUDE });
   const projected = projectedCostUsd(roster);
@@ -135,7 +145,6 @@ async function main() {
   console.log(DIM('provider would measure our own queueing as their latency.\n'));
 
   const budget = new Budget(BUDGET_USD);
-  const perCall = (t: Target) => projectedCostUsd([t]) / PROBES.length;
   const results: CallResult[] = [];
   /** First reason the run stopped. An array so the value survives TypeScript's narrowing
    * across the worker closures, and so the winner is unambiguously the first one recorded. */
@@ -146,28 +155,38 @@ async function main() {
     roster.map(async (t) => {
       for (const probe of PROBES) {
         if (aborts.length) return;
-        if (!budget.canAfford(perCall(t))) {
+        // Held before the call, not merely tested: 15 workers all pass the same test
+        // against the same remaining dollar, and only a hold stops them spending it twice.
+        const held = budget.reserve(reservationUsd(t, probe));
+        if (!held) {
           aborts.push(`budget cap reached at $${budget.spentUsd.toFixed(6)}`);
           return;
         }
 
-        const r = await callPinned({
-          apiKey,
-          providerAddress: t.address,
-          model: t.modelId,
-          probe,
-          params: t.params,
-          maxPriceUsdPrompt: t.maxPriceUsdPrompt,
-          maxPriceUsdCompletion: t.maxPriceUsdCompletion,
-          timeoutMs: 60_000,
-        });
+        let r: CallResult;
+        try {
+          r = await callPinned({
+            apiKey,
+            providerAddress: t.address,
+            model: t.modelId,
+            probe,
+            params: t.params,
+            maxPriceUsdPrompt: t.maxPriceUsdPrompt,
+            maxPriceUsdCompletion: t.maxPriceUsdCompletion,
+            timeoutMs: 60_000,
+          });
+        } catch (e) {
+          // Nothing was billed, so the hold must go back rather than starve the roster.
+          held.release();
+          throw e;
+        }
 
         // Evidence first: written before anything can throw on it.
         appendFileSync(transcriptPath, `${JSON.stringify(r)}\n`);
         results.push(r);
 
         try {
-          budget.record(callCostUsd(r, t));
+          held.settle(callCostUsd(r, t));
         } catch (e) {
           if (e instanceof BudgetExceeded) aborts.push(e.message);
           else throw e;

@@ -119,7 +119,7 @@ function main() {
   }
 
   // ── 05 cost ───────────────────────────────────────────────────────────────
-  head('05', 'COST UPPER BOUND');
+  head('05', 'COST');
   const top = [...plan.targets].sort((a, b) => b.estCostUsd - a.estCostUsd).slice(0, 5);
   console.log('model'.padEnd(24), 'mode'.padEnd(10), 'USD/epoch'.padStart(12));
   for (const t of top) {
@@ -137,11 +137,34 @@ function main() {
   );
 
   console.log('─'.repeat(78));
-  console.log(`ceiling  ${'$' + plan.estCostUsd.toFixed(4)}   ${DIM('if every probe used its whole max_tokens')}`);
+  console.log(
+    `declared ${'$' + plan.estCostUsd.toFixed(4)}   ` +
+      DIM('if every probe were billed exactly its max_tokens'),
+  );
   console.log(`measured ${B('$' + measured.toFixed(4))}   ${DIM(`(top 5 services account for ${(share * 100).toFixed(0)}%)`)}`);
   console.log(
-    DIM(`  token profile from a live run: ${SUITE_MEASURED_TOKENS.input} in / ${SUITE_MEASURED_TOKENS.output} out per service`),
+    DIM(`  token profile from live runs: ${SUITE_MEASURED_TOKENS.input} in / ${SUITE_MEASURED_TOKENS.output} out per service`),
   );
+  if (measured > plan.estCostUsd) {
+    console.log(
+      YEL(
+        `  The measured figure is ${(measured / plan.estCostUsd).toFixed(1)}x the declared one. ` +
+          'max_tokens is not a ceiling on',
+      ),
+    );
+    console.log(
+      YEL('  what is billed: reasoning models bill their thinking as completion tokens, and'),
+    );
+    console.log(
+      YEL('  45 of 176 billed calls in epochs 496514/496516 exceeded the limit they were sent.'),
+    );
+    console.log(
+      YEL('  --reasoning-effort exists but is off by default: measured live, `minimal` made'),
+    );
+    console.log(
+      YEL('  glm-5 answer arith-mod wrong. See ReasoningEffort in router-client.ts.'),
+    );
+  }
   console.log(`\n1 epoch/day for 8 days:  $${(measured * 8).toFixed(2)}`);
   console.log(`2 epochs/day for 8 days: $${(measured * 16).toFixed(2)}`);
   console.log(

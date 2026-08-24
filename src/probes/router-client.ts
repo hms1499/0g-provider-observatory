@@ -20,12 +20,47 @@ const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 /** Prices must be plain decimals. Exponent form ("4.14e-7") makes the Router return 400. */
 const PRICE_RE = /^\d+(\.\d+)?$/;
 
+/**
+ * How much of the output budget a reasoning model may spend thinking.
+ *
+ * `max_tokens` does not bound this. Measured across epochs 496514/496516: 45 of 176 billed
+ * calls were charged more completion tokens than the request asked for, and that overage was
+ * 51% of the epoch. The thinking is billed as completion whether or not an answer arrives.
+ *
+ * DEFAULT OFF, and it must stay that way until someone measures otherwise. Tried live
+ * against glm-5 on the `arith-mod` probe (expected answer 407, max_tokens 512):
+ *
+ *     none      200 ok  3263 completion tokens  answered 407
+ *     low       200 ok  7724 completion tokens  answered 407
+ *     minimal   200 ok     2 completion tokens  answered 243  <- WRONG
+ *
+ * Both values are accepted, so this is not an API-compatibility problem. `minimal` disables
+ * thinking and the model then gets the arithmetic wrong, which is the one outcome the
+ * project cannot tolerate: a starved model's wrong answer is indistinguishable from genuine
+ * provider divergence, so the instrument would be measuring our own parameter choice.
+ *
+ * `low` did not reduce anything in that sample — but n=1 against a probe whose output ranges
+ * 512..5223 tokens proves nothing either way, and it is not worth the credit to find out.
+ *
+ * The type and the negotiation stay because the parameter must be recorded in the bundle if
+ * it is ever sent. Sending it silently would make two epochs incomparable with nothing in
+ * the evidence to say so.
+ */
+export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
+
 /** Generation parameters negotiated against what each service declares it supports. */
 export interface NegotiatedParams {
   /** Sent only when the service declares support. 9/38 chatbot services do NOT take temperature. */
   temperature?: number;
   seed?: number;
   top_p?: number;
+  /**
+   * Sent only when the service declares support AND an effort was configured. Holding a
+   * whole group to the same effort is what makes the group comparable: at each model's own
+   * default, output variance is dominated by sampling inside the thinking trace rather than
+   * by the model.
+   */
+  reasoning_effort?: ReasoningEffort;
   /** Parameters dropped because the service does not declare support. Must be recorded. */
   dropped: string[];
 }
@@ -87,6 +122,7 @@ export function buildPinnedRequest(input: PinnedRequestInput): PinnedRequest {
   if (params.temperature !== undefined) body.temperature = params.temperature;
   if (params.seed !== undefined) body.seed = params.seed;
   if (params.top_p !== undefined) body.top_p = params.top_p;
+  if (params.reasoning_effort !== undefined) body.reasoning_effort = params.reasoning_effort;
 
   return { url: `${ROUTER_API}/chat/completions`, method: 'POST', headers, body };
 }

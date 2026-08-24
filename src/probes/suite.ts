@@ -234,7 +234,14 @@ export function assertSuiteValid(): void {
   if (a.comparator !== b.comparator) throw new Error('Noise-floor probes must share a comparator');
 }
 
-/** Total output token ceiling for the suite — the upper bound on cost. */
+/**
+ * Sum of the declared `max_tokens` across the suite.
+ *
+ * NOT an upper bound on cost, despite how it reads. Reasoning models bill their thinking as
+ * completion tokens and `max_tokens` does not cap it: across epochs 496514/496516, 45 of
+ * 176 billed calls exceeded the ceiling they were sent, `arith-mod` by 10x. Use
+ * PROBE_TOKEN_PROFILE for anything that touches money.
+ */
 export const SUITE_MAX_OUTPUT_TOKENS = PROBES.reduce((n, p) => n + p.maxTokens, 0);
 
 /**
@@ -250,15 +257,48 @@ export const SUITE_EST_INPUT_TOKENS = PROBES.reduce(
 );
 
 /**
- * What the suite actually consumed, measured 2026-08-22 against qwen3-vl-30b-a3b-instruct.
+ * What each probe actually consumed, measured over 353 calls across epochs 496514 and
+ * 496516 (2026-08-23), 15 services and 7 model families.
  *
- * The ceiling (SUITE_MAX_OUTPUT_TOKENS) is what a request is *allowed* to use; this is what
- * one real run *did* use, and it is the honest basis for a budget. A reasoning-heavy model
- * sits at the high end — it works arithmetic out longhand — so treat this as a pessimistic
- * profile rather than an average.
+ * Per-probe rather than one suite-wide figure, because a single number cannot describe
+ * both `word-count-7` (33 output tokens) and `arith-mod` (2726). The previous constant was
+ * measured against one provider and undershot the real roster by 2.15x and 1.83x on the two
+ * live runs.
  *
- * Only three probes still hit the ceiling, and none of them feed divergence: the two
- * freeform probes are never compared, and the policy probe only needs its opening words to
- * classify a refusal.
+ * `input` is the maximum observed — prompts are fixed, so the spread is only the chat
+ * template and tokenizer, and the worst case is cheap to carry.
+ *
+ * `output` is the 90th percentile, deliberately NOT the maximum. `arith-mod` was once
+ * billed 5223 tokens; reserving that for every call would stop a run long before it spent
+ * its budget. Reserve-then-settle makes a mild under-reservation safe — what is actually
+ * billed still binds the cap — while a wild over-reservation is not recoverable.
+ *
+ * Regenerate with `pnpm token-profile` after any run that changes the roster or the
+ * `reasoning_effort` setting.
  */
-export const SUITE_MEASURED_TOKENS = { input: 1753, output: 1740 } as const;
+export const PROBE_TOKEN_PROFILE: Record<string, { input: number; output: number }> = {
+  'echo-exact': { input: 104, output: 197 },
+  'json-strict': { input: 111, output: 397 },
+  'one-word': { input: 99, output: 118 },
+  'primes-list': { input: 101, output: 464 },
+  'arith-mult': { input: 101, output: 1836 },
+  'arith-mod': { input: 99, output: 2726 },
+  'count-chars': { input: 105, output: 489 },
+  'reverse-token': { input: 100, output: 703 },
+  'diacritics-echo': { input: 112, output: 424 },
+  'fact-anchor': { input: 102, output: 65 },
+  'word-count-7': { input: 100, output: 33 },
+  'no-letter-e': { input: 101, output: 41 },
+  'needle': { input: 317, output: 65 },
+  'arith-mult-repeat': { input: 101, output: 513 },
+  'policy-boundary': { input: 100, output: 120 },
+};
+
+/**
+ * The suite total, summed from the per-probe profile rather than stated separately so the
+ * two can never drift apart.
+ */
+export const SUITE_MEASURED_TOKENS = {
+  input: PROBES.reduce((n, p) => n + (PROBE_TOKEN_PROFILE[p.id]?.input ?? 0), 0),
+  output: PROBES.reduce((n, p) => n + (PROBE_TOKEN_PROFILE[p.id]?.output ?? 0), 0),
+} as const;

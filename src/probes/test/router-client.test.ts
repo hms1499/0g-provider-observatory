@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { readChoice } from '../router-client.js';
+import { buildPinnedRequest, readChoice } from '../router-client.js';
+import { PROBES } from '../suite.js';
 
 /**
  * The shape a reasoning model returns when it spends its whole output budget thinking:
@@ -45,5 +46,26 @@ describe('readChoice', () => {
 
   it('calls a body with no choices malformed', () => {
     assert.equal(readChoice({}).errorKind, 'malformed');
+  });
+});
+
+describe('buildPinnedRequest reasoning_effort', () => {
+  const base = {
+    providerAddress: '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB',
+    model: 'glm-5',
+    probe: PROBES[0],
+  };
+
+  it('carries the negotiated effort into the request body', () => {
+    const req = buildPinnedRequest({
+      ...base,
+      params: { temperature: 0, reasoning_effort: 'low', dropped: [] },
+    });
+    assert.equal(req.body.reasoning_effort, 'low');
+  });
+
+  it('omits the field entirely when no effort was negotiated', () => {
+    const req = buildPinnedRequest({ ...base, params: { temperature: 0, dropped: [] } });
+    assert.equal('reasoning_effort' in req.body, false);
   });
 });
