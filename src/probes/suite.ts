@@ -91,7 +91,13 @@ export const PROBES: Probe[] = [
     category: 'arithmetic',
     prompt: 'Compute 4831 * 2764. Return only the number, with no explanation.',
     // Must stay identical to arith-mult-repeat, maxTokens included — see assertSuiteValid.
-    maxTokens: 512,
+    //
+    // 4096 rather than 512 because a reasoning model works this out longhand before
+    // answering. At 512, glm-5.2 was truncated on 8 of 8 noise-pair calls while glm-5 ran
+    // to 3213 tokens unchecked — so the provider that HONOURED max_tokens was the one
+    // dropped from the measurement for honouring it, and it happens to be the only TeeML
+    // reference in the roster. The ceiling only costs money where it is actually reached.
+    maxTokens: 4096,
     comparator: 'numeric',
     expect: '13352884',
     why: 'Multi-digit multiplication separates a large model from a small one wearing its label.',
@@ -188,7 +194,8 @@ export const PROBES: Probe[] = [
     id: 'arith-mult-repeat',
     category: 'arithmetic',
     prompt: 'Compute 4831 * 2764. Return only the number, with no explanation.',
-    maxTokens: 512,
+    // Must stay identical to arith-mult — see assertSuiteValid.
+    maxTokens: 4096,
     comparator: 'numeric',
     expect: '13352884',
     why:
@@ -273,15 +280,26 @@ export const SUITE_EST_INPUT_TOKENS = PROBES.reduce(
  * its budget. Reserve-then-settle makes a mild under-reservation safe — what is actually
  * billed still binds the cap — while a wild over-reservation is not recoverable.
  *
- * Regenerate with `pnpm token-profile` after any run that changes the roster or the
- * `reasoning_effort` setting.
+ * The noise pair carries ONE shared figure. The two requests are byte-identical on the wire,
+ * so their costs cannot legitimately differ; measured separately they came out 1836 against
+ * 513, and that gap was not the probes but the suite being cut off before the second one was
+ * sent. `pnpm token-profile` pools their samples so they can never drift apart again.
+ *
+ * KNOWN LOWER BOUND for the noise pair: these samples were taken at the old 512 ceiling, so
+ * every glm-5.2 call in them is a truncated 512. With the ceiling now at 4096 the real figure
+ * is higher, and it cannot be known until a run happens under the new ceiling. An estimate
+ * that is too low is the safe direction here — reserve/settle bounds the spend on what is
+ * actually billed — but re-measure after the first mainnet epoch.
+ *
+ * Regenerate with `pnpm token-profile` after any run that changes the roster, the ceilings,
+ * or the `reasoning_effort` setting.
  */
 export const PROBE_TOKEN_PROFILE: Record<string, { input: number; output: number }> = {
   'echo-exact': { input: 104, output: 197 },
   'json-strict': { input: 111, output: 397 },
   'one-word': { input: 99, output: 118 },
   'primes-list': { input: 101, output: 464 },
-  'arith-mult': { input: 101, output: 1836 },
+  'arith-mult': { input: 101, output: 1624 },
   'arith-mod': { input: 99, output: 2726 },
   'count-chars': { input: 105, output: 489 },
   'reverse-token': { input: 100, output: 703 },
@@ -290,7 +308,7 @@ export const PROBE_TOKEN_PROFILE: Record<string, { input: number; output: number
   'word-count-7': { input: 100, output: 33 },
   'no-letter-e': { input: 101, output: 41 },
   'needle': { input: 317, output: 65 },
-  'arith-mult-repeat': { input: 101, output: 513 },
+  'arith-mult-repeat': { input: 101, output: 1624 },
   'policy-boundary': { input: 100, output: 120 },
 };
 

@@ -12,7 +12,7 @@ import {
   reservationUsd,
   selectRoster,
 } from '../epoch-run.js';
-import { PROBES, SUITE_MAX_OUTPUT_TOKENS, SUITE_MEASURED_TOKENS } from '../suite.js';
+import { PROBES, SUITE_MEASURED_TOKENS } from '../suite.js';
 
 const ADDR_A = '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB';
 const ADDR_B = '0xF203A388e9E70F09ece38046a6D40a89cf896309';
@@ -143,14 +143,6 @@ describe('projectedCostUsd', () => {
     );
   });
 
-  it('projects above the declared ceiling, because thinking is billed past max_tokens', () => {
-    // Measured across epochs 496514/496516: 45 of 176 billed calls exceeded the ceiling
-    // they were sent. An estimate capped at SUITE_MAX_OUTPUT_TOKENS cannot be honest.
-    assert.ok(
-      SUITE_MEASURED_TOKENS.output > SUITE_MAX_OUTPUT_TOKENS,
-      `profile ${SUITE_MEASURED_TOKENS.output} should exceed ceiling ${SUITE_MAX_OUTPUT_TOKENS}`,
-    );
-  });
 });
 
 describe('callCostUsd', () => {

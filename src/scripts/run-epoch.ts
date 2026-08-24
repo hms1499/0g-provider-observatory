@@ -56,7 +56,17 @@ const has = (f: string) => argv.includes(f);
 const opt = (f: string, d: string) => argv.find((a) => a.startsWith(`${f}=`))?.slice(f.length + 1) ?? d;
 
 const SNAPSHOT = opt('--snapshot', 'data/snapshot-2026-08-21.json');
-const BUDGET_USD = Number(opt('--budget-usd', '0.12'));
+/**
+ * $0.13 rather than $0.12, purely for headroom. The roster is trimmed to this figure before
+ * anything is sent, so it is a plan rather than just a ceiling — and the default roster
+ * projects $0.1199, which leaves $0.0001 of slack against $0.12.
+ *
+ * Slack matters here because the noise pair's profile is a known LOWER bound: it was
+ * measured at the old 512 ceiling, where every glm-5.2 call was a truncated 512. Under the
+ * new 4096 ceiling those calls will cost more, and the first run under it would otherwise
+ * abort mid-suite — the exact failure this fitting exists to prevent.
+ */
+const BUDGET_USD = Number(opt('--budget-usd', '0.13'));
 const DEPLOYMENT = opt('--deployment', 'deployments/galileo-16602.json');
 /**
  * The four most expensive multi-provider groups. All four are peer-to-peer — none holds a

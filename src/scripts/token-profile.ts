@@ -9,6 +9,7 @@
  *   pnpm token-profile data/epochs/*.jsonl
  */
 import { readFileSync } from 'node:fs';
+import { NOISE_PROBE_PAIR } from '../probes/divergence.js';
 import { PROBES, PROBE_TOKEN_PROFILE } from '../probes/suite.js';
 import type { CallResult } from '../probes/router-client.js';
 
@@ -38,6 +39,18 @@ for (const path of paths) {
     byProbe.set(r.probeId, slot);
   }
 }
+
+// The noise pair is byte-identical on the wire, so one shared profile rather than two.
+// Measured separately they drifted 3.5x apart — not because the requests differ but because
+// the second one sits near the end of the suite and stopped being sent when a run was cut.
+const pooled = { input: [] as number[], output: [] as number[] };
+for (const id of NOISE_PROBE_PAIR) {
+  const slot = byProbe.get(id);
+  if (!slot) continue;
+  pooled.input.push(...slot.input);
+  pooled.output.push(...slot.output);
+}
+if (pooled.input.length > 0) for (const id of NOISE_PROBE_PAIR) byProbe.set(id, pooled);
 
 console.log(`// measured over ${calls} calls from ${paths.length} transcript(s)`);
 console.log('export const PROBE_TOKEN_PROFILE: Record<string, { input: number; output: number }> = {');
