@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-24 (second pass)
+**Updated:** 2026-08-24 (mainnet live)
 
 ---
 
@@ -78,14 +78,20 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T10c | Per-probe token profile measured over 353 real calls, regenerable | `src/probes/suite.ts`, `src/scripts/token-profile.ts` |
 | T14 | Divergence is withheld when its noise floor was never measured | `src/probes/divergence.ts`, `src/chain/encoding.ts` |
 | T15 | Roster fitted to the budget before sending, so no run is cut mid-suite | `src/probes/epoch-run.ts` |
+| T12 | **Mainnet deploy, 38 providers registered, first epoch written and verified** | `deployments/aristotle-16661.json` |
+| T16 | Series roster pinned so epochs stay comparable | `data/series-roster.json`, `src/probes/roster-lock.ts` |
 
 ### Ready now
 
-Nothing. Everything that does not need money is done. The board is now waiting on B2.
+**Accumulate epochs.** One command, roughly $0.055 each:
 
-If there is spare time before funds arrive, the honest candidates are: a second Router key
-with account-read scope so a run can preflight its own balance (see B1), and pooling epochs
-for the noise floor (see below — the 12-epoch argument does not currently pay off).
+    pnpm epoch --confirm --write-chain
+
+One epoch per clock hour, and the ledger takes one record per (epoch, prober) — a second
+run in the same hour reverts. Start with at least 20 minutes left in the hour or the run
+crosses the boundary and refuses to write, which is the safe direction but wastes the calls.
+
+**Then T13**: README, 3-minute video, X post. The explorer link exists now.
 
 ### How many epochs the project needs: 14
 
@@ -119,8 +125,7 @@ before mainnet, or accept that the floor stays coarse and say so.
 
 | | Task | Waits on |
 |---|---|---|
-| T12 | **Mainnet deploy + accumulate real epochs** | B2 — contracts are ready, storage is wired, nothing else blocks it |
-| T13 | Submission pack: README, 3-min video, X post | T12 for the explorer link |
+| T13 | Submission pack: README, 3-min video, X post | nothing — T12 is done, the explorer link exists |
 
 ### Not in scope for Wave 3
 
@@ -130,6 +135,45 @@ by (epoch, prober), so opening the gate needs no data migration).
 
 **Critical path:** B2 -> T12 -> T13. The contracts are deployed and verified on testnet, so
 mainnet funds are now the only thing standing between here and a valid submission.
+
+### Live on 0G Aristotle mainnet (chain 16661)
+
+    ProviderRegistry     0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6
+    MeasurementRegistry  0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333
+    owner / prober       0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD
+    epoch 3600s · 38 providers registered · gas wallet ~1.67 0G
+
+Deployed and registered 2026-08-24. Two earlier keys are retired and recorded in the
+deployment file: one was generated inside a Claude Code session (testnet only), and one had
+its private key printed into a session transcript — rotated and drained before it owned
+anything. The owner is immutable and the ledger is write-once, so reusing either would have
+no way back.
+
+**Epoch 496539, the first real record.** 10 services, 150 calls, $0.0725.
+
+    https://chainscan.0g.ai/tx/0xf3f1de65f0b25652ea0e88cde51d2cc3ee879e574609863b12b97fcb53ca83b2
+
+`pnpm verify 496539` reports VERIFIED — bundle fetched through the public gateway with no
+wallet and no SDK, merkle root recomputed from the received bytes, all 10 measurements
+reproduced by code importing nothing from `src/probes/`. The mainnet storage path had never
+been exercised before this.
+
+**The noise floor now lands.** All 10 services returned both halves of the byte-identical
+pair, none truncated, against 6 of 13 missing a half before. glm-5.2 spent 1727 and 1789
+completion tokens on those probes — which is why a 512 ceiling was cutting it off, and why
+raising the ceiling was the fix rather than adding more repeats. One service's pair
+disagreed, so its floor is 100% and its divergence is withheld: working as designed.
+
+**Roster is pinned** to those 10 services in `data/series-roster.json`. Re-measuring the
+token profile made glm-5 affordable and fitting silently went to 13 services; the noise
+floor pools across epochs and needs the same set each time, so the series states its roster
+rather than inheriting whatever fits.
+
+**Two things that cost money and are worth not repeating.** `pnpm epoch --confirm` spends
+the full epoch and does not publish — publishing the result needs `pnpm upload-epoch
+<transcript>`, not a re-run, and a re-run was what the message used to imply. And the runner
+had no check that its deployment file matched the chain it was writing to; `assertDeploymentChain`
+now refuses before a single call is paid for.
 
 ### Cost — remeasured 2026-08-24, and the earlier figures were wrong
 
