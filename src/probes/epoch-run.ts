@@ -110,8 +110,11 @@ export function reservationUsd(
   const profile = PROBE_TOKEN_PROFILE[probe.id] ?? {
     input: Math.ceil(probe.prompt.length / 4) + 8,
     output: probe.maxTokens,
+    outputMax: probe.maxTokens,
   };
-  return t.usdPerPromptToken * profile.input + t.usdPerCompletionToken * profile.output;
+  // outputMax, not output: this is a hold placed before the call, and a hold that only
+  // covers the average call does not cover the call it was placed for.
+  return t.usdPerPromptToken * profile.input + t.usdPerCompletionToken * profile.outputMax;
 }
 
 /** What one completed call actually cost, from the usage the Router reported. */

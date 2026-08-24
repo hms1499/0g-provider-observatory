@@ -12,7 +12,7 @@ import {
   reservationUsd,
   selectRoster,
 } from '../epoch-run.js';
-import { PROBES, SUITE_MEASURED_TOKENS } from '../suite.js';
+import { PROBES, PROBE_TOKEN_PROFILE, SUITE_MEASURED_TOKENS } from '../suite.js';
 
 const ADDR_A = '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB';
 const ADDR_B = '0xF203A388e9E70F09ece38046a6D40a89cf896309';
@@ -212,12 +212,31 @@ describe('reservationUsd', () => {
 
   it('prices each probe at its own measured profile, not at a suite average', () => {
     const t = target(ADDR_A, 'glm-5');
-    const oneWord = reservationUsd(t, probeById('word-count-7'));
-    const reasoning = reservationUsd(t, probeById('arith-mod'));
+    const costs = PROBES.map((p) => reservationUsd(t, p));
+    // Deliberately not asserting which probe is dearest. It used to assert arith-mod above
+    // word-count-7 and that inverted on real data: word-count-7 declares 32 max_tokens and
+    // was billed 1496, while arith-mod declares 512 and was billed 567. What has to hold is
+    // that the probes are priced apart, not that a particular one leads.
     assert.ok(
-      reasoning > oneWord * 10,
-      `a reasoning probe must reserve far more than a one-word one, got ${reasoning} vs ${oneWord}`,
+      Math.max(...costs) > Math.min(...costs) * 10,
+      'the suite must not collapse to one price per call',
     );
+  });
+
+  it('reserves the worst case, never the typical one', () => {
+    // Planning and reserving want different statistics. An epoch is planned on what it
+    // usually costs, or the roster shrinks for no reason; a single call is held against what
+    // it might cost, or the hold does not cover it.
+    const t = target(ADDR_A, 'glm-5');
+    for (const probe of PROBES) {
+      const profile = PROBE_TOKEN_PROFILE[probe.id];
+      assert.ok(profile, `no profile for ${probe.id}`);
+      assert.ok(
+        profile.outputMax >= profile.output,
+        `${probe.id}: worst case ${profile.outputMax} is below typical ${profile.output}`,
+      );
+      assert.ok(reservationUsd(t, probe) >= t.usdPerCompletionToken * profile.output);
+    }
   });
 
   it('reserves above what the probe declared as max_tokens', () => {

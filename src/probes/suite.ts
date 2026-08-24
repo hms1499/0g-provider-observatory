@@ -264,52 +264,64 @@ export const SUITE_EST_INPUT_TOKENS = PROBES.reduce(
 );
 
 /**
- * What each probe actually consumed, measured over 353 calls across epochs 496514 and
- * 496516 (2026-08-23), 15 services and 7 model families.
+ * What each probe actually consumed, measured over 300 calls in mainnet epoch 496539
+ * (2026-08-24), 10 services, under the 4096-token noise-pair ceiling now in force.
  *
  * Per-probe rather than one suite-wide figure, because a single number cannot describe
  * both `word-count-7` (33 output tokens) and `arith-mod` (2726). The previous constant was
  * measured against one provider and undershot the real roster by 2.15x and 1.83x on the two
  * live runs.
  *
- * `input` is the maximum observed — prompts are fixed, so the spread is only the chat
- * template and tokenizer, and the worst case is cheap to carry.
+ * TWO output figures, because planning and reserving are different questions and a single
+ * number cannot answer both. Epoch 496539 cost $0.0725 while a 90th-percentile projection
+ * said $0.1199 — a roster planned on the pessimistic figure leaves most of the budget
+ * unspent and measures fewer services for no reason. A per-call hold has the opposite need:
+ * it must cover the call it is holding for.
  *
- * `output` is the 90th percentile, deliberately NOT the maximum. `arith-mod` was once
- * billed 5223 tokens; reserving that for every call would stop a run long before it spent
- * its budget. Reserve-then-settle makes a mild under-reservation safe — what is actually
- * billed still binds the cap — while a wild over-reservation is not recoverable.
+ * A percentile serves neither. The distribution is bimodal, not long-tailed: `no-letter-e`
+ * declares maxTokens 40, eight of ten services honour it, and qwen3.7-plus ignores it and
+ * bills 2281. With two of eighteen samples in the upper mode the p90 sits exactly on the
+ * boundary, so one more compliant sample swings the figure from 2281 to 41. So: the mean for
+ * planning, the maximum for holding, and no percentile anywhere.
  *
  * The noise pair carries ONE shared figure. The two requests are byte-identical on the wire,
  * so their costs cannot legitimately differ; measured separately they came out 1836 against
  * 513, and that gap was not the probes but the suite being cut off before the second one was
  * sent. `pnpm token-profile` pools their samples so they can never drift apart again.
  *
- * KNOWN LOWER BOUND for the noise pair: these samples were taken at the old 512 ceiling, so
- * every glm-5.2 call in them is a truncated 512. With the ceiling now at 4096 the real figure
- * is higher, and it cannot be known until a run happens under the new ceiling. An estimate
- * that is too low is the safe direction here — reserve/settle bounds the spend on what is
- * actually billed — but re-measure after the first mainnet epoch.
+ * MEASURED ON ONE ROSTER. Epoch 496539 ran the ten services that fit the budget, so
+ * glm-5 and glm-5.1 — the heaviest reasoning models — contributed nothing to these figures.
+ * Raising the budget enough to admit them means re-measuring, or the fitting will admit more
+ * groups than the epoch can actually pay for.
  *
  * Regenerate with `pnpm token-profile` after any run that changes the roster, the ceilings,
  * or the `reasoning_effort` setting.
  */
-export const PROBE_TOKEN_PROFILE: Record<string, { input: number; output: number }> = {
-  'echo-exact': { input: 104, output: 197 },
-  'json-strict': { input: 111, output: 397 },
-  'one-word': { input: 99, output: 118 },
-  'primes-list': { input: 101, output: 464 },
-  'arith-mult': { input: 101, output: 1624 },
-  'arith-mod': { input: 99, output: 2726 },
-  'count-chars': { input: 105, output: 489 },
-  'reverse-token': { input: 100, output: 703 },
-  'diacritics-echo': { input: 112, output: 424 },
-  'fact-anchor': { input: 102, output: 65 },
-  'word-count-7': { input: 100, output: 33 },
-  'no-letter-e': { input: 101, output: 41 },
-  'needle': { input: 317, output: 65 },
-  'arith-mult-repeat': { input: 101, output: 1624 },
-  'policy-boundary': { input: 100, output: 120 },
+export interface ProbeTokens {
+  /** Worst observed prompt size. Prompts are fixed, so the spread is only the tokenizer. */
+  input: number;
+  /** Mean output. What an epoch actually costs, and therefore what a roster is planned on. */
+  output: number;
+  /** Worst observed output. What a single call is held against before it is sent. */
+  outputMax: number;
+}
+
+export const PROBE_TOKEN_PROFILE: Record<string, ProbeTokens> = {
+  'echo-exact': { input: 104, output: 76, outputMax: 238 },
+  'json-strict': { input: 111, output: 119, outputMax: 443 },
+  'one-word': { input: 99, output: 48, outputMax: 132 },
+  'primes-list': { input: 101, output: 93, outputMax: 416 },
+  'arith-mult': { input: 101, output: 591, outputMax: 2925 },
+  'arith-mod': { input: 99, output: 430, outputMax: 567 },
+  'count-chars': { input: 105, output: 286, outputMax: 512 },
+  'reverse-token': { input: 100, output: 367, outputMax: 805 },
+  'diacritics-echo': { input: 112, output: 277, outputMax: 962 },
+  'fact-anchor': { input: 102, output: 50, outputMax: 140 },
+  'word-count-7': { input: 100, output: 285, outputMax: 1496 },
+  'no-letter-e': { input: 101, output: 298, outputMax: 2558 },
+  'needle': { input: 317, output: 80, outputMax: 280 },
+  'arith-mult-repeat': { input: 101, output: 591, outputMax: 2925 },
+  'policy-boundary': { input: 100, output: 316, outputMax: 1318 },
 };
 
 /**

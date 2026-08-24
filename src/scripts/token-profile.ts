@@ -13,12 +13,6 @@ import { NOISE_PROBE_PAIR } from '../probes/divergence.js';
 import { PROBES, PROBE_TOKEN_PROFILE } from '../probes/suite.js';
 import type { CallResult } from '../probes/router-client.js';
 
-/** Nearest-rank, matching the percentile rule the aggregation publishes under. */
-function percentile(sorted: number[], k: number): number {
-  if (sorted.length === 0) return 0;
-  return sorted[Math.min(sorted.length - 1, Math.ceil((k * sorted.length) / 100) - 1)];
-}
-
 const paths = process.argv.slice(2);
 if (paths.length === 0) {
   console.error('usage: pnpm token-profile <transcript.jsonl> [more.jsonl ...]');
@@ -53,7 +47,7 @@ for (const id of NOISE_PROBE_PAIR) {
 if (pooled.input.length > 0) for (const id of NOISE_PROBE_PAIR) byProbe.set(id, pooled);
 
 console.log(`// measured over ${calls} calls from ${paths.length} transcript(s)`);
-console.log('export const PROBE_TOKEN_PROFILE: Record<string, { input: number; output: number }> = {');
+console.log('export const PROBE_TOKEN_PROFILE: Record<string, ProbeTokens> = {');
 let changed = 0;
 for (const probe of PROBES) {
   const slot = byProbe.get(probe.id);
@@ -61,17 +55,29 @@ for (const probe of PROBES) {
     console.log(`  // '${probe.id}': no usage in these transcripts, keeping the committed value`);
     continue;
   }
-  // Input is fixed by the prompt, so carry the worst case. Output takes p90 rather than the
-  // maximum: reserve-then-settle makes a mild under-reservation safe, a wild over-reservation
-  // just stops the run early.
+  // Worst case for both, and the output one is a correction.
+  //
+  // This used to take the 90th percentile, on the reasoning that a wild over-reservation
+  // would stop a run early. Measuring epoch 496539 killed that: the distribution is bimodal,
+  // not long-tailed. `no-letter-e` declares maxTokens 40; eight of ten services honour it and
+  // qwen3.7-plus ignores it and bills 2281. With 2 of 18 samples in the upper mode the p90
+  // sits exactly on the boundary, and one more compliant sample flips the figure from 2281 to
+  // 41 — a 56x swing from noise. A percentile is the wrong statistic for that shape.
+  //
+  // The max is stable, means something plain ("the most this probe has ever cost"), and is
+  // only 20% above the p90 now that the noise pair no longer truncates. The error directions
+  // are not symmetric either: over-reserving costs headroom, under-reserving aborts a run
+  // mid-suite and biases every probe near the end of the suite.
   const input = Math.max(...slot.input);
-  const output = percentile([...slot.output].sort((a, b) => a - b), 90);
+  const output = Math.round(slot.output.reduce((a, b) => a + b, 0) / slot.output.length);
+  const outputMax = Math.max(...slot.output);
   const was = PROBE_TOKEN_PROFILE[probe.id];
-  const drift = was && (was.input !== input || was.output !== output);
+  const drift =
+    was && (was.input !== input || was.output !== output || was.outputMax !== outputMax);
   if (drift) changed++;
   console.log(
-    `  '${probe.id}': { input: ${input}, output: ${output} },` +
-      (drift ? `  // was ${was.input}/${was.output}` : ''),
+    `  '${probe.id}': { input: ${input}, output: ${output}, outputMax: ${outputMax} },` +
+      (drift ? `  // was ${was.input}/${was.output}/${was.outputMax}` : ''),
   );
 }
 console.log('};');
