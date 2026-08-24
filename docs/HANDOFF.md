@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-23
+**Updated:** 2026-08-24
 
 ---
 
@@ -73,14 +73,17 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T10 | Live epoch runner, run once against real providers | `src/scripts/run-epoch.ts`, `src/probes/epoch-run.ts` |
 | T11 | Storage wiring (F4): evidence bundle up, real merkle root on chain | `src/storage/`, `src/scripts/upload-epoch.ts` |
 | T8 | Verification CLI (F7): independent recomputation, verified live | `src/verify/`, `src/scripts/verify-epoch.ts` |
+| T9 | Public dashboard (F5), reading chain + storage live in the browser | `dashboard/` |
+| T10b | Budget cap is now a real cap: reserve before the call, settle on what was billed | `src/probes/epoch-run.ts` |
+| T10c | Per-probe token profile measured over 353 real calls, regenerable | `src/probes/suite.ts`, `src/scripts/token-profile.ts` |
 
-### Ready now — nothing blocks these, do them in any order
+### Ready now
 
-| | Task | Notes |
-|---|---|---|
-| T9 | **Dashboard shell** (F5) | Reads live from 0G Chain and 0G Storage in the browser, no backend and no build-time snapshot |
-| T10b | **Make the budget cap a real cap** | Overshot on BOTH live runs: $0.131 and $0.1388 against a $0.12 ceiling. Costs nothing to fix |
-| T10c | **Re-measure the token profile** | Projection was 2.15x low on run 1 and 1.83x low on run 2. `SUITE_MEASURED_TOKENS` came from one provider |
+Nothing. Everything that does not need money is done. The board is now waiting on B2.
+
+If there is spare time before funds arrive, the honest candidates are: a second Router key
+with account-read scope so a run can preflight its own balance (see B1), and pooling epochs
+for the noise floor (see below — the 12-epoch argument does not currently pay off).
 
 ### How many epochs the project needs: 14
 
@@ -92,11 +95,15 @@ Derived from three constraints, not guessed. The binding one is the noise floor.
 | **p95 meaningfulness** | >= 7 epochs | At n=15 the p95 has rank 15, so it *is* the slowest call. 7 epochs puts 5 samples above it, 14 puts 10. |
 | **"How did it behave last week"** | spread over days | One of the three questions the product answers. Also what a judge sees in the explorer: a steady series across days reads differently from a burst of test transactions. |
 
-**14 epochs, two a day, ~$9.75.** Twelve is the floor; twenty is comfortable at $13.92.
+**14 epochs.** Twelve is the floor. What that costs depends entirely on the roster — see
+Cost below; it is between $1 and $40 and the roster choice is the whole difference.
 
-Cost lever if needed: dropping the five most expensive services makes an epoch 46% cheaper
-($0.70 -> $0.38), at the cost of comparability inside the Claude and GPT groups — which are
-all `standard` mode with no TeeML reference, so already the weakest groups.
+**The 12-epoch noise-floor argument does not currently pay off.** It assumes epochs are
+pooled so the floor becomes a real rate. `computeDivergence()` accepts pooled input, but
+`run-epoch.ts` passes only the current run's results, so every published record still carries
+a floor of 0 or 10000 from its single duplicate pair. Running 14 epochs separately does not
+fix this on its own, and the ledger is write-once. Either add pooling to the write path
+before mainnet, or accept that the floor stays coarse and say so.
 
 ### Blocked on Huy — these are the only things Claude cannot do
 
@@ -104,7 +111,7 @@ all `standard` mode with no TeeML reference, so already the weakest groups.
 |---|---|---|---|
 | B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | pc.0g.ai -> connect wallet -> fund ~$5 of 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. See "Why the API key must be mainnet" below |
 | B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission** |
-| B3 | Top up Router credit to ~62 0G (~$10) | T10 at full roster | See "Funding" below. ~1.67 0G left — one more reduced run |
+| B3 | Top up Router credit — **~$2-3 is now enough**, not $10 | T10 | See "Cost" below. ~$0.09 left, about one lean epoch |
 
 ### Blocked on other tasks
 
@@ -122,29 +129,64 @@ by (epoch, prober), so opening the gate needs no data migration).
 **Critical path:** B2 -> T12 -> T13. The contracts are deployed and verified on testnet, so
 mainnet funds are now the only thing standing between here and a valid submission.
 
+### Cost — remeasured 2026-08-24, and the earlier figures were wrong
+
+The old $0.6962/epoch came from a token profile measured against one provider. Measured over
+353 real calls across both live epochs, a full 38-service epoch projects at **$2.82**, not
+$0.70. `pnpm dry-run` prints this and flags the gap.
+
+The reason is that **`max_tokens` does not bound what gets billed.** Reasoning models bill
+their thinking as completion tokens: 45 of 176 billed calls exceeded the limit they were
+sent, `arith-mod` by 10x, and that overage was **51% of epoch 496516**.
+
+**Roster choice is worth far more than epoch count.** Projected per epoch under the measured
+profile:
+
+| Group | services | $/epoch | TeeML ref | What it produced |
+|---|---|---|---|---|
+| glm-5.1 | 2 | $0.1001 | no | — |
+| glm-5 | 3 | $0.0796 | no | — |
+| **glm-5.2** | 2 | $0.0556 | **yes** | the only calibration group |
+| qwen3.7-plus | 2 | $0.0359 | no | — |
+| **deepseek-v4-flash** | 4 | $0.0112 | no | largest group |
+| **qwen3-vl-30b** | 2 | $0.0060 | no | the only non-zero divergence (9.1%) |
+
+The three bolded groups are **$0.073/epoch — 14 epochs for about $1** — and they carry the
+TeeML reference, the largest group, and the only divergence figure the project has ever
+produced. The three dropped ones cost 3x as much and produced nothing published.
+
+Also free to drop: `zai-org/GLM-5-FP8` had 3 successful calls out of 15, below the 5-sample
+floor, so it was **excluded from the epoch after being paid for**.
+
+**`reasoning_effort` is not the lever it looked like.** Tried live against glm-5 on
+`arith-mod` (expected 407): no parameter gave 3263 completion tokens and the right answer;
+`low` gave 7724 and the right answer; `minimal` gave 2 tokens and **the wrong answer, 243**.
+Both values are accepted by the Router, so this is not a compatibility problem — `minimal`
+simply turns thinking off, and a starved model's wrong answer is indistinguishable from
+provider divergence. The flag exists (`--reasoning-effort`), is recorded in the bundle, and
+is **off by default**. Leave it off unless someone measures a value that is both cheaper and
+still correct.
+
 ### Funding
 
 Topped up to **2.5 0G** on 2026-08-23 and the credit works: two live epochs ran and were
-billed against it. At $0.1585/0G that is $0.396, and one full epoch is $0.6962, so the
-top-up never covered a whole epoch — it covered two deliberately reduced ones.
+billed against it.
 
 | | |
 |---|---|
 | Epoch 496515 (181 calls) | $0.1310 |
 | Epoch 496516 (172 calls) | $0.1388 |
-| **Left** | **~$0.126 (~0.80 0G)** |
+| Live `reasoning_effort` test, 3 calls to glm-5 | ~$0.037 |
+| **Left** | **~$0.09** |
 
-That is **less than one more reduced run**, since a reduced run costs ~$0.135 in practice
-against a $0.076 projection. Treat the inference credit as spent until B3.
-
-Reaching 14 epochs needs about **62 0G** at today's price. The credit is denominated in 0G
-while inference is priced in USD, so a falling 0G price shrinks the runway without anyone
-spending anything.
+At the lean roster's $0.073/epoch that is roughly one more epoch. **B3 does not need $10** —
+$2-3 of credit covers all 14 epochs on the lean roster with room to spare. Do not skimp on
+B2 instead: mainnet gas and the deploy are the actual submission gate.
 
 The earlier open question about the deposit address is left below because it was never
 actually answered — the top-up worked, but nothing confirmed *why*.
 
-Huy found a deposit address on pc.0g.ai, Huy found a deposit address on pc.0g.ai,
+Huy found a deposit address on pc.0g.ai,
 `0x495C63D097582Fb4e31fDc06970EEebDe9F69227`, with no network stated. Read on chain
 2026-08-22:
 
@@ -173,7 +215,7 @@ a balance.
 mainnet (chain 16661)** first, confirm the dashboard balance moves, and only then send the
 rest. An 0x address is EVM-format and identifies no chain — the same string is valid on
 Ethereum — and 0G is the native token of 0G mainnet, so the network chosen at send time is
-what matters. $0.17 to de-risk $10.
+what matters.
 
 Two things to read off the dashboard next session: whether the deposit page names a
 network, and the current credit balance. The prober key holds only `inference` scope, so
@@ -215,17 +257,33 @@ real transcript through the fix: GLM-5-FP8 goes 86.7% -> 0.0%, and its usable sa
 drops 15 -> 2, which puts it under the 5-sample floor so it is now dropped from the epoch
 instead of published. That is the correct outcome — no number is better than a wrong one.
 
-**2. The budget cap is not a cap. OPEN (T10b).**
+**2. The budget cap is not a cap. FIXED (T10b).**
 Spent $0.131 against a $0.120 ceiling. `canAfford()` tests an average per-call estimate, and
 all 15 workers pass that test before any of them records what it spent. Under concurrency it
-is a warning, not a limit. It needs to reserve before the call and settle after.
+is a warning, not a limit.
 
-**3. Cost per call is 2.15x the projection. OPEN (T10c).**
+`Budget` now reserves before the call and settles on what the Router actually billed. A hold
+comes out of the cap before the request goes out, a failed call releases it, and an overspend
+is booked before it throws so the ledger stays consistent. `canAfford()`/`record()` are gone —
+an API that lets you test and then spend is the bug.
+
+**3. Cost per call is 2.15x the projection. FIXED (T10c).**
 Projected $0.000336/call, actual $0.000724. `SUITE_MEASURED_TOKENS` (1753 in / 1740 out) was
 measured against a single provider; this roster produced **9,848 in / 41,155 out over 181
 calls**. Reasoning models are the whole difference. Related: **53 of 181 replies truncated
 (29%)**, against the "only three probes still truncate" claim recorded earlier — that claim
 was also measured on one provider.
+
+Replaced with a **per-probe** profile measured over 353 calls: one number cannot describe both
+`word-count-7` (33 output tokens) and `arith-mod` (2726). Reservations are priced per probe
+instead of at a suite average, which under-reserved exactly the calls that overspend.
+`pnpm token-profile <transcript...>` regenerates the table — it immediately caught a
+percentile convention in the first hand-built version that did not match the nearest-rank rule
+the project publishes under.
+
+The deeper finding: **`SUITE_MAX_OUTPUT_TOKENS` was never an upper bound on cost.** The
+measured profile (8191 output tokens/service) is 2.4x the sum of the declared `max_tokens`
+(3424), because thinking is billed as completion regardless of the limit sent.
 
 **4. An epoch label that did not match its own measurements. FIXED.**
 The run started at 02:59:15 and wrote at 03:00:50, crossing the hour. The transcript was
