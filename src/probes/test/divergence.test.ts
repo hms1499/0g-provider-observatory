@@ -1,7 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import type { CallResult } from '../router-client.js';
-import { toMeasurements, aggregate, type ResolveContext } from '../aggregate.js';
+import {
+  DIVERGENCE_UNMEASURED,
+  toMeasurements,
+  aggregate,
+  type ResolveContext,
+} from '../aggregate.js';
 import {
   canonicalJson,
   classifyRefusal,
@@ -309,5 +314,90 @@ describe('wiring into the on-chain row', () => {
     const teetls = rows.find((r) => r.providerId === 2)!;
     assert.equal(teetls.divergenceBps, 833);
     assert.equal(rows.find((r) => r.providerId === 1)!.divergenceBps, 0);
+  });
+});
+
+describe('an unmeasured noise floor', () => {
+  /** Two peers of one model, disagreeing on a divergence probe. */
+  const pair = (extra: CallResult[] = []): CallResult[] => [
+    answer(PEER_C, 'arith-mod', '407'),
+    answer(PEER_D, 'arith-mod', '408'),
+    ...extra,
+  ];
+  const services: ServiceKey[] = [
+    { address: PEER_C, modelId: 'glm-5.2', canonicalId: 'glm-5.2', mode: 'TeeTLS' },
+    { address: PEER_D, modelId: 'glm-5.2', canonicalId: 'glm-5.2', mode: 'TeeTLS' },
+  ];
+
+  it('is not publishable when divergence was actually found', () => {
+    // No noise pair landed, so we cannot know how much of this gap is the provider's own
+    // instability. Publishing the raw figure would charge our uncertainty to them.
+    const [a] = computeDivergence(pair(), services);
+    assert.equal(a.noiseSamples, 0);
+    assert.ok(a.rawDivergenceBps > 0);
+    assert.equal(a.sufficient, false);
+  });
+
+  it('is still publishable when no divergence was found at all', () => {
+    // raw is 0, and max(0, 0 - floor) is 0 whatever the floor turns out to be, so the
+    // unknown changes nothing and 0 is an honest figure.
+    const agreeing: CallResult[] = [
+      answer(PEER_C, 'arith-mod', '407'),
+      answer(PEER_D, 'arith-mod', '407'),
+    ];
+    const [a] = computeDivergence(agreeing, services);
+    assert.equal(a.noiseSamples, 0);
+    assert.equal(a.rawDivergenceBps, 0);
+    assert.equal(a.sufficient, true);
+  });
+
+  it('is publishable once the noise pair lands', () => {
+    const [a] = computeDivergence(
+      pair([
+        answer(PEER_C, 'arith-mult', '13352884'),
+        answer(PEER_C, 'arith-mult-repeat', '13352884'),
+      ]),
+      services,
+    );
+    assert.equal(a.noiseSamples, 1);
+    assert.equal(a.sufficient, true);
+  });
+});
+
+describe('publishing an unmeasured divergence', () => {
+  const services: ServiceKey[] = [
+    { address: PEER_C, modelId: 'glm-5.2', canonicalId: 'glm-5.2', mode: 'TeeTLS' },
+    { address: PEER_D, modelId: 'glm-5.2', canonicalId: 'glm-5.2', mode: 'TeeTLS' },
+  ];
+
+  it('reports the sentinel rather than a zero the reader would trust', () => {
+    const div = computeDivergence(
+      [answer(PEER_C, 'arith-mod', '407'), answer(PEER_D, 'arith-mod', '408')],
+      services,
+    );
+    const lookup = divergenceLookup(div);
+    assert.equal(lookup(PEER_C, 'glm-5.2'), DIVERGENCE_UNMEASURED);
+  });
+
+  it('keeps a genuinely measured zero distinguishable from an unmeasured one', () => {
+    const div = computeDivergence(
+      [answer(PEER_C, 'arith-mod', '407'), answer(PEER_D, 'arith-mod', '407')],
+      services,
+    );
+    assert.equal(divergenceLookup(div)(PEER_C, 'glm-5.2'), 0);
+  });
+
+  it('carries the sentinel through to the on-chain row', () => {
+    const stats = aggregate([
+      ...Array.from({ length: 6 }, (_, i) => answer(PEER_C, `p${i}`, 'x')),
+    ]);
+    const ctx: ResolveContext = {
+      providerId: () => 1,
+      observedMode: () => 0,
+      divergenceBps: () => DIVERGENCE_UNMEASURED,
+    };
+    const { rows } = toMeasurements(stats, ctx);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].divergenceBps, DIVERGENCE_UNMEASURED);
   });
 });

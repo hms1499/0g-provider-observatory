@@ -34,6 +34,9 @@ export interface BundleRules {
   truncationSafeComparators: readonly string[];
   divergenceProbeIds: readonly string[];
   noiseProbePair: readonly string[];
+  /** Value standing for "could not be measured". Absent in bundles written before /3. */
+  divergenceUnmeasured?: number;
+  divergencePublication?: string;
   faultAttribution: FaultAttribution;
 }
 
@@ -287,12 +290,19 @@ function divergenceFor(
   const right = selfProbes?.get(nb) ?? [];
   const pairs = Math.min(left.length, right.length);
   let unstable = 0;
+  // Comparable pairs only. A reply carrying no number is missing evidence, not evidence of
+  // agreement, and leaving it in the denominator drags the floor down — which under-subtracts
+  // and overstates the divergence reported against the provider.
+  let comparable = 0;
   for (let i = 0; i < pairs; i++) {
     const a = compareKey('numeric', left[i], rules);
     const b = compareKey('numeric', right[i], rules);
-    if (a !== null && b !== null && a !== b) unstable++;
+    if (a === null || b === null) continue;
+    comparable++;
+    if (a !== b) unstable++;
   }
-  const noiseFloorBps = pairs === 0 ? 0 : basisPoints(unstable, pairs);
+  const noiseSamples = comparable;
+  const noiseFloorBps = comparable === 0 ? 0 : basisPoints(unstable, comparable);
 
   const reference = members.find((m) => m.mode === 'TeeML') ?? null;
   const isReference =
@@ -347,8 +357,29 @@ function divergenceFor(
     method,
     rawDivergenceBps,
     noiseFloorBps,
-    divergenceBps: Math.max(0, rawDivergenceBps - noiseFloorBps),
+    divergenceBps: publishedDivergence(rawDivergenceBps, noiseFloorBps, noiseSamples, rules),
     comparedProbes: compared,
     differingProbeIds: differing,
   };
+}
+
+/**
+ * What the record should carry for divergence.
+ *
+ * A raw figure above zero with no measured floor cannot be attributed: there is no way to
+ * separate the provider disagreeing with its peers from it disagreeing with itself. The
+ * bundle names the value that stands for "not measured"; a bundle that does not name one
+ * cannot express the distinction, so those figures fall back to the plain subtraction and
+ * the mismatch surfaces as a disagreement rather than being papered over.
+ */
+function publishedDivergence(
+  raw: number,
+  floorBps: number,
+  noiseSamples: number,
+  rules: BundleRules,
+): number {
+  if (raw > 0 && noiseSamples === 0 && rules.divergenceUnmeasured !== undefined) {
+    return rules.divergenceUnmeasured;
+  }
+  return Math.max(0, raw - floorBps);
 }

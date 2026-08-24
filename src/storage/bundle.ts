@@ -21,7 +21,7 @@ import {
   REFUSAL_PATTERN,
   TRUNCATION_SAFE_COMPARATORS,
 } from '../probes/divergence.js';
-import { faultSide } from '../probes/aggregate.js';
+import { DIVERGENCE_UNMEASURED, faultSide } from '../probes/aggregate.js';
 import { ERROR_KINDS } from '../probes/router-client.js';
 import type { Mode, Target } from '../probes/plan.js';
 import type { CallResult, NegotiatedParams, ReasoningEffort } from '../probes/router-client.js';
@@ -110,6 +110,10 @@ export interface EpochBundle {
     truncationSafeComparators: readonly string[];
     divergenceProbeIds: readonly string[];
     noiseProbePair: readonly string[];
+    /** Value written into divergenceBps when the figure could not be measured. */
+    divergenceUnmeasured: number;
+    /** When a divergence figure may not be published at all. */
+    divergencePublication: string;
     /** Which failures count against the provider, which are ours, which are neither. */
     faultAttribution: { provider: string[]; prober: string[]; unknown: string[] };
   };
@@ -157,6 +161,10 @@ export function buildBundle(input: BundleInput): EpochBundle {
       truncationSafeComparators: TRUNCATION_SAFE_COMPARATORS,
       divergenceProbeIds: DIVERGENCE_PROBES,
       noiseProbePair: NOISE_PROBE_PAIR,
+      divergenceUnmeasured: DIVERGENCE_UNMEASURED,
+      divergencePublication:
+        'the noise floor counts comparable pairs only; when it has 0 samples and raw ' +
+        'divergence is above 0, publish divergenceUnmeasured instead of a rate',
       // Derived from faultSide() rather than restated, so the bundle cannot claim an
       // attribution the code does not apply.
       faultAttribution: {

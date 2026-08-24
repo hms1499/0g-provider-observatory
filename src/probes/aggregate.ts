@@ -22,6 +22,7 @@
  * percentile method that rounded differently in another language would break F7.
  */
 import type { CallResult, ErrorKind } from './router-client.js';
+import { DIVERGENCE_UNMEASURED } from '../chain/encoding.js';
 
 /** Who a failure belongs to. */
 export type FaultSide = 'provider' | 'prober' | 'unknown';
@@ -196,6 +197,8 @@ export function aggregate(
   return out.sort((a, b) => a.address.localeCompare(b.address) || a.modelId.localeCompare(b.modelId));
 }
 
+export { DIVERGENCE_UNMEASURED } from '../chain/encoding.js';
+
 /** Shape of one row in MeasurementRegistry.writeEpoch. */
 export interface OnchainMeasurement {
   providerId: number;
@@ -215,6 +218,10 @@ const fit = (name: string, v: number, max: number): number => {
   }
   return v;
 };
+
+/** Basis points, or the sentinel. Anything between the two is a bug, not a rounding case. */
+const fitDivergence = (v: number): number =>
+  v === DIVERGENCE_UNMEASURED ? v : fit('divergenceBps', v, 10000);
 
 export interface ResolveContext {
   /** Registry id for a service, or null if it was never registered. */
@@ -259,7 +266,7 @@ export function toMeasurements(
       p50Ms: fit('p50Ms', s.p50Ms, 0xffffffff),
       p95Ms: fit('p95Ms', s.p95Ms, 0xffffffff),
       errorRateBps: fit('errorRateBps', s.errorRateBps, 10000),
-      divergenceBps: fit('divergenceBps', ctx.divergenceBps?.(s.address, s.modelId) ?? 0, 10000),
+      divergenceBps: fitDivergence(ctx.divergenceBps?.(s.address, s.modelId) ?? 0),
       calls: fit('calls', s.calls, 0xffff),
       observedMode: fit('observedMode', ctx.observedMode(s.address, s.modelId), 0xff),
     });

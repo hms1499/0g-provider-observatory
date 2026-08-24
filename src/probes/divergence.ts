@@ -36,7 +36,7 @@
  * to be reproducible exactly.
  */
 import type { CallResult } from './router-client.js';
-import { toBasisPoints } from './aggregate.js';
+import { DIVERGENCE_UNMEASURED, toBasisPoints } from './aggregate.js';
 import { PROBES, type Comparator } from './suite.js';
 
 /** Result of comparing one answer against another. */
@@ -163,6 +163,16 @@ export interface DivergenceResult {
   noiseSamples: number;
   /** What goes on chain: max(0, raw - noise). Can only ever be lower than raw. */
   divergenceBps: number;
+  /**
+   * Whether this figure may be published at all.
+   *
+   * False when divergence was found but the noise floor was never measured: without a floor
+   * there is no way to tell the provider's disagreement with its peers from its disagreement
+   * with itself, and publishing the raw gap charges our uncertainty to them. A raw of 0 stays
+   * publishable — `max(0, 0 - floor)` is 0 for every possible floor, so the unknown changes
+   * nothing.
+   */
+  sufficient: boolean;
   comparedProbes: number;
   differingProbeIds: string[];
 }
@@ -292,7 +302,7 @@ export function computeDivergence(
     else groups.set(s.canonicalId, [s]);
   }
 
-  const out: DivergenceResult[] = [];
+  const out: Omit<DivergenceResult, 'sufficient'>[] = [];
 
   for (const [canonicalId, members] of groups) {
     const reference = members.find((m) => m.mode === 'TeeML') ?? null;
@@ -385,15 +395,26 @@ export function computeDivergence(
     }
   }
 
-  return out.sort(
-    (a, b) => a.canonicalId.localeCompare(b.canonicalId) || a.address.localeCompare(b.address),
-  );
+  // Derived in one place rather than at each push site, so a new branch cannot forget it.
+  return out
+    .map((d) => ({ ...d, sufficient: d.noiseSamples > 0 || d.rawDivergenceBps === 0 }))
+    .sort(
+      (a, b) => a.canonicalId.localeCompare(b.canonicalId) || a.address.localeCompare(b.address),
+    );
 }
 
 /** Lookup shaped for `toMeasurements`'s divergenceBps hook. */
 export function divergenceLookup(
   results: readonly DivergenceResult[],
 ): (address: string, modelId: string) => number {
-  const m = new Map(results.map((r) => [idOf(r.address, r.modelId), r.divergenceBps]));
+  const m = new Map(
+    results.map((r) => [
+      idOf(r.address, r.modelId),
+      r.sufficient ? r.divergenceBps : DIVERGENCE_UNMEASURED,
+    ]),
+  );
+  // A service with no divergence entry at all was never grouped, so 0 is the measured truth
+  // for it: nothing to diverge from. That is different from a grouped service whose floor
+  // we failed to measure, which is what the sentinel marks.
   return (address, modelId) => m.get(idOf(address, modelId)) ?? 0;
 }

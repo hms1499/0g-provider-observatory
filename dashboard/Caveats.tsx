@@ -40,6 +40,13 @@ export function Caveats() {
           may be running a different model, quantisation, sampler or system prompt, and this
           measurement cannot tell which.
         </li>
+        <li>
+          A dash in the divergence column means we could not measure it, not that it was
+          zero. Each service answers one pair of byte-identical probes per epoch so we can
+          subtract its instability against itself; when that pair does not come back, we
+          cannot tell a provider disagreeing with its peers from one disagreeing with
+          itself, and we publish nothing rather than charge our uncertainty to them.
+        </li>
       </ul>
     </section>
   );

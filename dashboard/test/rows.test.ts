@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import type { EpochRecord, ProviderRecord } from '../../src/chain/registry.js';
 import { formatBps, formatMs, groupByOperator } from '../rows.js';
+import { DIVERGENCE_UNMEASURED } from '../../src/chain/encoding.js';
 
 const provider = (id: number, address: string, model: string): ProviderRecord => ({
   id,
@@ -87,6 +88,11 @@ describe('formatting', () => {
     assert.equal(formatBps(0), '0%');
     assert.equal(formatBps(833), '8.33%');
     assert.equal(formatBps(10000), '100%');
+  });
+
+  it('shows an unmeasured divergence as a gap, never as a rate', () => {
+    // The sentinel is 65535, and 655.35% would read as a measurement of a named operator.
+    assert.equal(formatBps(DIVERGENCE_UNMEASURED), '—');
   });
 
   it('renders milliseconds without inventing precision', () => {

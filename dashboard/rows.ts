@@ -1,4 +1,5 @@
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
+import { isUnmeasured } from '../src/chain/encoding.js';
 
 export interface ProviderRow {
   providerId: number;
@@ -72,8 +73,14 @@ export function groupByOperator(
   return [...groups.values()].sort((a, b) => b.rows.length - a.rows.length);
 }
 
-/** Basis points as a percentage. 833 -> "8.33%", with no trailing zeros invented. */
+/**
+ * Basis points as a percentage. 833 -> "8.33%", with no trailing zeros invented.
+ *
+ * The unmeasured sentinel renders as a gap. Showing 655.35% would put a number against a
+ * named operator that nobody measured, which is worse than showing nothing.
+ */
 export function formatBps(bps: number): string {
+  if (isUnmeasured(bps)) return '—';
   const pct = bps / 100;
   return `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%`;
 }
