@@ -218,7 +218,16 @@ function indexAnswers(results: readonly CallResult[]) {
  * With one epoch there is one observation, so the floor is 0 or 10000 and nothing in
  * between. A floor of 10000 wipes out the whole divergence figure — which is the safe
  * direction to err: a provider that cannot agree with itself should not be reported as
- * differing from its peers. Pooling epochs turns this into a real rate.
+ * differing from its peers.
+ *
+ * `samples` counts only pairs that could actually be compared. A reply carrying no number
+ * is missing evidence, not evidence of agreement: leaving it in the denominator drags the
+ * rate down, and a floor that is too low is subtracted too lightly, so the divergence
+ * published against the provider comes out higher than the measurement supports.
+ *
+ * `samples === 0` means the floor is UNKNOWN, not zero. The bps is 0 in that case only
+ * because there is no better value to return — a caller must decide what an unmeasured
+ * floor means for publication rather than treat it as a clean bill of health.
  */
 export function noiseFloor(probes: Map<string, string[]> | undefined): {
   bps: number;
@@ -229,13 +238,17 @@ export function noiseFloor(probes: Map<string, string[]> | undefined): {
   const left = probes.get(a) ?? [];
   const right = probes.get(b) ?? [];
   const n = Math.min(left.length, right.length);
-  if (n === 0) return { bps: 0, samples: 0 };
 
   let disagreements = 0;
+  let comparable = 0;
   for (let i = 0; i < n; i++) {
-    if (compareAnswers('numeric', left[i], right[i]) === 'differ') disagreements++;
+    const verdict = compareAnswers('numeric', left[i], right[i]);
+    if (verdict === 'incomparable') continue;
+    comparable++;
+    if (verdict === 'differ') disagreements++;
   }
-  return { bps: toBasisPoints(disagreements, n), samples: n };
+  if (comparable === 0) return { bps: 0, samples: 0 };
+  return { bps: toBasisPoints(disagreements, comparable), samples: comparable };
 }
 
 function modal(values: string[]): string | null {
@@ -259,8 +272,13 @@ function modal(values: string[]): string | null {
 /**
  * Compute divergence for every service, grouped by the model they claim to serve.
  *
- * Accepts one epoch or many pooled together, exactly like `aggregate()`. Pooling is how
- * the noise floor stops being a coin flip.
+ * Accepts one epoch or many pooled together, exactly like `aggregate()`.
+ *
+ * Pooling epochs would make the noise floor a real rate rather than a coin flip, but it is
+ * NOT what the runner does, and that is deliberate: the evidence bundle is per-epoch, so a
+ * figure derived from several epochs could not be recomputed by a verifier holding one
+ * bundle. Extra samples have to come from inside the epoch, or the number stops being
+ * verifiable — which is the one property the project cannot trade away.
  */
 export function computeDivergence(
   results: readonly CallResult[],

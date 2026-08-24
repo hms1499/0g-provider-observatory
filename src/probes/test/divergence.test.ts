@@ -138,6 +138,26 @@ describe('noise floor', () => {
     assert.deepEqual(noiseFloor(undefined), { bps: 0, samples: 0 });
     assert.deepEqual(noiseFloor(new Map([['arith-mult', ['1']]])), { bps: 0, samples: 0 });
   });
+
+  it('does not read a pair it could not compare as the provider agreeing with itself', () => {
+    // Neither reply carries a number, so there is nothing to compare. Counting this as a
+    // match would report perfect self-consistency from no evidence at all.
+    const probes = new Map([
+      ['arith-mult', ['let me work through this']],
+      ['arith-mult-repeat', ['thinking about it']],
+    ]);
+    assert.deepEqual(noiseFloor(probes), { bps: 0, samples: 0 });
+  });
+
+  it('measures the floor over the comparable pairs only', () => {
+    // Three pairs: one agrees, one differs, one cannot be compared. The rate is 1 in 2,
+    // not 1 in 3 — an unreadable pair is missing evidence, not evidence of agreement.
+    const probes = new Map([
+      ['arith-mult', ['1', '1', 'no number here']],
+      ['arith-mult-repeat', ['1', '2', 'nor here']],
+    ]);
+    assert.deepEqual(noiseFloor(probes), { bps: 5000, samples: 2 });
+  });
 });
 
 describe('computeDivergence', () => {
