@@ -1,0 +1,42 @@
+{
+  "network": "0G Aristotle mainnet",
+  "chainId": 16661,
+  "rpc": "https://evmrpc.0g.ai",
+  "explorer": "https://chainscan.0g.ai",
+  "storageIndexer": "https://indexer-storage-turbo.0g.ai",
+  "deployedAt": "2026-08-24",
+  "contracts": {
+    "ProviderRegistry": "0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6",
+    "MeasurementRegistry": "0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333"
+  },
+  "owner": "0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD",
+  "probers": ["0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD"],
+  "epochSeconds": 3600,
+  "transactions": {
+    "deployProviderRegistry": "0x6e959dcdd0a150da3f725ce08394500ec202dbfc60801766ccc69d59ccfc14ee",
+    "deployMeasurementRegistry": "0xe973dc5fe2594a75499324cd114e8f4418a244f7135ca423c0b9855b3ba10273",
+    "authorizeProberOnRegistry": "0xdef0e3727ea806164a775d33157ddc099b89697147473dea55fd4790954cd824",
+    "authorizeProberOnMeasurement": "0xb4f9b2250893404507a833bd08c064fd122f6c30401a3c58947eb7acafce42c7"
+  },
+  "gas": {
+    "totalUsed": 3114449,
+    "gasPriceGwei": 3.94,
+    "cost0G": 0.0098,
+    "note": "Read back after the fact: 1.700000 0G before, 1.690183 after."
+  },
+  "seeded": {
+    "providerCount": 0,
+    "note": "Nothing registered yet. Unlike the testnet deployment this ledger carries no stand-in values — every measurement written here will come from a real prober run."
+  },
+  "verifiedOnChain": {
+    "MeasurementRegistry.REGISTRY": "0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6",
+    "MeasurementRegistry.EPOCH_DURATION": 3600,
+    "authorized": "deployer is authorised on both registries",
+    "note": "Read directly with cast after deployment, not taken from the deploy script's own output."
+  },
+  "keyHistory": {
+    "note": "Two earlier keys are retired and must never be used here.",
+    "0xaBaCa14B88Ee1E392985e4dF315ae4e70CC734DB": "testnet-only; generated inside a Claude Code session",
+    "0x94f7268ca8b29d536f8c5cd0753753d55Fb06459": "retired unused; its private key was printed into a session transcript before any deploy, so it was rotated and drained first"
+  }
+}

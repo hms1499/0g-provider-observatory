@@ -2,9 +2,9 @@
  * Where the dashboard reads from. Contract addresses are public constants and are bundled
  * at build time; the RPC and indexer are chosen at view time by the network toggle.
  *
- * Mainnet's registry addresses are filled in by T12. Until then the mainnet entry exists so
- * that pointing the page at it is a deployment detail rather than a code change, and the UI
- * shows it as not yet deployed.
+ * Both networks are live. Mainnet was deployed 2026-08-24 — see
+ * `deployments/aristotle-16661.json` — and holds no seeded values: every measurement there
+ * comes from a real prober run, unlike testnet epoch 496497 which carries stand-ins.
  */
 export interface NetworkConfig {
   name: string;
@@ -36,9 +36,9 @@ export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
     rpcUrl: 'https://evmrpc.0g.ai',
     indexerUrl: 'https://indexer-storage-turbo.0g.ai',
     explorer: 'https://chainscan.0g.ai',
-    providerRegistry: '',
-    measurementRegistry: '',
-    prober: '',
+    providerRegistry: '0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6',
+    measurementRegistry: '0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333',
+    prober: '0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD',
   },
 };
 
