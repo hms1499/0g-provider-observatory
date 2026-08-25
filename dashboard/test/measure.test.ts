@@ -75,4 +75,23 @@ describe('measureGroup', () => {
       /no services/i,
     );
   });
+
+  it('refuses to replay against a bundle that never recorded the parameters it sent', async () => {
+    // Schema /1 and /2 bundles did not carry `sentParams` at all — simulate that by omitting
+    // the field, not by setting it to a falsy value, so the guard is proven against the real
+    // shape of an old bundle rather than an easier stand-in.
+    const noSentParams: VerifiableBundle = {
+      ...bundle,
+      roster: bundle.roster.map((s) => {
+        if (s.canonicalId !== 'qwen3-vl-30b') return s;
+        const { sentParams: _omit, ...rest } = s;
+        return rest;
+      }),
+    };
+    await assert.rejects(
+      () =>
+        measureGroup({ bundle: noSentParams, canonicalId: 'qwen3-vl-30b', apiKey: 'sk-test', call: perfectCall }),
+      /does not record the generation parameters/i,
+    );
+  });
 });
