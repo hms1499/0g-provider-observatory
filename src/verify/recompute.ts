@@ -67,6 +67,8 @@ export interface VerifiableBundle {
     mode: string;
     onchainMode: string | null;
     droppedParams: string[];
+    /** Generation parameters actually sent. Absent in bundles written before /3. */
+    sentParams?: Record<string, unknown>;
   }>;
   rules: BundleRules;
   results: BundleResult[];
