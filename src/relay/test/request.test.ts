@@ -78,4 +78,58 @@ describe('buildUpstream', () => {
     const { init } = buildUpstream(body(), 'Bearer sk-secret', prices);
     assert.equal(init.body.includes('sk-secret'), false);
   });
+
+  it('rejects a malformed Authorization header (not Bearer format)', () => {
+    assert.throws(
+      () => buildUpstream(body(), 'Basic xyz', prices),
+      (e: RelayRejected) => e.status === 401,
+    );
+  });
+
+  it('rejects a Bearer header with no token', () => {
+    assert.throws(
+      () => buildUpstream(body(), 'Bearer', prices),
+      (e: RelayRejected) => e.status === 401,
+    );
+  });
+
+  it('refuses an empty price row', () => {
+    const emptyPrices = {
+      [priceKey(ADDRESS, 'glm-5.2')]: {},
+    };
+    assert.throws(
+      () => buildUpstream(body(), 'Bearer sk-test', emptyPrices),
+      (e: RelayRejected) => e.status === 400,
+    );
+  });
+
+  it('refuses a row with zero prices', () => {
+    const zeroPrices = {
+      [priceKey(ADDRESS, 'glm-5.2')]: { prompt: '0', completion: '0' },
+    };
+    assert.throws(
+      () => buildUpstream(body(), 'Bearer sk-test', zeroPrices),
+      (e: RelayRejected) => e.status === 400,
+    );
+  });
+
+  it('refuses a row with only prompt price (completion-only cap leaves prompt unbounded)', () => {
+    const promptOnly = {
+      [priceKey(ADDRESS, 'glm-5.2')]: { prompt: '0.0000009' },
+    };
+    assert.throws(
+      () => buildUpstream(body(), 'Bearer sk-test', promptOnly),
+      (e: RelayRejected) => e.status === 400,
+    );
+  });
+
+  it('refuses a row with only completion price (prompt-only cap leaves completion unbounded)', () => {
+    const completionOnly = {
+      [priceKey(ADDRESS, 'glm-5.2')]: { completion: '0.000003' },
+    };
+    assert.throws(
+      () => buildUpstream(body(), 'Bearer sk-test', completionOnly),
+      (e: RelayRejected) => e.status === 400,
+    );
+  });
 });

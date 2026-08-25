@@ -76,7 +76,7 @@ export function parseRelayBody(raw: unknown): RelayBody {
   return {
     providerAddress: b.providerAddress,
     model: b.model,
-    messages: b.messages,
+    messages: b.messages.map((m) => ({ role: m.role, content: m.content })),
     max_tokens: b.max_tokens,
     ...(b.temperature === undefined ? {} : { temperature: b.temperature }),
   };
@@ -99,20 +99,27 @@ export function buildUpstream(
     throw new RelayRejected('no advertised price for that provider and model', 400);
   }
 
+  // Both prompt and completion must be priced. A row with only one ceiling leaves the other spend
+  // unbounded, so it is useless as a price control. toHeaderPrice returns undefined for zero
+  // or missing values, so we check the row before building headers.
+  const prompt = toHeaderPrice(Number(row.prompt ?? 0), PRICE_MULTIPLIER);
+  const completion = toHeaderPrice(Number(row.completion ?? 0), PRICE_MULTIPLIER);
+  if (!prompt || !completion) {
+    throw new RelayRejected('provider and model must have both prompt and completion prices', 400);
+  }
+
   const headers: Record<string, string> = {
     'content-type': 'application/json',
     authorization,
     'X-0G-Provider-Address': body.providerAddress,
+    'X-0G-Provider-Max-Price-Usd-Prompt': prompt,
+    'X-0G-Provider-Max-Price-Usd-Completion': completion,
   };
-  const prompt = toHeaderPrice(Number(row.prompt ?? 0), PRICE_MULTIPLIER);
-  const completion = toHeaderPrice(Number(row.completion ?? 0), PRICE_MULTIPLIER);
-  if (prompt) headers['X-0G-Provider-Max-Price-Usd-Prompt'] = prompt;
-  if (completion) headers['X-0G-Provider-Max-Price-Usd-Completion'] = completion;
 
   // Rebuilt field by field rather than spread, so nothing a caller invents rides along.
   const payload: Record<string, unknown> = {
     model: body.model,
-    messages: body.messages,
+    messages: body.messages.map((m) => ({ role: m.role, content: m.content })),
     max_tokens: body.max_tokens,
     stream: false,
   };
