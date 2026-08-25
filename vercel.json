@@ -3,6 +3,6 @@
   "outputDirectory": "dashboard-dist",
   "framework": null,
   "functions": {
-    "api/router.ts": { "maxDuration": 90 }
+    "api/router/chat/completions.ts": { "maxDuration": 90 }
   }
 }

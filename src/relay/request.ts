@@ -50,11 +50,20 @@ export function priceKey(address: string, model: string): string {
   return `${address.toLowerCase()}|${model}`;
 }
 
-export function parseRelayBody(raw: unknown): RelayBody {
+/**
+ * `providerAddress` comes from the `X-0G-Provider-Address` header, not the body — this is
+ * what lets the relay serve `${baseUrl}/chat/completions` as a drop-in for the real Router,
+ * whose own `/v1/chat/completions` also takes the pin as a header. A body-only pin would mean
+ * router-client.ts needed a special case just for this endpoint.
+ */
+export function parseRelayBody(raw: unknown, providerAddress: string | undefined): RelayBody {
   const b = raw as Partial<RelayBody> | null;
   if (!b || typeof b !== 'object') throw new RelayRejected('body must be a JSON object', 400);
-  if (typeof b.providerAddress !== 'string' || !ADDRESS_RE.test(b.providerAddress)) {
-    throw new RelayRejected('providerAddress must be a 0x-prefixed 20-byte address', 400);
+  if (typeof providerAddress !== 'string' || !ADDRESS_RE.test(providerAddress)) {
+    throw new RelayRejected(
+      'X-0G-Provider-Address header must be a 0x-prefixed 20-byte address',
+      400,
+    );
   }
   if (typeof b.model !== 'string' || b.model === '') {
     throw new RelayRejected('model must be a non-empty string', 400);
@@ -74,7 +83,7 @@ export function parseRelayBody(raw: unknown): RelayBody {
     throw new RelayRejected('temperature must be a number when present', 400);
   }
   return {
-    providerAddress: b.providerAddress,
+    providerAddress,
     model: b.model,
     messages: b.messages.map((m) => ({ role: m.role, content: m.content })),
     max_tokens: b.max_tokens,

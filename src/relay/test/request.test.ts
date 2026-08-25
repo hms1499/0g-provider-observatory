@@ -28,17 +28,32 @@ const prices: PriceTable = {
 describe('parseRelayBody', () => {
   it('rejects a malformed provider address', () => {
     assert.throws(
-      () => parseRelayBody({ ...body(), providerAddress: 'not-an-address' }),
+      () => parseRelayBody(body(), 'not-an-address'),
+      (e: RelayRejected) => e.status === 400,
+    );
+  });
+
+  it('rejects a well-formed body with no X-0G-Provider-Address header', () => {
+    assert.throws(
+      () => parseRelayBody(body(), undefined),
       (e: RelayRejected) => e.status === 400,
     );
   });
 
   it('rejects a body with no messages', () => {
-    assert.throws(() => parseRelayBody({ ...body(), messages: [] }), (e: RelayRejected) => e.status === 400);
+    assert.throws(
+      () => parseRelayBody({ ...body(), messages: [] }, ADDRESS),
+      (e: RelayRejected) => e.status === 400,
+    );
   });
 
   it('accepts a well-formed body', () => {
-    assert.equal(parseRelayBody(body()).model, 'glm-5.2');
+    assert.equal(parseRelayBody(body(), ADDRESS).model, 'glm-5.2');
+  });
+
+  it('takes the provider address from the header argument, not the body', () => {
+    const parsed = parseRelayBody({ ...body(), providerAddress: 'ignored-if-present' }, ADDRESS);
+    assert.equal(parsed.providerAddress, ADDRESS);
   });
 });
 

@@ -10,9 +10,16 @@
  *
  * It cannot produce a wrong measurement, because it does not measure. What a reader has to
  * trust is that it does not log one header, and that is checkable by reading this file.
+ *
+ * Lives at `api/router/chat/completions.ts` — not a bespoke `api/router.ts` — on purpose:
+ * `buildPinnedRequest` in router-client.ts builds every call as `${baseUrl}/chat/completions`
+ * and pins the provider via an `X-0G-Provider-Address` header, exactly like the real Router.
+ * Serving that same shape means this relay is a drop-in replacement for the Router at
+ * `baseUrl: '/api/router'`, and router-client.ts needs no special case to know it is talking
+ * to a relay instead of the Router itself.
  */
-import { loadPrices } from '../src/relay/prices.js';
-import { buildUpstream, parseRelayBody, RelayRejected } from '../src/relay/request.js';
+import { loadPrices } from '../../../src/relay/prices.js';
+import { buildUpstream, parseRelayBody, RelayRejected } from '../../../src/relay/request.js';
 
 /** A token bucket per IP. See the note at `allow()` for what this does and does not promise. */
 const buckets = new Map<string, { tokens: number; at: number }>();
@@ -39,7 +46,8 @@ export async function POST(req: Request): Promise<Response> {
     if (!authorization) {
       throw new RelayRejected('an Authorization: Bearer header is required', 401);
     }
-    const body = parseRelayBody(await req.json());
+    const providerAddress = req.headers.get('x-0g-provider-address') ?? undefined;
+    const body = parseRelayBody(await req.json(), providerAddress);
     const prices = await loadPrices(authorization, fetchJson);
     const { url, init } = buildUpstream(body, authorization, prices);
 
