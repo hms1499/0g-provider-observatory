@@ -10,8 +10,26 @@
  */
 import { recompute, type RecomputedService, type VerifiableBundle } from './recompute.js';
 
+/**
+ * The fields a cross-run comparison actually reads.
+ *
+ * `RecomputedService` satisfies this structurally, so recomputing a bundle still feeds
+ * `compareRuns` directly. A live measurement taken in the page produces `ServiceStats`
+ * plus a `DivergenceResult` and has no honest value for the rest — narrowing the input is
+ * how invented zeros are kept out of a comparison against measured numbers.
+ */
+export interface ComparableService {
+  address: string;
+  modelId: string;
+  mode: string;
+  p50Ms: number;
+  p95Ms: number;
+  errorRateBps: number;
+  divergenceBps: number;
+}
+
 export interface Measured {
-  services: readonly RecomputedService[];
+  services: readonly ComparableService[];
   /**
    * The value this run's bundle uses for "divergence was not measurable". Read from the
    * bundle rather than assumed: a bundle that never names one cannot express the
@@ -62,8 +80,8 @@ export interface ReproduceReport {
   onlyIndependent: string[];
 }
 
-const idOf = (s: RecomputedService) => `${s.address.toLowerCase()}|${s.modelId}`;
-const nameOf = (s: RecomputedService) => `${s.address} ${s.modelId}`;
+const idOf = (s: ComparableService) => `${s.address.toLowerCase()}|${s.modelId}`;
+const nameOf = (s: ComparableService) => `${s.address} ${s.modelId}`;
 
 export function compareRuns(published: Measured, independent: Measured): ReproduceReport {
   const byId = new Map(independent.services.map((s) => [idOf(s), s]));

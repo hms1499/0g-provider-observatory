@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
-import { compareRuns, reproduce } from '../reproduce.js';
+import { compareRuns, reproduce, type ComparableService } from '../reproduce.js';
 import type { RecomputedService, VerifiableBundle } from '../recompute.js';
 
 function measured(over: Partial<RecomputedService> = {}): RecomputedService {
@@ -149,5 +149,17 @@ describe('reproduce · two real mainnet runs of the same roster', { skip: !haveB
 
   it('finds no service whose observed mode changed between the two runs', () => {
     assert.deepEqual(report!.disagreements.filter((d) => d.kind === 'mode'), []);
+  });
+});
+
+describe('compareRuns · input shape', () => {
+  it('compares a run that carries only the fields the comparison reads', () => {
+    const live: ComparableService = {
+      address: '0xA', modelId: 'm-one', mode: 'TeeTLS',
+      p50Ms: 100, p95Ms: 200, errorRateBps: 0, divergenceBps: 0,
+    };
+    const report = compareRuns({ services: [live] }, { services: [live] });
+    assert.deepEqual(report.disagreements, []);
+    assert.equal(report.compared, 1);
   });
 });
