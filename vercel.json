@@ -1,5 +1,8 @@
 {
   "buildCommand": "pnpm dashboard:build",
   "outputDirectory": "dashboard-dist",
-  "framework": null
+  "framework": null,
+  "functions": {
+    "api/router.ts": { "maxDuration": 90 }
+  }
 }
