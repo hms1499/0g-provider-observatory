@@ -10,6 +10,7 @@ import { existsSync } from 'node:fs';
 import { buildPinnedRequest } from '../probes/router-client.js';
 import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
 import { latestSnapshot } from '../paths.js';
+import { ROUTER_API } from '../config.js';
 import {
   assertSuiteValid,
   PROBES,
@@ -180,6 +181,7 @@ function main() {
   head('06', 'REQUEST THAT WOULD BE SENT (sample)');
   const sample: Target = plan.groups[0]?.targets[0] ?? plan.targets[0];
   const req = buildPinnedRequest({
+    baseUrl: ROUTER_API,
     providerAddress: sample.address,
     model: sample.modelId,
     probe: PROBES[0],

@@ -13,7 +13,6 @@
  * Building the request is separated from sending it: the dry run can inspect the
  * exact bytes that would go on the wire without an API key and without spending.
  */
-import { ROUTER_API } from '../config.js';
 import type { Probe } from './suite.js';
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
@@ -66,6 +65,8 @@ export interface NegotiatedParams {
 }
 
 export interface PinnedRequestInput {
+  /** Where the Router lives. The CLI passes ROUTER_API; the browser passes '/api/router'. */
+  baseUrl: string;
   providerAddress: string;
   /** The exact string the Router routes on — use model_id, not canonical_id. */
   model: string;
@@ -124,7 +125,7 @@ export function buildPinnedRequest(input: PinnedRequestInput): PinnedRequest {
   if (params.top_p !== undefined) body.top_p = params.top_p;
   if (params.reasoning_effort !== undefined) body.reasoning_effort = params.reasoning_effort;
 
-  return { url: `${ROUTER_API}/chat/completions`, method: 'POST', headers, body };
+  return { url: `${input.baseUrl}/chat/completions`, method: 'POST', headers, body };
 }
 
 /**
@@ -320,8 +321,8 @@ export async function callPinned(opts: CallOptions): Promise<CallResult> {
 }
 
 /** The Router model catalogue. No auth required — a free preflight check. */
-export async function fetchModels(): Promise<any[]> {
-  const res = await fetch(`${ROUTER_API}/models`);
+export async function fetchModels(baseUrl: string): Promise<any[]> {
+  const res = await fetch(`${baseUrl}/models`);
   if (!res.ok) throw new Error(`Router /models returned ${res.status}`);
   const body = (await res.json()) as { data?: any[] };
   return body.data ?? [];

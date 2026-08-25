@@ -24,6 +24,10 @@ const BROWSER_ENTRYPOINTS = [
   'src/verify/check.ts',
   'src/verify/reproduce.ts',
   'src/storage/merkle.ts',
+  'src/probes/router-client.ts',
+  'src/probes/suite.ts',
+  'src/probes/aggregate.ts',
+  'src/probes/divergence.ts',
   'dashboard/main.tsx',
 ];
 

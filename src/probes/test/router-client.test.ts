@@ -51,6 +51,7 @@ describe('readChoice', () => {
 
 describe('buildPinnedRequest reasoning_effort', () => {
   const base = {
+    baseUrl: 'https://router-api.0g.ai/v1',
     providerAddress: '0xB01EBd79c3fd63ff52fD47C3935119601EEe2FdB',
     model: 'glm-5',
     probe: PROBES[0],
@@ -67,5 +68,18 @@ describe('buildPinnedRequest reasoning_effort', () => {
   it('omits the field entirely when no effort was negotiated', () => {
     const req = buildPinnedRequest({ ...base, params: { temperature: 0, dropped: [] } });
     assert.equal('reasoning_effort' in req.body, false);
+  });
+});
+
+describe('buildPinnedRequest · endpoint', () => {
+  it('builds its URL from the caller-supplied base, not from the environment', () => {
+    const req = buildPinnedRequest({
+      baseUrl: '/api/router',
+      providerAddress: '0x7DCFe6AEa70350C2090041524c9B4A9262DCe87D',
+      model: 'glm-5.2',
+      probe: PROBES[0],
+      params: { temperature: 0, dropped: [] },
+    });
+    assert.equal(req.url, '/api/router/chat/completions');
   });
 });

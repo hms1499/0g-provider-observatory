@@ -38,7 +38,7 @@ import { buildPlan, loadSnapshot, type Target } from '../probes/plan.js';
 import { callPinned, type CallResult, type ReasoningEffort } from '../probes/router-client.js';
 import { assertSuiteValid, PROBES, SUITE_MEASURED_TOKENS } from '../probes/suite.js';
 import { MODES, ObservatoryReader } from '../chain/registry.js';
-import { CHAIN_ID } from '../config.js';
+import { CHAIN_ID, ROUTER_API } from '../config.js';
 import { assertDeploymentChain, deploymentFor, latestSnapshot } from '../paths.js';
 import { applyRosterLock, type RosterLock } from '../probes/roster-lock.js';
 import { EpochDrift, writeEpoch } from '../chain/writer.js';
@@ -235,6 +235,7 @@ async function main() {
         try {
           r = await callPinned({
             apiKey,
+            baseUrl: ROUTER_API,
             providerAddress: t.address,
             model: t.modelId,
             probe,

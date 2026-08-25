@@ -11,6 +11,7 @@ import { callPinned } from '../probes/router-client.js';
 import { buildPlan, loadSnapshot } from '../probes/plan.js';
 import { PROBES } from '../probes/suite.js';
 import { latestSnapshot } from '../paths.js';
+import { ROUTER_API } from '../config.js';
 
 const B = (s: string) => `\x1b[1m${s}\x1b[0m`;
 const DIM = (s: string) => `\x1b[2m${s}\x1b[0m`;
@@ -47,6 +48,7 @@ async function main() {
 
   const r = await callPinned({
     apiKey,
+    baseUrl: ROUTER_API,
     providerAddress: target.address,
     model: target.modelId,
     probe,
