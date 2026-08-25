@@ -80,6 +80,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T15 | Roster fitted to the budget before sending, so no run is cut mid-suite | `src/probes/epoch-run.ts` |
 | T12 | **Mainnet deploy, 38 providers registered, first epoch written and verified** | `deployments/aristotle-16661.json` |
 | T16 | Series roster pinned so epochs stay comparable | `data/series-roster.json`, `src/probes/roster-lock.ts` |
+| T17 | A dev can measure the network themselves and compare, without asking permission | `src/verify/reproduce.ts`, `src/scripts/reproduce.ts`, `README.md` |
 
 ### Ready now
 
@@ -91,7 +92,42 @@ One epoch per clock hour, and the ledger takes one record per (epoch, prober) �
 run in the same hour reverts. Start with at least 20 minutes left in the hour or the run
 crosses the boundary and refuses to write, which is the safe direction but wastes the calls.
 
-**Then T13**: README, 3-minute video, X post. The explorer link exists now.
+**Then T13**: 3-minute video and X post. `README.md` now exists — T17 wrote the spine of it
+(what this is, mainnet addresses, verify, reproduce, what we do not know). It still needs the
+submission framing and the video link.
+
+### T17 — reproducing a published epoch, and what it decided not to do
+
+A dev can now take their own measurement and compare it against a published one:
+
+    pnpm epoch --confirm --no-lock --budget-usd=0.80 --exclude=   # 23 services, $0.7836
+    pnpm reproduce <their-bundle>.json 496539
+
+**No contract change and no allowlist.** Opening `writeEpoch` to other probers was the
+obvious reading of "give devs control", and it was rejected: a dev's own run is worth more
+as an independent check than as a second series on the same ledger, and `setAuthorized`
+would have put a permission gate in front of exactly the thing the project claims needs no
+permission. `MeasurementRegistry` is untouched.
+
+**Latency is reported as a ratio and never scored.** Two runs an hour apart see different
+load; nothing in the evidence says which one caught a bad minute. What is stable enough to
+compare is the conclusion — observed mode, whether divergence was measurable, whether the
+service diverges at all, and error rate past a 1000 bps tolerance (a shade over one failed
+call in fifteen).
+
+**Both bundles go through `recompute()`.** `src/verify/reproduce.ts` imports nothing from
+`src/probes/`, so neither run is read through the code that produced it. Neither side is
+treated as correct.
+
+Checked against 496539 vs 496540 — two real mainnet runs of the same roster, an hour apart.
+All 10 services line up, no observed mode changed, and one disagreement surfaces: glm-5.2 at
+`0xF203A388…` read 0% error in one run and 13.33% in the other. p95 ratios span 0.18x to
+1.47x, which is why they are reported rather than judged.
+
+**Two flags cost an hour to discover.** `DEFAULT_EXCLUDE` drops the four `standard`-mode
+groups, so reaching all 23 services needs `--exclude=` as well as a raised budget. And
+through `pnpm`, `--budget-usd 0.80` is swallowed before the script sees it — only
+`--budget-usd=0.80` works. Both are now in the README as written.
 
 ### How many epochs the project needs: 14
 

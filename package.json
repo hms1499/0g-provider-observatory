@@ -20,6 +20,7 @@
     "token-profile": "tsx src/scripts/token-profile.ts",
     "upload-epoch": "tsx src/scripts/upload-epoch.ts",
     "verify": "tsx src/scripts/verify-epoch.ts",
+    "reproduce": "tsx src/scripts/reproduce.ts",
     "dashboard:dev": "vite",
     "dashboard:build": "vite build",
     "dashboard:preview": "vite preview --outDir ../dashboard-dist",
