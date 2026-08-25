@@ -15,6 +15,12 @@ export interface NetworkConfig {
   providerRegistry: string;
   measurementRegistry: string;
   prober: string;
+  /**
+   * Whether any measurement on this chain is a stand-in rather than a real prober run.
+   * The dashboard opens on a chain where it is false: showing invented numbers first,
+   * however clearly labelled, is the wrong first impression for an instrument.
+   */
+  seeded: boolean;
 }
 
 export type NetworkKey = 'testnet' | 'mainnet';
@@ -29,6 +35,7 @@ export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
     providerRegistry: '0xCF9236a145FaE855B6894Eb7951cA9619D6613a8',
     measurementRegistry: '0x9bdeC5D5749270cf20DDa5d541770839E083CAc6',
     prober: '0xaBaCa14B88Ee1E392985e4dF315ae4e70CC734DB',
+    seeded: true,
   },
   mainnet: {
     name: '0G Aristotle mainnet',
@@ -39,8 +46,17 @@ export const NETWORKS: Record<NetworkKey, NetworkConfig> = {
     providerRegistry: '0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6',
     measurementRegistry: '0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333',
     prober: '0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD',
+    seeded: false,
   },
 };
+
+/**
+ * Which network the dashboard opens on.
+ *
+ * Kept here rather than as a literal inside a `useState` so the reason is stated once and
+ * the choice is testable: `networks.test.ts` asserts the default carries no seeded values.
+ */
+export const DEFAULT_NETWORK: NetworkKey = 'mainnet';
 
 export const isDeployed = (net: NetworkConfig): boolean => net.measurementRegistry !== '';
 

@@ -77,6 +77,34 @@ export function Verify(props: {
         prober that produced them.
       </p>
 
+      <details>
+        <summary>Recomputing is one question. Measuring it yourself is another.</summary>
+        <p>
+          The check below asks whether the published numbers follow from the published
+          evidence. It cannot tell you whether the method itself holds up. For that, run the
+          same instrument on your own key and compare what the two runs concluded.
+        </p>
+        <pre>
+{`# your own run — nothing is written to the chain
+pnpm epoch --confirm --no-lock --budget-usd=0.80 --exclude=
+
+# compare it against a published epoch
+pnpm reproduce data/epochs/<your-bundle>.json ${props.epochs.at(-1) ?? 496539}`}
+        </pre>
+        <p>
+          That measures all 10 multi-provider groups — 23 services, 345 calls, about $0.78
+          of inference on your own key. Drop both flags to measure only the pinned series
+          instead: 10 services, about $0.055.
+        </p>
+        <p>
+          Latency is reported as a ratio and never scored — two runs at two times see
+          different load. What gets compared is the conclusion: the observed mode, whether
+          divergence could be measured at all, whether the service diverges from its peers,
+          and the error rate past a tolerance of one failed call in fifteen. Neither run is
+          treated as correct.
+        </p>
+      </details>
+
       {props.epochs.length === 0 ? (
         <p>No epochs have been written on {props.net.name} yet.</p>
       ) : (

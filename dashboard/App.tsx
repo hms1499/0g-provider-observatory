@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Caveats } from './Caveats.js';
-import { NETWORKS, type NetworkKey } from './networks.js';
+import { DEFAULT_NETWORK, NETWORKS, type NetworkKey } from './networks.js';
 import { Providers } from './Providers.js';
 import { useObservatory } from './useObservatory.js';
 import { Verify } from './Verify.js';
 
 export default function App() {
-  const [key, setKey] = useState<NetworkKey>('testnet');
+  const [key, setKey] = useState<NetworkKey>(DEFAULT_NETWORK);
   const [panel, setPanel] = useState<'providers' | 'verify'>('providers');
   const net = NETWORKS[key];
   const data = useObservatory(net);
@@ -32,6 +32,14 @@ export default function App() {
           </button>
         </nav>
       </header>
+
+      {net.seeded && (
+        <p>
+          This chain carries stand-in values from before the prober ran against real
+          services. Read it as a record that the contracts work, not as a measurement of
+          anything. {NETWORKS.mainnet.name} holds only real runs.
+        </p>
+      )}
 
       {data.state === 'loading' && <p>Reading the ledger from {net.rpcUrl}…</p>}
       {data.state === 'not-deployed' && (

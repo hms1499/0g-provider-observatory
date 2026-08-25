@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { bundleUrl, explorerTx, NETWORKS } from '../networks.js';
+import { bundleUrl, DEFAULT_NETWORK, explorerTx, isDeployed, NETWORKS } from '../networks.js';
 
 describe('NETWORKS', () => {
   it('names both chains by their real ids', () => {
@@ -33,5 +33,15 @@ describe('source links', () => {
       bundleUrl(NETWORKS.testnet, '0xdef'),
       'https://indexer-storage-testnet-turbo.0g.ai/file?root=0xdef',
     );
+  });
+});
+
+describe('the network the dashboard opens on', () => {
+  it('holds real prober runs, never seeded stand-in values', () => {
+    assert.equal(NETWORKS[DEFAULT_NETWORK].seeded, false);
+  });
+
+  it('is deployed', () => {
+    assert.ok(isDeployed(NETWORKS[DEFAULT_NETWORK]));
   });
 });
