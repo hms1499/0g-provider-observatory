@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Caveats } from './Caveats.js';
 import { DEFAULT_NETWORK, NETWORKS, type NetworkKey } from './networks.js';
 import { Providers } from './Providers.js';
+import { Reproduce } from './Reproduce.js';
 import { useObservatory } from './useObservatory.js';
 import { Verify } from './Verify.js';
 
 export default function App() {
   const [key, setKey] = useState<NetworkKey>(DEFAULT_NETWORK);
-  const [panel, setPanel] = useState<'providers' | 'verify'>('providers');
+  const [panel, setPanel] = useState<'providers' | 'verify' | 'reproduce'>('providers');
   const net = NETWORKS[key];
   const data = useObservatory(net);
 
@@ -29,6 +30,9 @@ export default function App() {
           </button>
           <button onClick={() => setPanel('verify')} aria-pressed={panel === 'verify'}>
             Verify
+          </button>
+          <button onClick={() => setPanel('reproduce')} aria-pressed={panel === 'reproduce'}>
+            Reproducibility
           </button>
         </nav>
       </header>
@@ -64,6 +68,9 @@ export default function App() {
       )}
       {data.state === 'ready' && panel === 'verify' && (
         <Verify net={net} epochs={data.epochs} providers={data.providers} />
+      )}
+      {data.state === 'ready' && panel === 'reproduce' && (
+        <Reproduce net={net} epochs={data.epochs} />
       )}
 
       <Caveats />

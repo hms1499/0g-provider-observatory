@@ -22,6 +22,7 @@ const BROWSER_ENTRYPOINTS = [
   'src/chain/abi.ts',
   'src/verify/recompute.ts',
   'src/verify/check.ts',
+  'src/verify/reproduce.ts',
   'src/storage/merkle.ts',
   'dashboard/main.tsx',
 ];

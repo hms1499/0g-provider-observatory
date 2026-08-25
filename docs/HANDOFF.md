@@ -81,6 +81,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T12 | **Mainnet deploy, 38 providers registered, first epoch written and verified** | `deployments/aristotle-16661.json` |
 | T16 | Series roster pinned so epochs stay comparable | `data/series-roster.json`, `src/probes/roster-lock.ts` |
 | T17 | A dev can measure the network themselves and compare, without asking permission | `src/verify/reproduce.ts`, `src/scripts/reproduce.ts`, `README.md` |
+| T18 | Reproducibility is a panel on the dashboard, not a page of pnpm commands | `dashboard/Reproduce.tsx`, `dashboard/reproduceEpochs.ts` |
 
 ### Ready now
 
@@ -95,6 +96,39 @@ crosses the boundary and refuses to write, which is the safe direction but waste
 **Then T13**: 3-minute video and X post. `README.md` now exists — T17 wrote the spine of it
 (what this is, mainnet addresses, verify, reproduce, what we do not know). It still needs the
 submission framing and the video link.
+
+### T18 — the Router's CORS allowlist, measured
+
+T17 shipped reproducibility as a CLI and put the commands on the dashboard. That was the
+wrong vehicle: a feature that needs a clone, a package manager and `--exclude=` is an
+operations note, not something a reader can use.
+
+The obvious fix was to let the page measure with the reader's own key. **Measured, and it
+does not work.** The Router serves CORS properly but only to a fixed allowlist:
+
+    http://localhost:3000        200, ACAO returned
+    http://localhost:5173        200, ACAO returned
+    http://localhost:5174        403
+    http://localhost:8080        403
+    https://observatory.0g.ai    200
+    https://0g.ai.evil.test      403      (suffix match is correct, not fooled)
+    https://foo.vercel.app       403
+    https://<ours>.vercel.app    403
+
+A deployed dashboard cannot be in that list, and we do not control it. Worse, the
+`access-control-allow-headers` the Router returns does not include
+`X-0G-Provider-Max-Price-Usd-Prompt`/`-Completion`, so a browser carrying the price ceiling
+has its request blocked before it is sent. Measuring from a page means measuring with no
+price guard, on the reader's credit. Not shipped, deliberately.
+
+**What shipped instead** is a Reproducibility panel that compares two already-published
+epochs from their evidence, in the page. No key, no wallet, no install, no cost, and it
+answers the same question — does this instrument give the same answer twice. 496539 vs
+496540 renders live: 10 services compared, 0 modes changed, one error-rate disagreement
+(glm-5.2 at `0xF203A388…`, 0.00% against 13.33%), p95 ratios spanning 0.18x to 1.47x.
+
+The pnpm commands moved back to the README, where a reader who has already cloned the repo
+will find them.
 
 ### T17 — reproducing a published epoch, and what it decided not to do
 
