@@ -19,12 +19,11 @@
  * to a relay instead of the Router itself.
  */
 import { loadPrices } from '../../../src/relay/prices.js';
+import { allow, clientIp, createBucketStore } from '../../../src/relay/rate-limit.js';
 import { buildUpstream, parseRelayBody, RelayRejected } from '../../../src/relay/request.js';
 
-/** A token bucket per IP. See the note at `allow()` for what this does and does not promise. */
-const buckets = new Map<string, { tokens: number; at: number }>();
-const RATE_CAPACITY = 40;
-const RATE_REFILL_PER_MS = 40 / 60_000;
+/** See src/relay/rate-limit.ts for the caller-key rule and the eviction it is paired with. */
+const buckets = createBucketStore();
 
 export const config = { maxDuration: 90 };
 
@@ -36,7 +35,7 @@ export const config = { maxDuration: 90 };
 // not just under `vercel dev`. Exporting only POST also means the platform rejects
 // every other method before this file runs at all.
 export async function POST(req: Request): Promise<Response> {
-  if (!allow(clientIp(req))) return json({ error: 'too many requests' }, 429);
+  if (!allow(buckets, clientIp(req))) return json({ error: 'too many requests' }, 429);
 
   const authorization = req.headers.get('authorization') ?? undefined;
 
@@ -81,30 +80,4 @@ function json(payload: unknown, status: number): Response {
     status,
     headers: { 'content-type': 'application/json' },
   });
-}
-
-function clientIp(req: Request): string {
-  return (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0]!.trim();
-}
-
-/**
- * Casual abuse only. Fluid Compute reuses instances, so this map survives between requests
- * often enough to be useful — but it is per-instance, so it is NOT a hard guarantee across
- * a scaled-out deployment. Saying so here is cheaper than someone later assuming otherwise.
- *
- * The vector that would actually matter, using this as an anonymising relay to arbitrary
- * hosts, is closed by the upstream URL being a constant rather than by this function.
- */
-function allow(ip: string): boolean {
-  const now = Date.now();
-  const b = buckets.get(ip) ?? { tokens: RATE_CAPACITY, at: now };
-  b.tokens = Math.min(RATE_CAPACITY, b.tokens + (now - b.at) * RATE_REFILL_PER_MS);
-  b.at = now;
-  if (b.tokens < 1) {
-    buckets.set(ip, b);
-    return false;
-  }
-  b.tokens -= 1;
-  buckets.set(ip, b);
-  return true;
 }
