@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-24 (mainnet live)
+**Updated:** 2026-08-25 (measuring from the page)
 
 ---
 
@@ -82,6 +82,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T16 | Series roster pinned so epochs stay comparable | `data/series-roster.json`, `src/probes/roster-lock.ts` |
 | T17 | A dev can measure the network themselves and compare, without asking permission | `src/verify/reproduce.ts`, `src/scripts/reproduce.ts`, `README.md` |
 | T18 | Reproducibility is a panel on the dashboard, not a page of pnpm commands | `dashboard/Reproduce.tsx`, `dashboard/reproduceEpochs.ts` |
+| T19 | A reader measures a group from the page, with their own key, through a relay that holds nothing | `api/router/chat/completions.ts`, `src/relay/`, `dashboard/Measure.tsx`, `dashboard/measureGroup.ts` |
 
 ### Ready now
 
@@ -94,8 +95,68 @@ run in the same hour reverts. Start with at least 20 minutes left in the hour or
 crosses the boundary and refuses to write, which is the safe direction but wastes the calls.
 
 **Then T13**: 3-minute video and X post. `README.md` now exists — T17 wrote the spine of it
-(what this is, mainnet addresses, verify, reproduce, what we do not know). It still needs the
-submission framing and the video link.
+and T19 put the Measure panel at the top of it. It still needs the submission framing and the
+video link. The video has one more thing to show than it did: a reader measuring the network
+from the page.
+
+**Deploy so `/api/router` exists.** The Measure panel 404s under `pnpm dashboard:preview`,
+which serves the built page with no functions. It needs a real Vercel deployment or
+`npx vercel dev`. Not yet verified in a browser against mainnet — see T19.
+
+### T19 — measuring from the page, through a relay that holds nothing
+
+T18 established that a browser cannot talk to the Router directly: the Router serves CORS
+only to a fixed allowlist a deployed dashboard cannot join, and its
+`access-control-allow-headers` omits the `X-0G-Provider-Max-Price-Usd-*` pair, so a browser
+sending a price ceiling has the request blocked before it leaves the machine. `/v1/providers`
+is 403 from a foreign origin for the same reason — verified 2026-08-25 — so a page cannot even
+learn what a call should cost.
+
+A relay at `/api/router` gets past both. **Its four rules, all of them load-bearing:**
+
+1. **It holds no secret.** No `PRIVATE_KEY`, no server-side `ROUTER_API_KEY`, no fallback key.
+   A request with no `Authorization` header is rejected 401 before any upstream call, so a
+   keyless request costs us nothing.
+2. **The upstream is hardcoded** to `https://router-api.0g.ai/v1/chat/completions`, never read
+   from a body or a header. One endpoint is reachable through this relay and nothing else.
+3. **It attaches the price ceiling itself**, at three times the advertised rate — the same
+   multiplier as `run-epoch.ts` — from a price table it fetches server-side. A caller cannot
+   widen its own ceiling.
+4. **It logs no header and no body**, and scrubs upstream errors before returning them,
+   because an upstream error string can carry a URL with a token in it.
+
+**It must never gain chain access.** The ledger is write-once and keyed by (epoch, prober); a
+relay that could write would put a second, unaudited path to the same records behind an
+endpoint anyone on the internet can call. It reads no RPC and holds no key, and that is a
+property to preserve, not an accident of the current implementation.
+
+**It is a drop-in for the Router, not a bespoke endpoint.** The path is
+`api/router/chat/completions.ts` so `buildPinnedRequest` reaches it as
+`${baseUrl}/chat/completions` with the provider pinned in `X-0G-Provider-Address` — exactly
+the shape the real Router serves. `router-client.ts` needs no special case to know which one
+it is talking to, and that is what makes the browser path and the CLI path the same code.
+
+**What the panel refuses to do.** A bundle written before schema /3 does not record the
+sampling parameters the published run sent. Replaying against one of those would compare a
+live run at temperature 0 against a run whose actual conditions were never written down, and
+report it as one experiment rather than two. It refuses instead — the same call as dropping
+GLM-5-FP8 from an epoch on two usable samples.
+
+**Rate limiting is keyed on `x-real-ip`**, which Vercel's edge sets and a caller cannot
+override, falling back to the *last* `x-forwarded-for` entry — the first entries are
+caller-supplied, so keying on the first would let a caller mint a fresh bucket per request.
+40 requests per minute per caller. Fixed during the build; it was spoofable and unbounded.
+
+**Two filenames collided.** The plan named the panel `Measure.tsx` next to the existing
+`measure.ts`; tsc refuses both in one program on a case-insensitive filesystem. The logic
+module is `measureGroup.ts`, matching `Verify.tsx`/`verifyEpoch.ts` and
+`Reproduce.tsx`/`reproduceEpochs.ts`.
+
+**Not yet verified in a browser.** `pnpm typecheck`, `pnpm test` (284 pass) and
+`pnpm dashboard:build` are green, and the browser-safety guard now bundles the probe modules
+through `dashboard/main.tsx` for real. What has not happened is a live run under
+`npx vercel dev` against mainnet with a real key — the cheapest group, `qwen3-vl-30b`, is
+about $0.003. Until that runs, the panel is built and untested end to end.
 
 ### T18 — the Router's CORS allowlist, measured
 

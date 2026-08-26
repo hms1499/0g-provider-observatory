@@ -42,6 +42,26 @@ nothing else.
 different question is whether the *method* holds up: run the same instrument yourself and
 see if you reach the same conclusions.
 
+**Start with the dashboard's Measure panel.** Pick a consistency group, see the call count
+and what it will cost before you spend anything, paste a Router key with `inference` scope,
+and watch it run. The probes it sends come out of the published epoch's evidence bundle, not
+out of this repository, so you are replaying what the published numbers were derived from.
+No clone, no package manager, no flags. The key stays in the page — not in localStorage, not
+in a URL — and the calls are billed to you.
+
+The one thing it asks of you is the relay. Your key passes through `/api/router`, a function
+that forwards exactly one chat completion upstream and attaches the
+`X-0G-Provider-Max-Price-Usd-*` ceiling, at three times the advertised rate. It holds no key
+of its own, reads no chain, and runs no measurement, so it cannot produce a wrong number —
+what it can do is see your key in transit, which is why it logs no header and no body
+(`api/router/chat/completions.ts`, 83 lines, worth reading before you paste anything). It
+exists because the Router answers a browser only from an `Origin` on its own allowlist, which
+a deployed dashboard cannot join, and because the price-ceiling headers are absent from its
+`access-control-allow-headers` — so measuring from a page without a relay would mean measuring
+with no ceiling at all.
+
+If you have already cloned the repo, the CLI measures the whole roster instead of one group:
+
 ```bash
 # 0. see what it would cost, offline and free — no --confirm means nothing is sent
 pnpm epoch --no-lock --budget-usd=0.80 --exclude=
@@ -108,5 +128,7 @@ put a closed third-party API inside their own TDX enclave.
 | `src/probes/` | the 15-probe suite, provider pinning, roster fitting, divergence |
 | `src/storage/` | evidence bundles and 0G Storage upload |
 | `src/verify/` | independent recomputation and cross-run comparison. Imports nothing from `src/probes/` |
+| `src/relay/` | the relay's rules as pure functions: what it forwards, what it refuses, how it rate-limits |
+| `api/router/` | the relay itself — one chat completion forwarded, no secret, no chain, no measurement |
 | `dashboard/` | the public read-only view |
 | `docs/HANDOFF.md` | task board, findings, and what is still open |
