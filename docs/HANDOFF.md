@@ -152,11 +152,33 @@ caller-supplied, so keying on the first would let a caller mint a fresh bucket p
 module is `measureGroup.ts`, matching `Verify.tsx`/`verifyEpoch.ts` and
 `Reproduce.tsx`/`reproduceEpochs.ts`.
 
-**Not yet verified in a browser.** `pnpm typecheck`, `pnpm test` (284 pass) and
-`pnpm dashboard:build` are green, and the browser-safety guard now bundles the probe modules
-through `dashboard/main.tsx` for real. What has not happened is a live run under
-`npx vercel dev` against mainnet with a real key — the cheapest group, `qwen3-vl-30b`, is
-about $0.003. Until that runs, the panel is built and untested end to end.
+**Verified in a browser, up to the button.** Under `npx vercel dev` against mainnet the panel
+reads the newest epoch, pulls its bundle from the public gateway, and lists the four
+consistency groups it holds — glm-5.2, qwen3-vl-30b, qwen3.7-plus at 30 calls each and
+deepseek-v4-flash at 60 — with the Measure button disabled until a key is typed. What has
+*not* run is a paid call: that needs a real key and about $0.003 on `qwen3-vl-30b`.
+
+**`vercel dev` died the moment a browser opened the page, and the cause is the relay's
+existence.** Measured on CLI 54.21.0 and 59.5.0 alike. Once an `api/` function exists the CLI
+runs a second builder dev server for it, and it proxies the browser's websocket upgrade to
+that one instead of to Vite:
+
+    Detected "upgrade" event, proxying to builder dev server at http://127.0.0.1:57130
+    Error: An unexpected error occurred!
+    Error: read ECONNRESET
+
+Vite was on 57054. The Node builder's dev server is not a websocket server, it resets the
+socket, and nothing in the CLI handles that — the whole dev server exits. `server.hmr: false`
+does not help, because Vite 8 injects its client and opens the socket anyway. The fix in
+`vite.config.ts` gives HMR a port of its own under `vercel dev`, so the browser connects
+straight to Vite and no upgrade ever reaches the proxy. `pnpm dashboard:dev` is untouched.
+
+**Two things that look like faults and are not.** The `Sourcemap … points to missing source
+files` warnings come from `@0gfoundation/0g-storage-ts-sdk`, which ships `.js.map` files
+pointing at a `src.ts/` directory the package does not include. And the public mainnet RPC
+intermittently reverts an `eth_call` it answers correctly on the next attempt — 12 of 12
+succeeded a minute after two identical calls reverted — which the dashboard already reports
+as a read failure rather than a measurement.
 
 ### T18 — the Router's CORS allowlist, measured
 
