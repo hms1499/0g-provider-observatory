@@ -1326,3 +1326,9 @@ ul:has(> li > button) button[aria-pressed='true'] {
   font-size: 0.7rem;
   color: var(--faint);
 }
+
+/* The source link, set as prose rather than as another key/value row. */
+footer.site .source {
+  font-size: 0.82rem;
+  margin-bottom: 0.9rem;
+}

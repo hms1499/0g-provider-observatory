@@ -9,8 +9,8 @@ import { explorerAddress, isDeployed, type NetworkConfig } from './networks.js';
  * page only inside table rows, which meant a reader who wanted to look the project up on the
  * explorer had to find a row first.
  *
- * No invented links. There is no repository URL in this project's metadata, so there is no
- * repository link here — a footer full of dead placeholder links is worse than a short one.
+ * Every link here resolves to something a reader can open. The source is included now that it
+ * is public; when it was not, this footer said nothing rather than carrying a placeholder.
  */
 export function SiteFooter({ net }: { net: NetworkConfig }) {
   const rows: Array<{ label: string; address: string }> = [
@@ -57,6 +57,16 @@ export function SiteFooter({ net }: { net: NetworkConfig }) {
 
         <div className="col">
           <h3>Read it yourself</h3>
+          <p className="source">
+            <a
+              href="https://github.com/hms1499/0g-provider-observatory"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source on GitHub
+            </a>{' '}
+            — the prober, the contracts, and this page.
+          </p>
           <dl>
             <div>
               <dt>network</dt>

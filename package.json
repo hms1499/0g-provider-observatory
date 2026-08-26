@@ -1,6 +1,11 @@
 {
   "name": "0g-provider-observatory",
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hms1499/0g-provider-observatory.git"
+  },
+  "homepage": "https://og-provider-observatory.vercel.app",
   "private": true,
   "type": "module",
   "description": "Independent measurement layer for the 0G Compute provider network",
