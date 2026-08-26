@@ -67,7 +67,7 @@ prober                0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD
 
 ## Check it yourself
 
-Four levels, each doubting the one before it. Pick how far you want to go.
+Three checks, each doubting the one before it. Pick how far you want to go.
 
 ### 1. Does the number follow from the evidence?
 
@@ -106,7 +106,19 @@ spend anything, paste a key with `inference` scope. The probes come from the pub
 epoch's evidence, not from this repository. No clone, no flags. The cheapest group costs
 about **$0.003**.
 
-**From a clone**, for the whole roster instead of one group:
+> **This path asks one thing of you.** Your key passes through a small server of ours at
+> `/api/router` on its way to 0G's Router. It has to: the Router will not answer a browser
+> page it does not recognise.
+>
+> That server forwards one call and nothing else. It holds no key of its own, never reads the
+> chain, and does no measuring — so it cannot change a number. What it *can* do is see your
+> key go past, which is why it logs no header and no body. It is 83 lines, and reading them is
+> the point: [`api/router/chat/completions.ts`](api/router/chat/completions.ts).
+>
+> The reason it has to exist is in [`docs/HANDOFF.md`](docs/HANDOFF.md).
+
+**From a clone**, which skips that server entirely — the CLI calls 0G's Router directly and
+nothing of ours is in the path:
 
 ```bash
 # see what it would cost — nothing is sent without --confirm
@@ -124,17 +136,6 @@ both flags to measure only the pinned series instead: 10 services, about **$0.05
 
 > Flags must be written as `--flag=value`. Through `pnpm`, the space-separated form is
 > swallowed before the script sees it.
-
-### 4. Read the code
-
-Measuring from the page needs one server-side piece: a relay at `/api/router`. It forwards
-exactly one chat completion and attaches a price ceiling the browser is not allowed to send.
-It holds no key, reads no chain, and runs no measurement — so it cannot produce a wrong
-number. What it can do is see your key in transit, which is why it logs no header and no
-body. 83 lines, in `api/router/chat/completions.ts`. Worth reading before you paste anything.
-
-Why it exists at all is in [`docs/HANDOFF.md`](docs/HANDOFF.md) — the Router answers a browser
-only from origins on its own allowlist, and blocks the price-ceiling headers.
 
 ## Run it locally
 
