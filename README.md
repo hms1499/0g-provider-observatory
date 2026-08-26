@@ -115,7 +115,8 @@ about **$0.003**.
 > key go past, which is why it logs no header and no body. It is 83 lines, and reading them is
 > the point: [`api/router/chat/completions.ts`](api/router/chat/completions.ts).
 >
-> The reason it has to exist is in [`docs/HANDOFF.md`](docs/HANDOFF.md).
+> Why it has to exist, measured rather than assumed:
+> [`docs/network-findings.md`](docs/network-findings.md#5-the-router-answers-a-browser-only-from-an-origin-it-already-knows).
 
 **From a clone**, which skips that server entirely — the CLI calls 0G's Router directly and
 nothing of ours is in the path:

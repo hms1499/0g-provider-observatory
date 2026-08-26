@@ -16,3 +16,6 @@ broadcast/
 lib/
 .vercel
 .env*
+
+# Competition administration — kept locally, not published
+HACKATHON-RULES.md

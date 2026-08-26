@@ -1,9 +1,13 @@
 # Network findings
 
-**2026-08-21** · 0G Aristotle mainnet (chain 16661) · inference contract `0x47340d900bdFec2BD393c626E12ea0656F938d84`
+**2026-08-21 to 2026-08-25** · 0G Aristotle mainnet (chain 16661) · inference contract
+`0x47340d900bdFec2BD393c626E12ea0656F938d84`
 
-What reconciling the two sources of truth about the network turned up, and what it means for the design.
-The question driving it: **how far can any of this actually be verified?**
+What measuring the network turned up, and what it forced in the design. Sections 1–4 come from
+reconciling the two sources of truth about which services exist; section 5 from trying to reach the
+Router from a browser.
+
+The question driving all of it: **how far can any of this actually be verified?**
 
 ---
 
@@ -95,7 +99,58 @@ No address appears in the Router while missing from the chain.
 
 ---
 
-## 5. Design impact
+## 5. The Router answers a browser only from an origin it already knows
+
+Measured 2026-08-25, sending `Origin` by hand against `https://router-api.0g.ai`:
+
+| Origin sent | Result |
+|---|---|
+| `http://localhost:3000` | 200, `access-control-allow-origin` returned |
+| `http://localhost:5173` | 200 |
+| `http://localhost:5174` | 403 |
+| `http://localhost:8080` | 403 |
+| `https://observatory.0g.ai` | 200 |
+| `https://0g.ai.evil.test` | 403 — a suffix match would have passed this; it is not fooled |
+| `https://foo.vercel.app` | 403 |
+| `https://<our own>.vercel.app` | 403 |
+
+So the allowlist is fixed and specific, and a deployed dashboard cannot join it. `/v1/providers`
+behaves the same way, which means a browser cannot even read the advertised price table.
+
+A second, independent blocker: the `access-control-allow-headers` the Router returns does **not**
+include `X-0G-Provider-Max-Price-Usd-Prompt` / `-Completion`. A browser that attached a price
+ceiling would have its request refused by its own CORS preflight, before anything left the machine.
+Measuring from a page without a server would therefore mean measuring **with no price ceiling at
+all**, on the reader's credit.
+
+### What this forced
+
+A relay at `api/router/chat/completions.ts` — 83 lines, four rules, none of them preferences:
+
+1. **It holds no secret.** No `PRIVATE_KEY`, no server-side `ROUTER_API_KEY`, no fallback key. A
+   request with no `Authorization` is rejected before any upstream call, so a keyless request costs
+   nothing.
+2. **The upstream is a constant**, never read from a body or a header, so the relay cannot be aimed
+   at another host.
+3. **It attaches the price ceiling itself**, at three times the advertised rate, from a table it
+   fetches server-side. A caller cannot widen its own ceiling.
+4. **It never gains chain access.** The ledger is write-once and keyed by prober; a second write
+   path behind a public endpoint would undo both properties at once.
+
+It logs no header and no body, and scrubs upstream errors before returning them — an upstream error
+string can carry a URL with a token in it. It runs no measurement, so it cannot produce a wrong
+number; what it can do is see a key in transit.
+
+**One limit worth stating.** The 40 requests/minute rate limit lives in memory, so it is per
+instance rather than global. It is abuse-dampening, not an authorization boundary. The vector that
+would actually matter — using this as an anonymising relay to arbitrary hosts — is closed by rule 2,
+not by the rate limit.
+
+Running the CLI from a clone skips the relay entirely: `run-epoch.ts` calls the Router directly.
+
+---
+
+## 6. Design impact
 
 1. **Stop treating the HTTP Router as the primary source.** On-chain carries enough to derive the
    correct mode. The Router becomes a cross-check, and the gap between the two is itself a measurement.
