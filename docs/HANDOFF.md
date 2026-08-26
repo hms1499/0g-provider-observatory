@@ -86,6 +86,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T17 | A dev can measure the network themselves and compare, without asking permission | `src/verify/reproduce.ts`, `src/scripts/reproduce.ts`, `README.md` |
 | T18 | Reproducibility is a panel on the dashboard, not a page of pnpm commands | `dashboard/Reproduce.tsx`, `dashboard/reproduceEpochs.ts` |
 | T19 | A reader measures a group from the page, with their own key, through a relay that holds nothing | `api/router/chat/completions.ts`, `src/relay/`, `dashboard/Measure.tsx`, `dashboard/measureGroup.ts` |
+| T20 | **Public repository and a production deployment — the relay exists on the open internet now** | https://github.com/hms1499/0g-provider-observatory · https://og-provider-observatory.vercel.app |
 
 ### Ready now
 
@@ -102,8 +103,20 @@ and T19 put the Measure panel at the top of it. It still needs the submission fr
 video link. The video has one more thing to show than it did: a reader measuring the network
 from the page.
 
-**Deploy so `/api/router` exists.** The Measure panel 404s under `pnpm dashboard:preview`,
-which serves the built page with no functions. It needs a real Vercel deployment or
+**Deployed. `/api/router` exists on the open internet.** Verified against the live host, not
+against a local build: the page reads epoch 496540 from mainnet, renders four consistency
+groups and two observations, and the relay answers a request with no `Authorization` with 401
+and a `GET` with 405. Zero console errors.
+
+Two things worth writing down about that deployment. It carries **no environment variables at
+all** — the relay holds no key by design, so there is nothing to configure and nothing to
+leak. And a `curl | grep` of the served HTML proves nothing about what shipped: the dashboard
+renders client-side, so the initial HTML is an empty root element whichever build is live.
+Check the built JS bundle, or render the page.
+
+**Superseded, kept because the reasoning still applies.** The Measure panel 404s under
+`pnpm dashboard:preview`, which serves the built page with no functions. It needs a real
+Vercel deployment or
 `npx vercel dev`. Not yet verified in a browser against mainnet — see T19.
 
 ### T19 — measuring from the page, through a relay that holds nothing
