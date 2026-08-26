@@ -90,13 +90,22 @@ enough to compare is the conclusion:
 
 | Compared | Why |
 |---|---|
-| observed mode | a provider's guarantee mode does not change by the hour |
+| observed mode | a provider's guarantee mode does not change by the hour. **Only in the CLI** — see below |
 | divergence measurability | one run could measure a noise floor and the other could not |
 | divergence verdict | does this service disagree with its peers at all — not by how much |
 | error rate | flagged only past 1000 bps, a shade over one failed call in fifteen |
 | p50 / p95 | **reported as a ratio, never as a fault** |
 
 Neither run is treated as correct. Where they disagree, the tool names the disagreement.
+
+**Mode is not a live check in the Measure panel.** It is not measured by any probe anywhere:
+it is derived from the service registry on chain — whether a TEE verifier is declared, and
+whether the target is separated — and read once when a run builds its roster. Two published
+epochs each derive it for themselves, so the CLI comparing two bundles can genuinely catch an
+operator changing what they declare. The panel replays the roster recorded in the published
+bundle, so its mode is that epoch's by construction and can never differ. The panel is
+comparing measurements; the current mode of every provider is on the Providers tab, read live
+from chain.
 
 ## Everything that costs nothing
 

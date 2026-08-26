@@ -149,6 +149,15 @@ the network, silently. Caught in review, fixed with a test that reclassifies a p
 asserts the live figure follows the bundle. `dashboard/measureGroup.ts` now imports nothing
 from `src/probes/` except the code that sends a call.
 
+**Mode is inherited, not re-observed, and that is not fixable here.** `observedMode` is not
+measured by any probe: `deriveMode()` reads it from the on-chain service registry —
+`TEEVerifier` present, `TargetSeparated` set — when a run builds its roster. The panel replays
+the roster recorded in the bundle, so its mode is that epoch's by construction and the mode
+disagreement can never fire. Re-deriving it in the page would mean reading the 0G inference
+contract from the browser, and it would still be a registry fact rather than a measurement.
+Not built: the README says the check is CLI-only instead, and the Providers tab already shows
+the current mode live.
+
 **What the panel refuses to do.** A bundle written before schema /3 does not record the
 sampling parameters the published run sent. Replaying against one of those would compare a
 live run at temperature 0 against a run whose actual conditions were never written down, and
