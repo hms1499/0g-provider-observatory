@@ -63,68 +63,302 @@ body {
 }
 
 main {
+  padding-top: 2.5rem;
+  padding-bottom: 4rem;
+}
+
+/* ── site header ────────────────────────────────────────────────────────────
+ *
+ * Two rows, two jobs. The top is identity and context: the mark, the wordmark, and which
+ * chain is being read. The second is navigation between sections of one document, so the
+ * tabs are underlined rather than filled — a filled chip reads as a control that does
+ * something, and these only move the reader.
+ *
+ * Sticky, because the page runs to a couple of thousand pixels and a reader deep in a table
+ * should be able to change section without going back to the top to find out how.
+ */
+
+header.site {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+}
+
+header.site .bar,
+header.site .tabs,
+main,
+footer.site .cols {
   max-width: 72rem;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 6rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
-/* ── header ─────────────────────────────────────────────────────────────── */
-
-header {
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-h1 {
-  font-family: var(--mono);
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  margin: 0 0 0.35rem;
-}
-
-header > p {
-  color: var(--muted);
-  margin: 0 0 1.25rem;
-  max-width: 46rem;
-}
-
-header nav {
+header.site .bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  padding-bottom: 0.9rem;
 }
 
-header nav button {
+header.site .identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+/* The tab icon's own drawing, at reading size. */
+header.site .mark {
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: none;
+  margin-top: 0.1rem;
+  color: var(--ink);
+}
+
+header.site h1 {
   font-family: var(--mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+header.site .identity p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0;
+  max-width: 34rem;
+}
+
+header.site .chain {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+header.site .chain .label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* One control with two states, drawn as one object, because it is one choice. */
+header.site .switch {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+header.site .switch button {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
   color: var(--muted);
   background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
+  border: none;
   padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+header.site .switch button + button {
+  border-left: 1px solid var(--rule);
+}
+
+header.site .switch button:hover {
+  color: var(--ink);
+}
+
+header.site .switch button[aria-pressed='true'] {
+  color: var(--bg);
+  background: var(--accent);
+}
+
+header.site .tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+}
+
+header.site .tabs button {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 0.55rem;
   cursor: pointer;
   transition: color 0.12s, border-color 0.12s;
 }
 
-header nav button:hover {
+header.site .tabs button:hover {
   color: var(--ink);
-  border-color: var(--faint);
+}
+
+header.site .tabs button[aria-pressed='true'] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
 }
 
 /*
- * "You are here", in the accent rather than in near-black. Two filled black chips at the top
- * of the page pull harder than anything below them, including the verification verdict —
- * and the verdict is the one thing on this site allowed to be loud.
+ * On a phone the header was four stacked rows — mark, wordmark, tagline, chain switch, then
+ * tabs wrapping onto two lines — and being sticky it held about a quarter of the viewport
+ * permanently. So on narrow screens the tagline goes (the wordmark already says what this
+ * is), the chain switch moves up beside it, and the tabs become one row that scrolls
+ * sideways rather than wrapping.
  */
-header nav button[aria-pressed='true'] {
-  color: var(--bg);
-  background: var(--accent);
-  border-color: var(--accent);
+@media (max-width: 40rem) {
+  header.site .bar {
+    align-items: center;
+    padding-top: 0.9rem;
+    padding-bottom: 0.7rem;
+  }
+
+  header.site .identity p {
+    display: none;
+  }
+
+  header.site .chain .label {
+    display: none;
+  }
+
+  header.site h1 {
+    font-size: 0.82rem;
+  }
+
+  header.site .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 1.1rem;
+    scrollbar-width: none;
+  }
+
+  header.site .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  header.site .tabs button {
+    white-space: nowrap;
+  }
+}
+
+/* The stand-in-values warning. Carries state, so it may carry a rule of its own. */
+.notice {
+  border-left: 2px solid var(--accent);
+  padding-left: 0.9rem;
+  color: var(--muted);
+}
+
+/* ── site footer ────────────────────────────────────────────────────────────
+ *
+ * The colophon: what the instrument is, and every address a reader needs to look the project
+ * up without asking us. These used to reach the page only inside table rows.
+ */
+
+footer.site {
+  border-top: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+footer.site .cols {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr 1fr;
+  gap: 2.5rem;
+  padding-top: 2.5rem;
+  padding-bottom: 3rem;
+}
+
+@media (max-width: 60rem) {
+  footer.site .cols {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+footer.site h2 {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 0.6rem;
+}
+
+footer.site h3 {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0 0 0.7rem;
+}
+
+footer.site p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.7rem;
+  max-width: 34rem;
+}
+
+footer.site .stance {
+  color: var(--faint);
+}
+
+footer.site dl {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+/*
+ * `display` stated explicitly. The generic `dl div` rule is a two-column grid with a 7rem
+ * label track, which is right for the caveats list and wrong here — it put a 42-character
+ * address in a 7rem column and let it run over its own label. An element-scoped rule that
+ * sets `display` is not overridden by a class-scoped rule that does not.
+ */
+footer.site dl > div {
+  display: block;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+footer.site dl > div:last-child {
+  border-bottom: none;
+}
+
+footer.site dt {
+  color: var(--faint);
+  letter-spacing: 0.04em;
+}
+
+footer.site dd {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  /* `anywhere` rather than `break-all`: an address only breaks when it has to, and a URL
+   * that fits on one line is left on one line instead of being chopped mid-host. */
+  overflow-wrap: anywhere;
+}
+
+footer.site dd a {
+  text-decoration: none;
+}
+
+footer.site dd a:hover {
+  text-decoration: underline;
 }
 
 /* ── headings and prose ─────────────────────────────────────────────────── */
@@ -810,6 +1044,7 @@ button:disabled {
 }
 
 .findings dl > div {
+  display: block;
   padding: 0.45rem 0;
   border-bottom: 1px solid var(--rule);
 }
