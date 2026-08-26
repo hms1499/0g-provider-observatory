@@ -163,7 +163,7 @@
   <div class="kicker">
     <span class="tag hot">0G Bridge · Wave 3</span>
     <span class="tag">Developer Tooling</span>
-    <span class="tag">Draft v3</span>
+    <span class="tag">Draft v3.1</span>
   </div>
   <h1>0G Provider Observatory</h1>
   <p class="lede col">An independent instrument for 0G's inference network. Today developers pick providers based on metrics the network reports about itself — <strong>nobody has measured them independently, and nothing is retained over time</strong>.</p>
@@ -359,6 +359,7 @@ deepseek-v4-flash-0731   4 providers, same model
         <li>roll 42 records up to 20 addresses</li>
         <li>TeeML / TeeTLS / standard labels with explanations</li>
         <li>every number links out to the explorer</li>
+        <li>measure a group yourself, in the page, with your own key</li>
       </ul>
     </article>
 
@@ -406,10 +407,11 @@ flowchart LR
   end
   subgraph USE["End users"]
     direction TB
-    D["F5 · Dashboard"]
+    D["F5 · Dashboard<br/>reads, and can measure"]
     SDK["F6 · Selection SDK"]
     V["F7 · Verification CLI"]
   end
+  R["Relay · /api/router<br/>no key · no chain · no measurement"]
 
   P -->|"probe prompts"| C
   C -->|"response + TEE signature"| P
@@ -422,9 +424,11 @@ flowchart LR
   CH --> SDK
   CH --> V
   S --> V
+  D -.->|"reader's own key"| R
+  R -.->|"one chat completion"| C
 </pre>
   </div>
-  <p class="platecap"><b>Figure 1</b><span>The prober is the only component that writes. Dashboard, SDK and CLI all read straight from 0G Chain and 0G Storage — no component has to trust our server.</span></p>
+  <p class="platecap"><b>Figure 1</b><span>The prober is the only component that writes, and every published number is read straight from 0G Chain and 0G Storage — nothing on the reading path goes through us. The dotted path is the one exception, added when the dashboard learned to measure: a reader who wants their own measurement sends their own Router key through our relay, because the Router answers a browser only from an origin on its allowlist and forbids the price-ceiling headers a browser would need to send. The relay holds no key, reads no chain and runs no measurement, so it cannot produce a number — but it is the one place the project asks to be trusted, and the page says so above the input.</span></p>
 </section>
 
 <section>
@@ -463,7 +467,7 @@ sequenceDiagram
 </section>
 
 <section>
-  <div class="sechead"><span class="eyebrow">07</span><h2>Two user flows</h2></div>
+  <div class="sechead"><span class="eyebrow">07</span><h2>Three user flows</h2></div>
   <div class="plate">
 <pre class="mermaid">
 %%{init:{'theme':'base','themeVariables':{'fontFamily':'IBM Plex Mono, monospace','fontSize':'13px','primaryColor':'#FFFFFF','primaryTextColor':'#141A21','primaryBorderColor':'#146A75','lineColor':'#5A6672','clusterBkg':'#F2F1EC','clusterBorder':'#D9D4C8','edgeLabelBackground':'#FBFAF7'}}}%%
@@ -485,11 +489,18 @@ flowchart TB
     B5 -->|"no"| B7["FAIL"]
   end
 
+  subgraph M["Flow C — measure it yourself, from the page"]
+    direction LR
+    M1["Pick a group<br/>in the dashboard"] --> M2["Replay the probes<br/>recorded in the evidence"]
+    M2 --> M3["Aggregate + compare<br/>in the browser"]
+    M3 --> M4["Where the two runs<br/>disagree"]
+  end
+
   style B6 fill:#E4F0E8,stroke:#2C6E4E,color:#1E4C36
   style B7 fill:#F6E3E0,stroke:#9E3B2E,color:#7A2C22
 </pre>
   </div>
-  <p class="platecap"><b>Figure 3</b><span>Flow B is the argumentatively load-bearing part. If an outsider cannot verify for themselves, the product is just a centralised leaderboard — exactly the thing it sets out to replace.</span></p>
+  <p class="platecap"><b>Figure 3</b><span>Flow B is the argumentatively load-bearing part. If an outsider cannot verify for themselves, the product is just a centralised leaderboard — exactly the thing it sets out to replace. Flow B proves a published number follows from its evidence; Flow C asks the harder question, whether the instrument gives the same answer twice, and answers it with a fresh measurement rather than with arithmetic on an old one. Flow C is the only one that costs the reader anything, and the only one that needs a server of ours.</span></p>
 </section>
 
 <section>
@@ -562,6 +573,12 @@ flowchart TB
     </div>
 
     <div class="risk">
+      <h3>The relay is a trust surface the project did not have<span class="st open">open</span></h3>
+      <p>Measuring from the page needs a server, because the Router answers a browser only from an origin on its allowlist and its <code>access-control-allow-headers</code> omits the price ceiling. So the reader's own API key transits <code>/api/router</code>, and section 05's original claim — that no component has to trust our server — no longer holds for that one path.</p>
+      <p class="fix">Bounded rather than removed. The relay holds no key of its own and rejects a request without one, its upstream is a constant so it cannot be aimed at another host, it attaches the price ceiling itself so a caller cannot widen it, and it logs no header and no body. It reads no chain and must never gain that: the ledger is write-once and keyed by prober, and a second write path behind a public endpoint would undo both. It is also not on the path of any published number — it cannot produce a wrong measurement, only see a key in transit. What remains is real and is stated on the page rather than buried: the rate limit is per instance, not global, and a reader who does not want to trust it can still run the same measurement from a clone.</p>
+    </div>
+
+    <div class="risk">
       <h3>Overlap with VeriAgent<span class="st open">open</span></h3>
       <p>VeriAgent in Wave 3 also builds a "verification oracle" that calls 0G Compute to check inference.</p>
       <p class="fix">The subject is entirely different: they score the trustworthiness of a user's <em>agent</em>; we measure the <em>infrastructure</em> of the network itself. This has to be explicit in the one-line description and in the demo video.</p>
@@ -617,7 +634,7 @@ flowchart TB
 </section>
 
 <footer>
-  Design draft v3 · positioning: independent measurement · task-based build · 2026-08-21<br>
+  Design draft v3.1 · positioning: independent measurement · task-based build · 2026-08-21, architecture revised 2026-08-25 when the page learned to measure<br>
   Network figures measured 2026-08-21 from router-api.0g.ai/v1/providers · 42 services · 20 addresses · 6 operators<br>
   0G Bridge by AKINDO · Wave 3 · deadline 2026-08-30 22:00
 </footer>

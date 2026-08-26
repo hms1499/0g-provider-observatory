@@ -1,6 +1,6 @@
 # 0G Provider Observatory
 
-`0G Bridge · Wave 3` · `Developer Tooling` · `Draft v3`
+`0G Bridge · Wave 3` · `Developer Tooling` · `Draft v3.1`
 
 An independent instrument for 0G's inference network. Today developers pick
 providers based on metrics the network reports about itself — **nobody has
@@ -206,6 +206,7 @@ labelled with the guarantee mode.
 - roll 42 records up to 20 addresses
 - TeeML / TeeTLS / standard labels with explanations
 - every number links out to the explorer
+- measure a group yourself, in the page, with your own key
 
 ### F6 · Provider selection SDK
 
@@ -245,10 +246,11 @@ flowchart LR
   end
   subgraph USE["End users"]
     direction TB
-    D["F5 · Dashboard"]
+    D["F5 · Dashboard<br/>reads, and can measure"]
     SDK["F6 · Selection SDK"]
     V["F7 · Verification CLI"]
   end
+  R["Relay · /api/router<br/>no key · no chain · no measurement"]
 
   P -->|"probe prompts"| C
   C -->|"response + TEE signature"| P
@@ -261,11 +263,19 @@ flowchart LR
   CH --> SDK
   CH --> V
   S --> V
+  D -.->|"reader's own key"| R
+  R -.->|"one chat completion"| C
 ```
 
-**Figure 1** — The prober is the only component that writes. Dashboard, SDK and
-CLI all read straight from 0G Chain and 0G Storage — no component has to trust
-our server.
+**Figure 1** — The prober is the only component that writes, and every published
+number is read straight from 0G Chain and 0G Storage — nothing on the reading
+path goes through us. The dotted path is the one exception, added when the
+dashboard learned to measure: a reader who wants their own measurement sends
+their own Router key through our relay, because the Router answers a browser only
+from an origin on its allowlist and forbids the price-ceiling headers a browser
+would need to send. The relay holds no key, reads no chain and runs no
+measurement, so it cannot produce a number — but it is the one place the project
+asks to be trusted, and the page says so above the input.
 
 ---
 
@@ -304,7 +314,7 @@ rootHash in a measurement always points at evidence that already exists.
 
 ---
 
-## 07 · Two user flows
+## 07 · Three user flows
 
 ```mermaid
 flowchart TB
@@ -325,13 +335,24 @@ flowchart TB
     B5 -->|"no"| B7["FAIL"]
   end
 
+  subgraph M["Flow C — measure it yourself, from the page"]
+    direction LR
+    M1["Pick a group<br/>in the dashboard"] --> M2["Replay the probes<br/>recorded in the evidence"]
+    M2 --> M3["Aggregate + compare<br/>in the browser"]
+    M3 --> M4["Where the two runs<br/>disagree"]
+  end
+
   style B6 fill:#E4F0E8,stroke:#2C6E4E,color:#1E4C36
   style B7 fill:#F6E3E0,stroke:#9E3B2E,color:#7A2C22
 ```
 
 **Figure 3** — Flow B is the argumentatively load-bearing part. If an outsider
 cannot verify for themselves, the product is just a centralised leaderboard —
-exactly the thing it sets out to replace.
+exactly the thing it sets out to replace. Flow B proves a published number
+follows from its evidence; Flow C asks the harder question, whether the
+instrument gives the same answer twice, and answers it with a fresh measurement
+rather than with arithmetic on an old one. Flow C is the only one that costs the
+reader anything, and the only one that needs a server of ours.
 
 ---
 
@@ -403,6 +424,25 @@ Answered: yes. Both `/v1/proxy/attestation/report` and
 `/v1/proxy/signature/{chatID}` are public and need no auth, and signature
 recovery runs offline via `ethers.recoverAddress()`. F7 keeps its strong scope.
 
+### The relay is a trust surface the project did not have — *open*
+
+Measuring from the page needs a server, because the Router answers a browser only
+from an origin on its allowlist and its `access-control-allow-headers` omits the
+price ceiling. So the reader's own API key transits `/api/router`, and section
+05's original claim — that no component has to trust our server — no longer holds
+for that one path.
+
+Bounded rather than removed. The relay holds no key of its own and rejects a
+request without one, its upstream is a constant so it cannot be aimed at another
+host, it attaches the price ceiling itself so a caller cannot widen it, and it
+logs no header and no body. It reads no chain and must never gain that: the
+ledger is write-once and keyed by prober, and a second write path behind a public
+endpoint would undo both. It is also not on the path of any published number — it
+cannot produce a wrong measurement, only see a key in transit. What remains is
+real and is stated on the page rather than buried: the rate limit is per
+instance, not global, and a reader who does not want to trust it can still run
+the same measurement from a clone.
+
 ### Overlap with VeriAgent — *open*
 
 VeriAgent in Wave 3 also builds a "verification oracle" that calls 0G Compute to
@@ -462,7 +502,7 @@ the calendar.
 
 ---
 
-Design draft v3 · positioning: independent measurement · task-based build ·
+Design draft v3.1 · positioning: independent measurement · task-based build ·
 2026-08-21
 Network figures measured 2026-08-21 from `router-api.0g.ai/v1/providers` · 42
 services · 20 addresses · 6 operators

@@ -9,7 +9,10 @@
 **0G Provider Observatory** — an independent measurement layer for 0G's inference network.
 Submission for **0G Bridge by AKINDO, Wave 3**. Hard deadline **2026-08-30 22:00**.
 
-Design doc (v3, locked): https://claude.ai/code/artifact/d4f6a199-c73f-470d-bc63-e90a22cdd02c
+Design doc (v3.1): https://claude.ai/code/artifact/d4f6a199-c73f-470d-bc63-e90a22cdd02c
+The architecture was revised after T19 — the relay is a component now, and section 05's
+claim that no component has to trust our server is no longer true of the Measure path.
+**The published artifact is still v3 until someone republishes the file.**
 Source file: `docs/provider-observatory.html` — edit the file and republish to the same URL.
 
 ## How we work

@@ -59,3 +59,22 @@ are load-bearing, not preferences:
 
 Everything except a live prober run works without `PRIVATE_KEY` or
 `ROUTER_API_KEY` and costs nothing.
+
+## The relay
+
+`api/router/chat/completions.ts` exists so the dashboard can measure with a reader's own
+key; the Router refuses a browser origin outside its allowlist and blocks the price-ceiling
+headers. Rules in `src/relay/` are pure functions so they can be tested without a network.
+Four invariants, load-bearing rather than preferences:
+
+- **It holds no secret.** No `PRIVATE_KEY`, no server-side `ROUTER_API_KEY`, no fallback
+  key. A request with no `Authorization` is rejected before any upstream call.
+- **The upstream is a constant**, never read from a body or a header, so the relay cannot be
+  aimed at another host.
+- **It attaches the price ceiling itself** at 3x the advertised rate, so a caller cannot
+  widen its own.
+- **It never gains chain access.** The ledger is write-once and keyed by prober; a second
+  write path behind a public endpoint would undo both properties at once.
+
+It logs no header and no body. It runs no measurement, so it cannot produce a wrong number —
+what it can do is see a key in transit, and the page says so above the input.
