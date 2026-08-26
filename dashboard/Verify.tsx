@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ObservatoryReader, type ProviderRecord } from '../src/chain/registry.js';
+import { Masthead } from './Masthead.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
 import { verifyEpochInBrowser, type VerifyOutcome } from './verifyEpoch.js';
 
@@ -93,46 +94,67 @@ export function Verify(props: {
       )}
 
       {outcome && (
-        <div>
+        <div className="log">
+          <Masthead
+            readings={[
+              { label: 'epoch', value: selected ?? '—' },
+              { label: 'steps', value: outcome.steps.length },
+              { label: 'measurements', value: outcome.checked },
+              {
+                label: 'advisories',
+                value: outcome.findings.length === 0 ? 'none' : outcome.findings.length,
+              },
+            ]}
+          />
+
           <ol>
             {outcome.steps.map((s, i) => (
               <li key={i}>
-                <strong data-status={s.status}>{s.status === 'ok' ? 'ok' : 'FAIL'}</strong> {s.label}
-                {s.detail && <span> — {s.detail}</span>}
+                <strong data-status={s.status}>{s.status === 'ok' ? 'ok' : 'FAIL'}</strong>{' '}
+                <span className="what">{s.label}</span>
+                {s.detail && <span className="detail">{s.detail}</span>}
               </li>
             ))}
           </ol>
 
-          {outcome.verdict === 'verified' ? (
-            <>
-              <p>Verified. All {outcome.checked} published measurements recomputed exactly.</p>
-              {outcome.findings.length > 0 && (
-                <>
-                  <p>
-                    Advisory — not blocking the verdict. The evidence supports these
-                    measurements, but the chain never published them.
-                  </p>
-                  <ul>
-                    {outcome.findings.map((f, i) => (
-                      <li key={i}>
-                        {f.severity} — {f.service}: {f.message}
-                      </li>
-                    ))}
-                  </ul>
-                </>
+          {/*
+            The one loud element on the page, and the only place it is spent. F7 is the claim
+            the whole project rests on — that a stranger can recompute every published number
+            from the published evidence — so the moment it comes back clean is stated as a
+            result, not as a sentence in a paragraph. Colour here reports the outcome of a
+            check, which is a state; nothing on this page colours a provider.
+          */}
+          <p className="stamp" data-verdict={outcome.verdict}>
+            <span className="verdict">
+              {outcome.verdict === 'verified' ? 'verified' : 'not verified'}
+            </span>
+            <span className="census">
+              {outcome.checked} measurement{outcome.checked === 1 ? '' : 's'} recomputed
+              {outcome.verdict === 'verified' ? ' exactly' : ''} · epoch {selected}
+            </span>
+          </p>
+
+          {outcome.findings.length > 0 && (
+            <div className="findings">
+              <h3>
+                {outcome.verdict === 'verified'
+                  ? 'Advisory — not blocking the verdict'
+                  : 'What did not reconcile'}
+              </h3>
+              {outcome.verdict === 'verified' && (
+                <p>The evidence supports these measurements, but the chain never published them.</p>
               )}
-            </>
-          ) : (
-            <>
-              <p>Not verified.</p>
-              <ul>
+              <dl>
                 {outcome.findings.map((f, i) => (
-                  <li key={i}>
-                    {f.severity} — {f.service}: {f.message}
-                  </li>
+                  <div key={i}>
+                    <dt>{f.service}</dt>
+                    <dd>
+                      <span className="severity">{f.severity}</span> {f.message}
+                    </dd>
+                  </div>
                 ))}
-              </ul>
-            </>
+              </dl>
+            </div>
           )}
 
           {root && (
@@ -144,6 +166,7 @@ export function Verify(props: {
           )}
         </div>
       )}
+
     </section>
   );
 }

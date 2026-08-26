@@ -4,6 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      IBM Plex is the design doc's face, so the page and the doc read as one instrument.
+      Every rule that uses it names a system fallback: if the CDN is unreachable the page
+      still renders in the reader's own mono, which matters for a page whose whole claim is
+      that it does not depend on us.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap"
+    />
     <title>0G Provider Observatory</title>
   </head>
   <body>

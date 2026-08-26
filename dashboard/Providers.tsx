@@ -8,6 +8,7 @@ import {
   type ModelGroup,
   type ProviderRow,
 } from './rows.js';
+import { Masthead } from './Masthead.js';
 import { ModeBadge } from './ModeBadge.js';
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
 
@@ -41,42 +42,39 @@ export function Providers(props: {
 
   return (
     <section>
-      <div className="masthead">
-        <div className="reading">
-          <span className="label">epoch</span>
-          <span className="value">{props.epoch.epoch}</span>
-        </div>
-        <div className="reading">
-          <span className="label">observed</span>
-          <span className="value">{utc(props.epoch.writtenAt)}</span>
-        </div>
-        <div className="reading">
-          <span className="label">services</span>
-          <span className="value">
-            {measured} <span className="of">of {registered}</span>
-          </span>
-        </div>
-        <div className="reading">
-          <span className="label">calls</span>
-          <span className="value">{calls}</span>
-        </div>
-        <div className="reading provenance">
-          <span className="label">published in</span>
-          <span className="value">
-            {props.txHash ? (
-              <a href={explorerTx(props.net, props.txHash)} target="_blank" rel="noreferrer">
-                one transaction
+      <Masthead
+        readings={[
+          { label: 'epoch', value: props.epoch.epoch },
+          { label: 'observed', value: utc(props.epoch.writtenAt) },
+          {
+            label: 'services',
+            value: (
+              <>
+                {measured} <span className="of">of {registered}</span>
+              </>
+            ),
+          },
+          { label: 'calls', value: calls },
+        ]}
+        note={{
+          label: 'published in',
+          value: (
+            <>
+              {props.txHash ? (
+                <a href={explorerTx(props.net, props.txHash)} target="_blank" rel="noreferrer">
+                  one transaction
+                </a>
+              ) : (
+                'one transaction'
+              )}
+              , derived from{' '}
+              <a href={bundleUrl(props.net, props.epoch.storageRoot)} target="_blank" rel="noreferrer">
+                this evidence
               </a>
-            ) : (
-              'one transaction'
-            )}
-            , derived from{' '}
-            <a href={bundleUrl(props.net, props.epoch.storageRoot)} target="_blank" rel="noreferrer">
-              this evidence
-            </a>
-          </span>
-        </div>
-      </div>
+            </>
+          ),
+        }}
+      />
 
       <p>
         Grouped by model, so the providers serving one model can be read against each other —

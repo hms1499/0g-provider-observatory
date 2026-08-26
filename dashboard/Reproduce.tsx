@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ObservatoryReader } from '../src/chain/registry.js';
+import { Masthead } from './Masthead.js';
+import { RatioCell } from './RatioCell.js';
+import { serviceLabel } from './rows.js';
 import type { NetworkConfig } from './networks.js';
 import { reproduceInBrowser, type ReproduceOutcome } from './reproduceEpochs.js';
 
@@ -122,6 +125,17 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
 
       {report && (
         <>
+          <Masthead
+            readings={[
+              { label: 'earlier', value: earlier },
+              { label: 'later', value: later },
+              { label: 'compared', value: report.compared },
+              {
+                label: 'disagreements',
+                value: report.disagreements.length === 0 ? 'none' : report.disagreements.length,
+              },
+            ]}
+          />
           <p>
             {report.compared} service{report.compared === 1 ? '' : 's'} measured by both runs
             {report.disagreements.length === 0
@@ -146,7 +160,7 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
                 <tbody>
                   {report.disagreements.map((d, i) => (
                     <tr key={i}>
-                      <td>{d.service}</td>
+                      <td>{serviceLabel(d.service)}</td>
                       <td>{d.kind}</td>
                       <td>{show(d.published)}</td>
                       <td>{show(d.independent)}</td>
@@ -162,16 +176,16 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
             <thead>
               <tr>
                 <th>service</th>
-                <th>p50</th>
-                <th>p95</th>
+                <th className="num">p50</th>
+                <th className="num">p95</th>
               </tr>
             </thead>
             <tbody>
               {report.latency.map((l) => (
                 <tr key={l.service}>
-                  <td>{l.service}</td>
-                  <td>{l.p50Ratio.toFixed(2)}&times;</td>
-                  <td>{l.p95Ratio.toFixed(2)}&times;</td>
+                  <td>{serviceLabel(l.service)}</td>
+                  <RatioCell ratio={l.p50Ratio} />
+                  <RatioCell ratio={l.p95Ratio} />
                 </tr>
               ))}
             </tbody>
@@ -186,10 +200,10 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
               </p>
               <ul>
                 {report.onlyPublished.map((s) => (
-                  <li key={s}>{s} — epoch {earlier} only</li>
+                  <li key={s}>{serviceLabel(s)} — epoch {earlier} only</li>
                 ))}
                 {report.onlyIndependent.map((s) => (
-                  <li key={s}>{s} — epoch {later} only</li>
+                  <li key={s}>{serviceLabel(s)} — epoch {later} only</li>
                 ))}
               </ul>
             </>

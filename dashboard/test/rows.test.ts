@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import type { EpochRecord, ProviderRecord } from '../../src/chain/registry.js';
-import { formatBps, formatSeconds, groupByModel, groupByOperator } from '../rows.js';
+import { formatBps, formatSeconds, groupByModel, groupByOperator, ratioPosition, serviceLabel } from '../rows.js';
 import { DIVERGENCE_UNMEASURED } from '../../src/chain/encoding.js';
 
 const provider = (id: number, address: string, model: string): ProviderRecord => ({
@@ -168,5 +168,39 @@ describe('groupByModel', () => {
       providers,
     );
     assert.deepEqual(groups.map((g) => g.model), ['model-one', 'model-lonely']);
+  });
+});
+
+describe('ratioPosition', () => {
+  it('puts parity in the middle, because parity is the thing being looked for', () => {
+    assert.equal(ratioPosition(1), 0.5);
+  });
+
+  it('places half and double the same distance either side', () => {
+    const half = ratioPosition(0.5)!;
+    const double = ratioPosition(2)!;
+    assert.ok(Math.abs(0.5 - half - (double - 0.5)) < 1e-9);
+  });
+
+  it('pins an outlier to the edge rather than rescaling everything else', () => {
+    assert.equal(ratioPosition(400), 1);
+    assert.equal(ratioPosition(0.0001), 0);
+  });
+
+  it('cannot place a ratio against a published zero', () => {
+    assert.equal(ratioPosition(0), null);
+  });
+});
+
+describe('serviceLabel', () => {
+  it('shortens the address and keeps the model, which is what the eye is looking for', () => {
+    assert.equal(
+      serviceLabel('0xF203A388e9E70F09ece38046a6D40a89cf896309 glm-5.2'),
+      '0xF203A388…6309 glm-5.2',
+    );
+  });
+
+  it('leaves a label that is not an address alone rather than truncating it', () => {
+    assert.equal(serviceLabel('some other shape'), 'some other shape');
   });
 });

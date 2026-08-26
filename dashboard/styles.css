@@ -13,31 +13,38 @@
  */
 
 :root {
-  --bg: #fbfbfa;
-  --ink: #1a1a18;
-  --muted: #6b6b66;
-  --faint: #93938c;
-  --rule: #e2e2dd;
-  --panel: #f4f4f1;
-  --accent: #1c5d99;
-  --ok: #2d6a4f;
-  --fail: #9b2c2c;
+  /*
+   * Taken from `docs/provider-observatory.html`, which had a palette and a typeface before
+   * the dashboard did. The two were reading as different projects — the doc in verdigris and
+   * Plex, the page in a warm grey with system faces. One instrument, one identity.
+   */
+  --bg: #fbfaf7;
+  --panel: #f2f1ec;
+  --ink: #141a21;
+  --muted: #5a6672;
+  --faint: #8b96a1;
+  --rule: #d9d4c8;
+  --accent: #146a75;
+  --ok: #2c6e4e;
+  --fail: #9e3b2e;
 
-  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
-  --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #131312;
-    --ink: #e8e8e3;
-    --muted: #9a9a93;
-    --faint: #6f6f68;
-    --rule: #2c2c29;
-    --panel: #1c1c1a;
-    --accent: #7fb3e0;
-    --ok: #74c69d;
-    --fail: #e58a8a;
+    /* The same hues under a night ground: verdigris lifted enough to stay readable, the
+     * paper inverted to the ink's own family rather than to a neutral black. */
+    --bg: #10141a;
+    --panel: #171d25;
+    --ink: #e6e8e5;
+    --muted: #9aa5b1;
+    --faint: #6e7a86;
+    --rule: #2a333d;
+    --accent: #5fb3bd;
+    --ok: #6cbf95;
+    --fail: #e08a7d;
   }
 }
 
@@ -109,10 +116,15 @@ header nav button:hover {
   border-color: var(--faint);
 }
 
+/*
+ * "You are here", in the accent rather than in near-black. Two filled black chips at the top
+ * of the page pull harder than anything below them, including the verification verdict —
+ * and the verdict is the one thing on this site allowed to be loud.
+ */
 header nav button[aria-pressed='true'] {
   color: var(--bg);
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 /* ── headings and prose ─────────────────────────────────────────────────── */
@@ -706,4 +718,161 @@ select {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ── the verification log ───────────────────────────────────────────────────
+ *
+ * A checklist rendered as a log: status in a fixed column on the left so the eye runs down
+ * one edge, the step in ink, its detail in slate underneath. This is the one panel where
+ * colour is legitimate — it reports whether a check passed, which is a state, not a
+ * judgement about whoever was measured.
+ */
+
+.log ol {
+  border-left: 1px solid var(--rule);
+  margin: 1.5rem 0;
+}
+
+.log ol li {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: 0.15rem 0.6rem;
+  padding: 0.4rem 0 0.4rem 1rem;
+  color: var(--ink);
+}
+
+.log ol li .what {
+  min-width: 0;
+}
+
+.log ol li .detail {
+  grid-column: 2;
+  color: var(--faint);
+  word-break: break-all;
+}
+
+/*
+ * The verdict, as a stamp.
+ *
+ * Every other element on this page is deliberately quiet, because ranking providers by
+ * emphasis is the thing the project refuses to do. Boldness is spent once, here, on the
+ * moment an outsider's recomputation agrees with what was published — which is the argument
+ * the project rests on rather than a number about anyone.
+ */
+.stamp {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 1.75rem 0;
+  padding: 0.9rem 1.4rem;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  max-width: none;
+}
+
+.stamp[data-verdict='verified'] {
+  color: var(--ok);
+}
+
+.stamp[data-verdict='failed'] {
+  color: var(--fail);
+}
+
+.stamp .verdict {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.stamp .census {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* Advisories: named against the service they concern, never dressed as a verdict. */
+.findings h3 {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0 0 0.5rem;
+}
+
+.findings dl {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.findings dl > div {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.findings dl > div:last-child {
+  border-bottom: none;
+}
+
+.findings dt {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.findings dd {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+}
+
+.findings .severity {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-right: 0.4rem;
+}
+
+/* ── quality floor ──────────────────────────────────────────────────────────
+ *
+ * Not announced anywhere in the interface, and not optional: a keyboard user must be able to
+ * see where they are, and a reader who has asked their system for less motion must get it.
+ */
+
+:where(a, button, select, input):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * The parity track. Same instrument as the duration track, different quantity: the centre
+ * line is 1.0x, where the two runs agreed. Drawn as a mark on the track rather than a
+ * different colour, because a ratio far from parity is a disagreement to look into, not a
+ * fault to attribute — nothing in the evidence says which run caught a bad minute.
+ */
+td.dur .track.parity::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 1px;
+  height: 7px;
+  background: var(--rule);
 }

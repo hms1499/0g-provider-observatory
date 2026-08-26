@@ -145,6 +145,40 @@ export function groupByModel(
 }
 
 /**
+ * A service label with its address shortened, for reading rather than for copying.
+ *
+ * `compareRuns` names a service by its full address and model, which is right for a CLI whose
+ * output someone may paste into a script. On a page it is 42 characters nobody reads, sitting
+ * where the eye needs to find the model. The full address is a click away on the explorer.
+ *
+ * Anything that does not start with an address is returned untouched: this shortens a known
+ * shape, it does not truncate arbitrary text.
+ */
+export function serviceLabel(service: string): string {
+  const [address, ...rest] = service.split(' ');
+  if (!/^0x[0-9a-fA-F]{40}$/.test(address ?? '')) return service;
+  return [`${address.slice(0, 10)}…${address.slice(-4)}`, ...rest].join(' ');
+}
+
+/**
+ * Where a ratio sits on a track centred on parity, as 0..1. Null when it cannot be placed.
+ *
+ * The same instrument as `scalePosition`, reading a different quantity. Logarithmic and
+ * symmetric about 1.0, because half as fast and twice as fast are the same size of
+ * disagreement and a linear track would draw the second one twice as far from centre.
+ *
+ * `span` is how far out the track reaches, as a multiple: 4 shows 0.25x to 4x. Anything
+ * beyond is pinned to the end, so an outlier stays visible as "past the edge" rather than
+ * stretching the scale until every other reading collapses into the middle.
+ */
+export function ratioPosition(ratio: number, span = 4): number | null {
+  if (!(ratio > 0) || !(span > 1)) return null;
+  const limit = Math.log(span);
+  const at = Math.min(Math.max(Math.log(ratio), -limit), limit);
+  return (at + limit) / (2 * limit);
+}
+
+/**
  * Basis points as a percentage. 833 -> "8.33%", with no trailing zeros invented.
  *
  * The unmeasured sentinel renders as a gap. Showing 655.35% would put a number against a

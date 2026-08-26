@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ObservatoryReader } from '../src/chain/registry.js';
 import type { VerifiableBundle } from '../src/verify/recompute.js';
 import type { ReproduceReport } from '../src/verify/reproduce.js';
+import { Masthead } from './Masthead.js';
+import { RatioCell } from './RatioCell.js';
+import { serviceLabel } from './rows.js';
 import { measureGroup } from './measureGroup.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
 
@@ -151,6 +154,19 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
 
       {bundle && selected && (
         <>
+          <Masthead
+            readings={[
+              { label: 'replaying', value: `epoch ${newest}` },
+              { label: 'group', value: selected.canonicalId },
+              { label: 'providers', value: selected.services },
+              { label: 'calls', value: selected.calls },
+            ]}
+            note={{
+              label: 'billed to',
+              value: 'your key, at whatever those providers charge — the relay caps each call at three times the advertised rate',
+            }}
+          />
+
           <label>
             group{' '}
             <select value={selected.canonicalId} onChange={(e) => setGroup(e.target.value)}>
@@ -172,12 +188,6 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
               autoComplete="off"
             />
           </label>
-
-          <p>
-            This will send <strong>{selected.calls} calls</strong> on your key, billed at
-            whatever those providers charge. The relay caps each call at three times the
-            advertised rate.
-          </p>
 
           <button onClick={run} disabled={!apiKey || progress !== null}>
             {progress ? `measuring ${progress.done}/${progress.total}…` : 'Measure'}
@@ -220,7 +230,7 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
                 <tbody>
                   {report.disagreements.map((d, i) => (
                     <tr key={i}>
-                      <td>{d.service}</td>
+                      <td>{serviceLabel(d.service)}</td>
                       <td>{d.kind}</td>
                       <td>{show(d.published)}</td>
                       <td>{show(d.independent)}</td>
@@ -240,16 +250,16 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
             <thead>
               <tr>
                 <th>service</th>
-                <th>p50</th>
-                <th>p95</th>
+                <th className="num">p50</th>
+                <th className="num">p95</th>
               </tr>
             </thead>
             <tbody>
               {report.latency.map((l) => (
                 <tr key={l.service}>
-                  <td>{l.service}</td>
-                  <td>{l.p50Ratio.toFixed(2)}&times;</td>
-                  <td>{l.p95Ratio.toFixed(2)}&times;</td>
+                  <td>{serviceLabel(l.service)}</td>
+                  <RatioCell ratio={l.p50Ratio} />
+                  <RatioCell ratio={l.p95Ratio} />
                 </tr>
               ))}
             </tbody>
@@ -260,10 +270,10 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
               <h3>Not comparable</h3>
               <ul>
                 {report.onlyPublished.map((s) => (
-                  <li key={s}>{s} — epoch {newest} only</li>
+                  <li key={s}>{serviceLabel(s)} — epoch {newest} only</li>
                 ))}
                 {report.onlyIndependent.map((s) => (
-                  <li key={s}>{s} — your run only</li>
+                  <li key={s}>{serviceLabel(s)} — your run only</li>
                 ))}
               </ul>
             </>
