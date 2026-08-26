@@ -1,30 +1,35 @@
 /**
  * Measure one consistency group from the page, and compare it against what was published.
  *
- * What comes from the bundle, and what does not — stated plainly because overstating this
- * is worse than an honest gap:
+ * **Both sides go through `recompute()`, under one rulebook: the published epoch's.**
+ * The prompts, `maxTokens` and expected answers sent to the Router come from the bundle, so
+ * a reader does not have to trust this repository for what was asked — and the rules that
+ * decide what a difference *means* come from the bundle too: which probes count toward
+ * divergence, which comparator each one uses, which pair measures the noise floor, and what
+ * value stands for "not measurable".
  *
- *   - The prompts, `maxTokens` and expected answers SENT to the Router are the bundle's.
- *     A reader does not have to trust this repository for what was asked.
- *   - The rules used to COMPARE the answers — which probes count toward divergence, which
- *     comparator each one uses — are `src/probes/suite.ts`'s, via `computeDivergence`. That
- *     module is out of scope for this file to change: it is what produces the numbers this
- *     project publishes on chain, and a verifier reading it independently is a separate
- *     concern (`src/verify/recompute.ts`) with its own rules read from the bundle instead.
+ * A live run records no rules of its own, so it has to borrow some. Borrowing today's
+ * `src/probes/suite.ts` was the earlier design and it was wrong: reclassify one probe and
+ * the two sides of the comparison are scored under different rulebooks, so the panel reports
+ * our own edit as a disagreement between two measurements of the network — silently, because
+ * nothing in the report says the rules differed. `src/verify/reproduce.ts` states the
+ * principle this file now keeps: both sides must go through the same implementation, or the
+ * comparison inherits the bias it exists to detect.
  *
- * The consequence: if the suite has drifted since a bundle was written — a probe added,
- * removed, or reclassified — the live divergence figure computed here is today's rules
- * applied to yesterday's evidence, not a like-for-like replay. That is a real limitation of
- * comparing a live run against an old bundle, not a bug in this file.
+ * The consequence is worth stating plainly: a live replay is scored by rules that may be
+ * older than the code that ran it. That is the correct direction. The published number is
+ * the fixed point — it is what the evidence records — and a comparison against it is only
+ * meaningful under the rules it was published beneath.
+ *
+ * Nothing here imports the measurement code from `src/probes/`. `callPinned` sends the
+ * calls and `Probe` types their shape; no figure in the output is computed by the code that
+ * produced the published figures.
  *
  * Ordering matches the prober: sequential within a provider, parallel across the providers
  * of a group. Concurrent calls to one provider would measure queueing, not the provider.
  */
-import { aggregate } from '../src/probes/aggregate.js';
-import { computeDivergence, divergenceLookup, type ServiceKey } from '../src/probes/divergence.js';
 import { callPinned, type CallResult } from '../src/probes/router-client.js';
 import type { Probe } from '../src/probes/suite.js';
-import { DIVERGENCE_UNMEASURED } from '../src/chain/encoding.js';
 import { compareRuns, type ComparableService, type ReproduceReport } from '../src/verify/reproduce.js';
 import { recompute, type VerifiableBundle } from '../src/verify/recompute.js';
 
@@ -108,32 +113,22 @@ export async function measureGroup(args: {
     }),
   );
 
-  const keys: ServiceKey[] = services.map((s) => ({
-    address: s.address,
-    modelId: s.modelId,
-    canonicalId: s.canonicalId,
-    mode: s.mode,
-  }));
-  const stats = aggregate(results);
-  const divergenceOf = divergenceLookup(computeDivergence(results, keys));
-  const modeOf = new Map(keys.map((k) => [`${k.address.toLowerCase()}|${k.modelId}`, k.mode]));
+  // The live run as a bundle of its own: the published epoch's probes and rules, this run's
+  // roster and results. Only the group's services are in the roster — passing the whole
+  // roster would hand `recompute` services this run never called and have it publish their
+  // zeros as measurements, which is exactly the invented figure `compareRuns` narrows its
+  // input to keep out.
+  const live: ComparableService[] = recompute({
+    ...args.bundle,
+    roster: services,
+    results,
+  });
 
-  const live: ComparableService[] = stats.map((s) => ({
-    address: s.address,
-    modelId: s.modelId,
-    mode: modeOf.get(`${s.address.toLowerCase()}|${s.modelId}`) ?? 'unknown',
-    p50Ms: s.p50Ms,
-    p95Ms: s.p95Ms,
-    errorRateBps: s.errorRateBps,
-    divergenceBps: divergenceOf(s.address, s.modelId),
-  }));
-
-  const publishedAll = recompute(args.bundle);
-  const published = publishedAll.filter((s) => s.canonicalId === args.canonicalId);
+  const published = recompute(args.bundle).filter((s) => s.canonicalId === args.canonicalId);
 
   const report = compareRuns(
     { services: published, unmeasured: args.bundle.rules.divergenceUnmeasured },
-    { services: live, unmeasured: DIVERGENCE_UNMEASURED },
+    { services: live, unmeasured: args.bundle.rules.divergenceUnmeasured },
   );
 
   return { live, report };

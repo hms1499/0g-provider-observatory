@@ -59,6 +59,40 @@ describe('measureGroup', () => {
     assert.equal(ticks.at(-1), 30);
   });
 
+  /**
+   * The rules that decide what a difference MEANS are recorded in the bundle, and a live
+   * replay has no rules of its own — so it has to borrow the published epoch's, not the
+   * ones `src/probes/suite.ts` happens to carry today. Otherwise changing the suite
+   * silently rewrites what an old epoch is compared against, and the panel reports our
+   * edit as a disagreement between two measurements of the network.
+   */
+  it('scores the live run by the bundle\'s divergence rules, not today\'s suite', async () => {
+    const [a] = bundle.roster.filter((s) => s.canonicalId === 'qwen3-vl-30b');
+    const narrowed: VerifiableBundle = {
+      ...bundle,
+      rules: { ...bundle.rules, divergenceProbeIds: ['one-word'] },
+    };
+
+    // One provider answers `echo-exact` differently. That probe counts toward divergence
+    // under today's suite and is absent from this bundle's rules, so it is exactly the
+    // probe the two rulebooks disagree about.
+    const { live } = await measureGroup({
+      bundle: narrowed,
+      canonicalId: 'qwen3-vl-30b',
+      apiKey: 'sk-test',
+      call: async (opts: any) => {
+        const r = await perfectCall(opts);
+        if (opts.probe.id === 'echo-exact' && opts.providerAddress === a.address) {
+          return { ...r, text: 'something else entirely' };
+        }
+        return r;
+      },
+    });
+
+    assert.equal(live.length, 2);
+    for (const s of live) assert.equal(s.divergenceBps, 0, `${s.address} counted a probe the bundle excludes`);
+  });
+
   it('compares the live run against what the bundle published', async () => {
     const { report } = await measureGroup({
       bundle,

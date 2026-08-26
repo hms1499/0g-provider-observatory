@@ -139,6 +139,16 @@ property to preserve, not an accident of the current implementation.
 the shape the real Router serves. `router-client.ts` needs no special case to know which one
 it is talking to, and that is what makes the browser path and the CLI path the same code.
 
+**Both sides of the comparison run under one rulebook: the published epoch's.** The rules
+that decide what a difference means — which probes count toward divergence, which comparator
+each uses, which pair measures the noise floor, what value stands for "not measurable" — are
+read from the bundle for the live run as well as the published one. The first version scored
+the live side with today's `src/probes/suite.ts`, which meant reclassifying a single probe
+would have made the panel report our own edit as a disagreement between two measurements of
+the network, silently. Caught in review, fixed with a test that reclassifies a probe and
+asserts the live figure follows the bundle. `dashboard/measureGroup.ts` now imports nothing
+from `src/probes/` except the code that sends a call.
+
 **What the panel refuses to do.** A bundle written before schema /3 does not record the
 sampling parameters the published run sent. Replaying against one of those would compare a
 live run at temperature 0 against a run whose actual conditions were never written down, and
