@@ -11,6 +11,7 @@
 import { Contract, JsonRpcProvider } from 'ethers';
 import { MEASUREMENT_REGISTRY_ABI, PROVIDER_REGISTRY_ABI } from './abi.js';
 import { mapWithConcurrency } from './concurrency.js';
+import { retryRead } from './retry.js';
 
 /** Mirrors ProviderRegistry.Mode. Index 0 is Unknown so an unset slot never reads as real. */
 export const MODES = ['Unknown', 'TeeML', 'TeeTLS', 'standard'] as const;
@@ -90,7 +91,7 @@ export class ObservatoryReader {
 
   /** All registered providers, with model names recovered from registration logs. */
   async loadProviders(fromBlock = 0): Promise<ProviderRecord[]> {
-    const count = Number(await this.reg.providerCount());
+    const count = Number(await retryRead(() => this.reg.providerCount()));
     if (count === 0) return [];
     if (this.#providers?.count === count) return this.#providers.records;
 
@@ -107,7 +108,7 @@ export class ObservatoryReader {
 
     const ids = Array.from({ length: count }, (_, i) => i + 1);
     const records = await mapWithConcurrency(ids, 8, async (id) => {
-      const p = await this.reg.get(id);
+      const p = await retryRead(() => this.reg.get(id));
       return {
         id,
         address: p.addr,
@@ -135,16 +136,16 @@ export class ObservatoryReader {
   }
 
   async epochsOf(prober: string): Promise<number[]> {
-    const raw = (await this.mr.epochsOf(prober)) as bigint[];
+    const raw = (await retryRead(() => this.mr.epochsOf(prober))) as bigint[];
     return raw.map(Number);
   }
 
   /** One epoch as written by one prober, or null if that prober never wrote it. */
   async readEpoch(epoch: number, prober: string): Promise<EpochRecord | null> {
-    if (!(await this.mr.isWritten(epoch, prober))) return null;
+    if (!(await retryRead(() => this.mr.isWritten(epoch, prober)))) return null;
 
-    const h = await this.mr.getHeader(epoch, prober);
-    const raw = await this.mr.getMeasurements(epoch, prober);
+    const h = await retryRead(() => this.mr.getHeader(epoch, prober));
+    const raw = await retryRead(() => this.mr.getMeasurements(epoch, prober));
 
     return {
       epoch,

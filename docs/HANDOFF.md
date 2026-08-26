@@ -173,12 +173,30 @@ does not help, because Vite 8 injects its client and opens the socket anyway. Th
 `vite.config.ts` gives HMR a port of its own under `vercel dev`, so the browser connects
 straight to Vite and no upgrade ever reaches the proxy. `pnpm dashboard:dev` is untouched.
 
-**Two things that look like faults and are not.** The `Sourcemap … points to missing source
-files` warnings come from `@0gfoundation/0g-storage-ts-sdk`, which ships `.js.map` files
-pointing at a `src.ts/` directory the package does not include. And the public mainnet RPC
-intermittently reverts an `eth_call` it answers correctly on the next attempt — 12 of 12
-succeeded a minute after two identical calls reverted — which the dashboard already reports
-as a read failure rather than a measurement.
+**The sourcemap warnings are not a fault.** `Sourcemap … points to missing source files` comes
+from `@0gfoundation/0g-storage-ts-sdk`, which ships `.js.map` files pointing at a `src.ts/`
+directory the package does not include.
+
+**The public mainnet RPC intermittently reverts reads that are correct, and the page used to
+die on it.** Measured 2026-08-26 against `ProviderRegistry.get(id)` on `https://evmrpc.0g.ai`:
+twenty consecutive calls for id 36 all reverted `UnknownProvider(36)`, while calls minutes
+either side — same id, same block tag — all returned the provider, and `providerCount` read 38
+throughout. So the id was in range the whole time and the node answered as though it were not.
+
+`loadProviders` reads all 38 ids eight at a time, and `mapWithConcurrency` fails the batch on
+the first error, so one bad read out of 38 replaced the entire dashboard with
+`Could not read 0G Aristotle mainnet: missing revert data … CALL_EXCEPTION`. `src/chain/retry.ts`
+now retries a read twice, 150ms then 400ms, on every read the first paint depends on.
+
+**Every error is retried, including a revert**, because a transient `UnknownProvider` and a
+genuine one are the same bytes. Retrying an id that really is out of range costs two extra
+calls and then fails exactly as before. **Reads only** — nothing that writes goes through it,
+and a retried write to a write-once ledger is precisely what must never happen.
+
+Proven by injecting the exact failure: two reverts forced on ids 32 and 36, and `loadProviders`
+still returned all 38 with the right addresses. Ten live rounds also passed, but the RPC was in
+a healthy window at the time (0 of 30 raw reads blipped), so that run shows only that nothing
+regressed.
 
 ### T18 — the Router's CORS allowlist, measured
 
