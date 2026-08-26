@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import type { EpochRecord, ProviderRecord } from '../../src/chain/registry.js';
-import { formatBps, formatMs, groupByOperator } from '../rows.js';
+import { formatBps, formatSeconds, groupByModel, groupByOperator } from '../rows.js';
 import { DIVERGENCE_UNMEASURED } from '../../src/chain/encoding.js';
 
 const provider = (id: number, address: string, model: string): ProviderRecord => ({
@@ -13,14 +13,14 @@ const provider = (id: number, address: string, model: string): ProviderRecord =>
   registeredAt: new Date(0),
 });
 
-const measurement = (providerId: number, p50Ms: number) => ({
+const measurement = (providerId: number, p50Ms: number): EpochRecord['measurements'][number] => ({
   providerId,
   p50Ms,
   p95Ms: p50Ms * 2,
   errorRateBps: 0,
   divergenceBps: 0,
   calls: 15,
-  observedMode: 'TeeTLS' as const,
+  observedMode: 'TeeTLS',
 });
 
 const epoch = (measurements: ReturnType<typeof measurement>[]): EpochRecord => ({
@@ -96,8 +96,77 @@ describe('formatting', () => {
   });
 
   it('renders milliseconds without inventing precision', () => {
-    assert.equal(formatMs(0), '—');
-    assert.equal(formatMs(847), '847 ms');
-    assert.equal(formatMs(12480), '12.5 s');
+    assert.equal(formatSeconds(0), '—');
+    // One unit and one precision down the whole column: 847 ms next to 43.3 s cannot be
+    // compared by eye, and comparing them is the only reason the column exists.
+    assert.equal(formatSeconds(847), '0.85');
+    assert.equal(formatSeconds(5010), '5.01');
+    assert.equal(formatSeconds(43300), '43.30');
+  });
+});
+
+describe('groupByModel', () => {
+  const providers = [
+    provider(1, '0xAAA', 'model-one'),
+    provider(2, '0xAAA', 'model-two'),
+    provider(3, '0xBBB', 'model-one'),
+    provider(4, '0xCCC', 'model-lonely'),
+  ];
+
+  it('puts every provider of one model side by side, which is what divergence compares', () => {
+    const groups = groupByModel(
+      epoch([measurement(1, 100), measurement(2, 900), measurement(3, 200)]),
+      providers,
+    );
+    const one = groups.find((g) => g.model === 'model-one')!;
+    assert.deepEqual(
+      one.rows.map((r) => r.address).sort(),
+      ['0xAAA', '0xBBB'],
+    );
+  });
+
+  it('never merges the providers of a model into a single figure', () => {
+    const groups = groupByModel(epoch([measurement(1, 100), measurement(3, 200)]), providers);
+    const one = groups.find((g) => g.model === 'model-one')!;
+    assert.deepEqual(one.rows.map((r) => r.p50Ms).sort((a, b) => a - b), [100, 200]);
+  });
+
+  it('names the TeeML service as the reference the others were measured against', () => {
+    const withReference = [
+      { ...measurement(1, 100), observedMode: 'TeeML' as const },
+      measurement(3, 200),
+    ];
+    const groups = groupByModel(epoch(withReference), providers);
+    const one = groups.find((g) => g.model === 'model-one')!;
+    assert.equal(one.referenceAddress, '0xAAA');
+  });
+
+  it('leaves referenceAddress null when no peer runs in an enclave', () => {
+    const groups = groupByModel(epoch([measurement(1, 100), measurement(3, 200)]), providers);
+    assert.equal(groups.find((g) => g.model === 'model-one')!.referenceAddress, null);
+  });
+
+  it('keeps a model served by one provider, rather than hiding what has no peer', () => {
+    const groups = groupByModel(epoch([measurement(4, 100)]), providers);
+    assert.equal(groups.find((g) => g.model === 'model-lonely')!.rows.length, 1);
+  });
+
+  it('reports a registered service this epoch never measured, against its operator', () => {
+    const groups = groupByModel(epoch([measurement(1, 100)]), providers);
+    const two = groups.find((g) => g.model === 'model-two');
+    assert.equal(two, undefined, 'a model with no measurement is not a group');
+    const missing = groupByModel(epoch([measurement(1, 100)]), providers);
+    assert.deepEqual(
+      missing.flatMap((g) => g.rows).map((r) => r.model),
+      ['model-one'],
+    );
+  });
+
+  it('orders the widest groups first, so the comparisons come before the singletons', () => {
+    const groups = groupByModel(
+      epoch([measurement(1, 100), measurement(3, 200), measurement(4, 300)]),
+      providers,
+    );
+    assert.deepEqual(groups.map((g) => g.model), ['model-one', 'model-lonely']);
   });
 });

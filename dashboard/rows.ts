@@ -73,6 +73,77 @@ export function groupByOperator(
   return [...groups.values()].sort((a, b) => b.rows.length - a.rows.length);
 }
 
+export interface ModelGroup {
+  /** The model string as the chain records it. Not canonicalised — see `groupByModel`. */
+  model: string;
+  rows: ProviderRow[];
+  /**
+   * The TeeML service in this group, if one exists. Divergence for every other member was
+   * measured against it, and a reader cannot judge a divergence figure without knowing what
+   * it was compared to. Null where the group has no enclave-attested member and the figure
+   * therefore comes from peer comparison instead.
+   */
+  referenceAddress: string | null;
+}
+
+/**
+ * Turn one epoch into rows, grouped by model.
+ *
+ * This is the axis the product's second question lives on: providers claiming the same model
+ * either behave alike or they do not, and that is only readable when they sit next to each
+ * other. Grouped by operator instead, the four services serving `deepseek-v4-flash` land in
+ * four different places on the page and the comparison has to be done from memory.
+ *
+ * As with `groupByOperator`, the grouping is for reading. No figure is averaged across the
+ * providers of a model — that would invent a "model score" nobody measured, and the spread
+ * between providers is the finding, not noise to be summarised away.
+ *
+ * **Grouped by the exact model string the chain records, never canonicalised.** In every
+ * epoch so far each consistency group registers under one string, so this produces exactly
+ * the groups the prober compared. If two providers ever serve one model under different
+ * strings they will appear as two groups — which is what the registry says, and the panel
+ * says so rather than guessing they are the same thing.
+ *
+ * Rows are ordered by address, never by a measurement. Sorting by p50 would rank the
+ * operators down the page, which is the one thing this dashboard does not do.
+ */
+export function groupByModel(
+  epoch: EpochRecord,
+  providers: readonly ProviderRecord[],
+): ModelGroup[] {
+  const byId = new Map(providers.map((p) => [p.id, p]));
+  const groups = new Map<string, ModelGroup>();
+
+  for (const m of epoch.measurements) {
+    const p = byId.get(m.providerId);
+    if (!p || p.model === null) continue;
+
+    let g = groups.get(p.model);
+    if (!g) groups.set(p.model, (g = { model: p.model, rows: [], referenceAddress: null }));
+
+    g.rows.push({
+      providerId: p.id,
+      address: p.address,
+      model: p.model,
+      mode: m.observedMode,
+      p50Ms: m.p50Ms,
+      p95Ms: m.p95Ms,
+      errorRateBps: m.errorRateBps,
+      divergenceBps: m.divergenceBps,
+      calls: m.calls,
+    });
+    if (m.observedMode === 'TeeML') g.referenceAddress = p.address;
+  }
+
+  for (const g of groups.values()) g.rows.sort((a, b) => a.address.localeCompare(b.address));
+
+  // Widest groups first: a model with four providers carries a comparison, one with a single
+  // provider carries none. Ordering by how much can be compared, not by how well anyone did.
+  return [...groups.values()].sort(
+    (a, b) => b.rows.length - a.rows.length || a.model.localeCompare(b.model),
+  );
+}
+
 /**
  * Basis points as a percentage. 833 -> "8.33%", with no trailing zeros invented.
  *
@@ -85,8 +156,32 @@ export function formatBps(bps: number): string {
   return `${Number.isInteger(pct) ? pct : pct.toFixed(2)}%`;
 }
 
-/** Milliseconds, switching to seconds where ms would be noise. 0 means "not published". */
-export function formatMs(ms: number): string {
+/**
+ * Seconds, always, to two places. 0 means "not published".
+ *
+ * The unit is fixed rather than chosen per value. Switching to milliseconds under some
+ * threshold puts `847 ms` in the same column as `43.3 s`, and a reader comparing two
+ * providers then has to convert in their head before they can see which is slower — in a
+ * column whose entire purpose is that comparison. Fixed precision also gives every cell the
+ * same width, so `tabular-nums` can line the decimal points up.
+ */
+export function formatSeconds(ms: number): string {
   if (ms === 0) return '—';
-  return ms >= 10_000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`;
+  return (ms / 1000).toFixed(2);
+}
+
+/**
+ * Where a duration sits on the epoch's own scale, as 0..1. Null when it cannot be placed.
+ *
+ * Logarithmic, because the spread within one epoch is nearly two orders of magnitude —
+ * 4192 ms against 43.3 s — and on a linear track everything below the slowest service
+ * collapses into the left edge and stops being readable.
+ *
+ * This carries magnitude and nothing else. It is drawn in one ink for every provider: the
+ * tick says how long the call took, never whether that is good.
+ */
+export function scalePosition(ms: number, lo: number, hi: number): number | null {
+  if (ms <= 0 || lo <= 0 || hi <= 0 || hi <= lo) return null;
+  const clamped = Math.min(Math.max(ms, lo), hi);
+  return (Math.log(clamped) - Math.log(lo)) / (Math.log(hi) - Math.log(lo));
 }
