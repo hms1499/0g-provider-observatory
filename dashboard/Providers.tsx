@@ -9,6 +9,8 @@ import {
   type ProviderRow,
 } from './rows.js';
 import { Masthead } from './Masthead.js';
+import { Primer } from './Primer.js';
+import { observe } from './findings.js';
 import { ModeBadge } from './ModeBadge.js';
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
 
@@ -25,6 +27,7 @@ export function Providers(props: {
   txHash: string | null;
 }) {
   const groups = groupByModel(props.epoch, props.providers);
+  const observations = observe(groups);
   const gaps = groupByOperator(props.epoch, props.providers).filter((g) => g.unmeasured.length > 0);
 
   const measured = props.epoch.measurements.length;
@@ -42,19 +45,35 @@ export function Providers(props: {
 
   return (
     <section>
+      <Primer />
+
       <Masthead
         readings={[
-          { label: 'epoch', value: props.epoch.epoch },
-          { label: 'observed', value: utc(props.epoch.writtenAt) },
+          {
+            label: 'epoch',
+            hint: 'One measurement run. The prober takes one per clock hour, and the ledger accepts one record per epoch per prober.',
+            value: props.epoch.epoch,
+          },
+          {
+            label: 'observed',
+            hint: 'When this run was written to the chain.',
+            value: utc(props.epoch.writtenAt),
+          },
           {
             label: 'services',
+            hint: 'Measured this epoch, out of every service registered on chain. A service is not measured when the prober could not reach it, or when too few calls succeeded to support a number.',
             value: (
               <>
-                {measured} <span className="of">of {registered}</span>
+                {measured} measured{' '}
+                <span className="of">· {registered - measured} not reached</span>
               </>
             ),
           },
-          { label: 'calls', value: calls },
+          {
+            label: 'calls',
+            hint: 'Probe calls this epoch made in total, across every service it measured.',
+            value: calls,
+          },
         ]}
         note={{
           label: 'published in',
@@ -76,11 +95,24 @@ export function Providers(props: {
         }}
       />
 
-      <p>
-        Grouped by model, so the providers serving one model can be read against each other —
-        that comparison is what a divergence figure means. Nothing is averaged across a group:
-        the spread between providers is the finding, not noise to summarise away. Models are
-        grouped by the exact string the registry records, never guessed to be the same thing.
+      {observations.length > 0 && (
+        <div className="observed">
+          <h3>What stands out in this epoch</h3>
+          <ul>
+            {observations.map((o) => (
+              <li key={o.text}>{o.text}</li>
+            ))}
+          </ul>
+          <p>
+            Observations, not verdicts. Each names a service and a number and stops there —
+            why two providers of one model differ is not a question this instrument can answer.
+          </p>
+        </div>
+      )}
+
+      <p className="grouping">
+        Grouped by the exact model string the registry records. Nothing is averaged across a
+        group — the spread between its providers is the finding, not noise to summarise away.
       </p>
 
       {groups.map((g) => (
@@ -138,16 +170,36 @@ function ModelBlock(props: { group: ModelGroup; net: NetworkConfig; lo: number; 
         <thead>
           <tr>
             <th>operator</th>
-            <th>mode</th>
-            <th className="num">
-              p50 <span className="unit">s</span>
+            <th>
+              <abbr title="What the operator's registry entry declares about how this model is run. A kind of guarantee, never a grade — see the notes at the foot of the page.">
+                mode
+              </abbr>
             </th>
             <th className="num">
-              p95 <span className="unit">s</span>
+              <abbr title="Median response time. Half this service's calls came back faster than this.">
+                p50
+              </abbr>{' '}
+              <span className="unit">s</span>
             </th>
-            <th className="num">errors</th>
-            <th className="num">divergence</th>
-            <th className="num">calls</th>
+            <th className="num">
+              <abbr title="At 15 probes per service, p95 is this service's slowest call in this epoch. It carries almost no tail information until epochs are pooled.">
+                p95
+              </abbr>{' '}
+              <span className="unit">s</span>
+            </th>
+            <th className="num">
+              <abbr title="Share of calls that failed in a way attributed to the provider. Failures that were ours — a timeout we set, an output ceiling we chose — are excluded.">
+                errors
+              </abbr>
+            </th>
+            <th className="num">
+              <abbr title="How often this service's answers differed from other providers of the same model, after subtracting how often it disagrees with itself. A dash means it could not be measured, not that it was zero.">
+                divergence
+              </abbr>
+            </th>
+            <th className="num">
+              <abbr title="Probe calls this service answered in this epoch.">calls</abbr>
+            </th>
           </tr>
         </thead>
         <tbody>

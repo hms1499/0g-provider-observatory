@@ -13,14 +13,16 @@ import type { ReactNode } from 'react';
  * column space.
  */
 export function Masthead(props: {
-  readings: ReadonlyArray<{ label: string; value: ReactNode }>;
+  readings: ReadonlyArray<{ label: string; value: ReactNode; hint?: string }>;
   note?: { label: string; value: ReactNode };
 }) {
   return (
     <div className="masthead">
       {props.readings.map((r) => (
         <div className="reading" key={r.label}>
-          <span className="label">{r.label}</span>
+          <span className="label">
+            {r.hint ? <abbr title={r.hint}>{r.label}</abbr> : r.label}
+          </span>
           <span className="value">{r.value}</span>
         </div>
       ))}

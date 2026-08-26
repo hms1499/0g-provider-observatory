@@ -1111,3 +1111,167 @@ td.dur .track.parity::before {
   height: 7px;
   background: var(--rule);
 }
+
+/* ── the primer ─────────────────────────────────────────────────────────────
+ *
+ * The block a first-time reader needs and a returning one can skip past, so it sits above the
+ * reading but is set quieter than it: panel ground, no rules, prose measure.
+ */
+
+.primer {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1.25rem 1.4rem 1.4rem;
+  margin-bottom: 2rem;
+}
+
+.primer > summary {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.primer > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The affordance, drawn rather than lettered: closed points right, open points down. */
+.primer > summary::before {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 0.6rem;
+  border-left: 4px solid currentColor;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  vertical-align: 1px;
+}
+
+.primer[open] > summary::before {
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor;
+  border-bottom: none;
+  vertical-align: 2px;
+}
+
+.primer[open] > summary {
+  margin-bottom: 0.75rem;
+}
+
+.primer:not([open]) {
+  padding: 0.7rem 1.4rem;
+}
+
+/* The one line the grouping note needs now the primer states the method. */
+.grouping {
+  font-size: 0.88rem;
+}
+
+.primer > p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* The four tabs and what each doubts. A list, because the order is the argument. */
+.primer .ladder {
+  margin: 1.1rem 0 0;
+}
+
+.primer .ladder > div {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 0.9rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.primer .ladder > div:last-child {
+  border-bottom: none;
+}
+
+.primer .ladder dt {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--ink);
+}
+
+.primer .ladder dd {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.primer .ladder-note {
+  font-size: 0.82rem;
+  color: var(--faint);
+  margin: 0.9rem 0 0;
+}
+
+@media (max-width: 40rem) {
+  .primer .ladder > div {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
+/* ── what stands out ────────────────────────────────────────────────────────
+ *
+ * The reason the project exists, and it used to be the hardest thing on the page to find: a
+ * column of `0%` reads as "nothing to see", and the one service that answered 13.33% sat in
+ * it at the same weight as the rest.
+ *
+ * Deliberately not coloured and not ordered by size. Ranking these by how bad a number is
+ * would be a leaderboard with extra steps, which is the one thing this page does not build.
+ */
+
+.observed {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  margin: 0 0 2rem;
+}
+
+.observed h3 {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0 0 0.5rem;
+}
+
+.observed ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 52rem;
+}
+
+.observed li {
+  font-size: 0.9rem;
+  color: var(--ink);
+  padding: 0.2rem 0;
+}
+
+.observed > p {
+  font-size: 0.82rem;
+  color: var(--faint);
+  margin: 0.7rem 0 0;
+  max-width: 52rem;
+}
+
+/* A definition available where the word is, rather than a thousand pixels below it. */
+abbr[title] {
+  text-decoration: underline dotted var(--rule);
+  text-underline-offset: 3px;
+  cursor: help;
+}
