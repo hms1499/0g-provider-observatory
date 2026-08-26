@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import type { CallResult } from '../../src/probes/router-client.js';
 import type { VerifiableBundle } from '../../src/verify/recompute.js';
-import { measureGroup } from '../measure.js';
+import { measureGroup } from '../measureGroup.js';
 
 const bundle = JSON.parse(
   readFileSync('data/epochs/496540-2026-08-24T040551787Z.bundle.json', 'utf8'),

@@ -458,3 +458,33 @@ pre {
   margin: 0.75rem 0;
   overflow-x: auto;
 }
+
+/* ── the Measure panel ─────────────────────────────────────────────────────
+ *
+ * No colour encodes a result here either. The key field is styled as an input and
+ * nothing more: making it look alarming would be theatre, and the paragraph above it
+ * already says exactly what happens to the key.
+ */
+
+label {
+  display: block;
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+input[type='password'],
+select {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  min-width: 18rem;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
