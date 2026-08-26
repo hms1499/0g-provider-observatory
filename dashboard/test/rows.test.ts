@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import type { EpochRecord, ProviderRecord } from '../../src/chain/registry.js';
-import { formatBps, formatSeconds, groupByModel, groupByOperator, ratioPosition, serviceLabel } from '../rows.js';
+import { formatBps, formatSeconds, groupByModel, groupByOperator, newestPair, orderedPair, ratioPosition, serviceLabel } from '../rows.js';
 import { DIVERGENCE_UNMEASURED } from '../../src/chain/encoding.js';
 
 const provider = (id: number, address: string, model: string): ProviderRecord => ({
@@ -202,5 +202,27 @@ describe('serviceLabel', () => {
 
   it('leaves a label that is not an address alone rather than truncating it', () => {
     assert.equal(serviceLabel('some other shape'), 'some other shape');
+  });
+});
+
+describe('newestPair', () => {
+  it('opens on the two most recent, which is the comparison a reader wants first', () => {
+    assert.deepEqual(newestPair([496537, 496539, 496540]), [496539, 496540]);
+  });
+
+  it('does not depend on the order the chain handed them back', () => {
+    assert.deepEqual(newestPair([496540, 496537, 496539]), [496539, 496540]);
+  });
+
+  it('has nothing to compare with fewer than two', () => {
+    assert.equal(newestPair([496540]), null);
+    assert.equal(newestPair([]), null);
+  });
+});
+
+describe('orderedPair', () => {
+  it('reads earlier-then-later whichever way round they were picked', () => {
+    assert.deepEqual(orderedPair(496540, 496539), [496539, 496540]);
+    assert.deepEqual(orderedPair(496539, 496540), [496539, 496540]);
   });
 });

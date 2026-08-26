@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ObservatoryReader } from '../src/chain/registry.js';
 import { Masthead } from './Masthead.js';
 import { RatioCell } from './RatioCell.js';
-import { serviceLabel } from './rows.js';
+import { newestPair, orderedPair, serviceLabel } from './rows.js';
 import type { NetworkConfig } from './networks.js';
 import { reproduceInBrowser, type ReproduceOutcome } from './reproduceEpochs.js';
 
@@ -29,7 +29,13 @@ function show(value: string | number): string {
  * are already on 0G Storage, and the comparison happens in this page.
  */
 export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[] }) {
-  const pairs = props.epochs.length >= 2 ? props.epochs.slice(-2) : null;
+  // Which two, chosen rather than assumed. It opened on the last two and offered no way to
+  // reach the rest, which was invisible at two epochs and drops twelve at fourteen.
+  const [picked, setPicked] = useState<[number, number] | null>(null);
+  const pairs = useMemo(
+    () => picked ?? newestPair(props.epochs),
+    [picked, props.epochs.join(',')],
+  );
   const [outcome, setOutcome] = useState<ReproduceOutcome | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -81,7 +87,9 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
     return () => {
       cancelled = true;
     };
-  }, [props.net, props.epochs.join(',')]);
+  }, [props.net, pairs?.join(',')]);
+
+  const [earlier, later] = pairs ?? [0, 0];
 
   if (!pairs) {
     return (
@@ -96,7 +104,6 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
     );
   }
 
-  const [earlier, later] = pairs;
   const report = outcome?.report;
 
   return (
@@ -113,6 +120,40 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
         load, and nothing here can say which one caught a bad minute. What is stable enough to
         compare is the conclusion. <strong>Neither run is treated as correct.</strong>
       </p>
+
+      {props.epochs.length > 2 && (
+        <div className="pair">
+          <label>
+            earlier{' '}
+            <select
+              value={earlier}
+              onChange={(e) => setPicked(orderedPair(Number(e.target.value), later))}
+            >
+              {props.epochs.map((e) => (
+                <option key={e} value={e} disabled={e === later}>
+                  {e}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            later{' '}
+            <select
+              value={later}
+              onChange={(e) => setPicked(orderedPair(earlier, Number(e.target.value)))}
+            >
+              {props.epochs.map((e) => (
+                <option key={e} value={e} disabled={e === earlier}>
+                  {e}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="of">
+            {props.epochs.length} epochs published on this chain
+          </span>
+        </div>
+      )}
 
       {busy && <p>Fetching both bundles through the public gateway…</p>}
 

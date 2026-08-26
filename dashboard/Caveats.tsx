@@ -6,7 +6,7 @@ import { MODE_NOTES } from './modes.js';
  */
 export function Caveats() {
   return (
-    <section>
+    <section className="caveats">
       <h2>What these numbers are, and what they are not</h2>
 
       <h3>Guarantee modes</h3>

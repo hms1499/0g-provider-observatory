@@ -129,10 +129,15 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
     <section>
       <h2>Measure</h2>
       <p>
-        The Reproducibility panel compares two runs we already published. This one lets you
-        take the measurement yourself, now, with your own key, and compare it against epoch{' '}
-        <strong>{newest}</strong>. The probes come from that epoch&rsquo;s evidence, not from
-        our source — you are replaying what the published numbers were derived from.
+        Measure the network yourself, now, with your own key, and compare what you get against
+        epoch <strong>{newest}</strong>. The probes are replayed from that epoch&rsquo;s
+        published evidence rather than from our source, so you are sending exactly what the
+        published numbers were derived from.
+      </p>
+      <p>
+        Every other panel on this site reads figures somebody else recorded. This one takes a
+        fresh measurement, which is the only check that does not depend on our evidence being
+        honest in the first place.
       </p>
 
       <p>

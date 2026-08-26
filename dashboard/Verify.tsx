@@ -81,16 +81,28 @@ export function Verify(props: {
       {props.epochs.length === 0 ? (
         <p>No epochs have been written on {props.net.name} yet.</p>
       ) : (
-        <ul>
-          {props.epochs.map((e) => (
-            <li key={e}>
-              <button onClick={() => run(e)} disabled={busy}>
-                epoch {e}
-              </button>
-              {selected === e && busy && <span> checking…</span>}
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="pick">
+            Pick an epoch to check. It fetches that epoch&rsquo;s evidence from 0G Storage and
+            recomputes every figure in it — a couple of seconds, and nothing is sent anywhere.
+          </p>
+          {/*
+            Newest first. The chain hands these back oldest-first, which was fine at two and
+            unreadable at the fourteen this series is heading for: the epoch a reader almost
+            always wants would have been the last chip in a wall of identical ones.
+          */}
+          <ul>
+            {[...props.epochs].reverse().map((e, i) => (
+              <li key={e}>
+                <button onClick={() => run(e)} disabled={busy} aria-pressed={selected === e}>
+                  epoch {e}
+                </button>
+                {i === 0 && <span className="tag">newest</span>}
+                {selected === e && busy && <span className="tag">checking…</span>}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {outcome && (

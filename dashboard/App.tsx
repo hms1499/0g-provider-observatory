@@ -59,7 +59,13 @@ export default function App() {
           <Measure net={net} epochs={data.epochs} />
         )}
 
-        <Caveats />
+        {/*
+          Only here. These notes qualify the figures in the table above them — what a mode
+          means, why a p95 at fifteen probes says little, what a dash stands for. On the
+          verification panel they explained guarantee modes to a reader rehashing a bundle,
+          which is a different question, and took more than half the page doing it.
+        */}
+        {panel === 'providers' && <Caveats />}
       </main>
 
       <SiteFooter net={net} />

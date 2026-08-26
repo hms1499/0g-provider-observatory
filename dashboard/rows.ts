@@ -145,6 +145,24 @@ export function groupByModel(
 }
 
 /**
+ * The two epochs a comparison should open on, newest pair first, or null if there is no pair.
+ *
+ * Separate from the component so the "which two" decision can be read and tested on its own —
+ * it used to be a `.slice(-2)` buried in a render, which was right for the two epochs that
+ * existed and silently ignored the other twelve this series is heading for.
+ */
+export function newestPair(epochs: readonly number[]): [number, number] | null {
+  if (epochs.length < 2) return null;
+  const sorted = [...epochs].sort((a, b) => a - b);
+  return [sorted[sorted.length - 2], sorted[sorted.length - 1]];
+}
+
+/** Two epochs in chronological order, whichever way round a reader picked them. */
+export function orderedPair(a: number, b: number): [number, number] {
+  return a <= b ? [a, b] : [b, a];
+}
+
+/**
  * A service label with its address shortened, for reading rather than for copying.
  *
  * `compareRuns` names a service by its full address and model, which is right for a CLI whose
