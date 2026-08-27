@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-26 (contracts verified on ChainScan)
+**Updated:** 2026-08-27 (README rewritten · 5 epochs on chain · demo video recorded)
 
 ---
 
@@ -94,24 +94,38 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T19 | A reader measures a group from the page, with their own key, through a relay that holds nothing | `api/router/chat/completions.ts`, `src/relay/`, `dashboard/Measure.tsx`, `dashboard/measureGroup.ts` |
 | T20 | **Public repository and a production deployment — the relay exists on the open internet now** | https://github.com/hms1499/0g-provider-observatory · https://og-provider-observatory.vercel.app |
 | T21 | Both mainnet contracts verified on ChainScan — source and ABI public, `exactMatch` | `deployments/aristotle-16661.json`, `docs/network-findings.md` §6 |
+| T22 | The README describes the project that exists: live link, the relay on the diagram, the 0G components named, every example run before being written down | `README.md` |
+| T13a | **Demo video recorded and hosted on YouTube** (Huy, 2026-08-27) — the link is not in this file yet | — |
 
 ### Ready now
 
-**Accumulate epochs.** One command, roughly $0.055 each:
+**Accumulate epochs — 5 of the 14 the argument needs.** One command, roughly $0.055 each:
 
     pnpm epoch --confirm --write-chain
+
+    496539  2026-08-24 03:31      496592  2026-08-26 08:34
+    496540  2026-08-24 04:10      496609  2026-08-27 01:41
+    496591  2026-08-26 07:18
 
 One epoch per clock hour, and the ledger takes one record per (epoch, prober) — a second
 run in the same hour reverts. Start with at least 20 minutes left in the hour or the run
 crosses the boundary and refuses to write, which is the safe direction but wastes the calls.
 
-**Then T13**: 3-minute video and X post. `README.md` now exists — T17 wrote the spine of it
-and T19 put the Measure panel at the top of it. It still needs the submission framing and the
-video link. The video has one more thing to show than it did: a reader measuring the network
-from the page.
+The series is not continuous: two days separate 496540 from 496591, and the README's table
+shows that rather than hiding it. Nine more epochs reach 12, which is where the noise floor
+argument starts to hold. **Gas is not the constraint** — measured over all five, an epoch
+costs 0.0022 0G to write plus 0.0012 to put its evidence on Storage, so the 0.156 0G left in
+the wallet buys about 45 more. Router credit is the thing to watch, and it is not readable
+from here.
 
-**Deployed. `/api/router` exists on the open internet.** Verified against the live host, not
-against a local build: the page reads epoch 496540 from mainnet, renders four consistency
+**Then T13, and only two pieces of it are left.** The README is done (T22) and the video is
+recorded (T13a). What remains is the public X post — project name, a screenshot or clip,
+`#0GBridge` `#BuildOn0G`, tagging `@0G_labs` `@0G_Builders` `@AKINDO_io` — and submitting on
+AKINDO before 2026-08-30 22:00. The video link still needs to go into the submission and into
+this file.
+
+**Deployed. `/api/router` exists on the open internet.** Verified 2026-08-26 against the live
+host, not against a local build: the page read epoch 496540 from mainnet, renders four consistency
 groups and two observations, and the relay answers a request with no `Authorization` with 401
 and a `GET` with 405. Zero console errors.
 
@@ -343,7 +357,7 @@ and T13 itself.
 
 | | Task | Waits on |
 |---|---|---|
-| T13 | Submission pack: README, 3-min video, X post | nothing — T12 is done, the explorer link exists |
+| T13 | Submission pack | nothing. README done (T22), video recorded (T13a). Left: the X post, and submitting on AKINDO with the video link |
 
 ### Not in scope for Wave 3
 
@@ -351,15 +365,17 @@ Provider selection SDK (F6) if time runs short · full statistical methodology (
 multiple decentralised probers with staking (Wave 5 — the contracts already key every record
 by (epoch, prober), so opening the gate needs no data migration).
 
-**Critical path:** B2 -> T12 -> T13. The contracts are deployed and verified on testnet, so
-mainnet funds are now the only thing standing between here and a valid submission.
+**Critical path:** B2 -> T12 -> T13, and only T13 is open. Contracts are on mainnet and
+source-verified, five epochs are written and each one verifies, the dashboard and the relay are
+public, the README carries the setup and the explorer links, and the video exists. What is left
+is one X post and the AKINDO form — plus epochs, which cost only wall-clock time.
 
 ### Live on 0G Aristotle mainnet (chain 16661)
 
     ProviderRegistry     0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6
     MeasurementRegistry  0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333
     owner / prober       0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD
-    epoch 3600s · 38 providers registered · gas wallet ~1.67 0G
+    epoch 3600s · 38 providers registered · gas wallet 0.156 0G (2026-08-27)
 
 Deployed and registered 2026-08-24. Two earlier keys are retired and recorded in the
 deployment file: one was generated inside a Claude Code session (testnet only), and one had
@@ -396,8 +412,12 @@ now refuses before a single call is paid for.
 ### Cost — remeasured 2026-08-24, and the earlier figures were wrong
 
 The old $0.6962/epoch came from a token profile measured against one provider. Measured over
-353 real calls, a full 38-service epoch projects at **$3.12**, not $0.70. `pnpm dry-run`
-prints it.
+353 real calls, a full 38-service epoch projected at **$3.12**, not $0.70.
+
+`pnpm dry-run` prints the current figure, and on 2026-08-27 it printed **$1.4109** for all 38
+services — the projection moves with the network's advertised prices and with which services
+are healthy, so read it from the command rather than from this file. The point that survives is
+the one below: `max_tokens` does not bound what gets billed.
 
 The reason is that **`max_tokens` does not bound what gets billed.** Reasoning models bill
 their thinking as completion tokens: 45 of 176 billed calls exceeded the limit they were
@@ -484,8 +504,21 @@ the Router up again and confirmed it on 2026-08-26**, so the ~$0.09 above is his
 current balance. The sizing argument still holds — $2-3 of credit covers all 14 epochs on the
 lean roster with room to spare.
 
-The earlier open question about the deposit address is left below because it was never
-actually answered — the top-up worked, but nothing confirmed *why*.
+**The deposit address question is now answered by the chain, 2026-08-27.** The prober wallet's
+transaction list has one transfer that is not a contract call: nonce 5, **1.5 0G to
+`0x495C63D097582Fb4e31fDc06970EEebDe9F69227` on 0G mainnet at 2026-08-24 03:17**, fourteen
+minutes before the first mainnet epoch was run. Every epoch since has been billed and has
+completed, so the address on pc.0g.ai does take a plain 0G transfer on chain 16661 and the
+credit follows. Strictly this is a correlation — nothing read the hosted balance directly, and
+the key's `inference` scope still forbids that — but it is the sequence the plan below asked
+for, carried out and working.
+
+**It is also where the gas went.** 1.7 0G funded the wallet, 1.5 left in that one transfer, and
+the deploy plus five epochs account for the rest — which is why the balance reads 0.156 0G and
+not a number that looked alarming until the transfer was found.
+
+The original open question is kept below, unedited, because the reasoning is what made the
+answer findable.
 
 Huy found a deposit address on pc.0g.ai,
 `0x495C63D097582Fb4e31fDc06970EEebDe9F69227`, with no network stated. Read on chain
@@ -512,9 +545,9 @@ hosted one:
 `0x495C…` is plausibly a sweep address that credits the hosted account rather than holding
 a balance.
 
-**Unverified, because the pc.0g.ai UI is not visible from here.** So: send **1 0G on 0G
-mainnet (chain 16661)** first, confirm the dashboard balance moves, and only then send the
-rest. An 0x address is EVM-format and identifies no chain — the same string is valid on
+**Unverified at the time, because the pc.0g.ai UI is not visible from here.** So: send **1 0G
+on 0G mainnet (chain 16661)** first, confirm the dashboard balance moves, and only then send
+the rest. *(This is what happened — see the paragraph above.)* An 0x address is EVM-format and identifies no chain — the same string is valid on
 Ethereum — and 0G is the native token of 0G mainnet, so the network chosen at send time is
 what matters.
 
