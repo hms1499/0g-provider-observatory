@@ -23,6 +23,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { aggregate, toMeasurements, type ResolveContext } from '../probes/aggregate.js';
+import { mapWithConcurrency } from '../chain/concurrency.js';
 import { computeDivergence, divergenceLookup, type ServiceKey } from '../probes/divergence.js';
 import {
   Budget,
@@ -92,6 +93,23 @@ const REASONING_EFFORT = opt('--reasoning-effort', '') as ReasoningEffort | '';
  * product answers week-over-week questions, and neither survives a roster that moves.
  */
 const ROSTER_LOCK = opt('--roster-lock', 'data/series-roster.json');
+/**
+ * How many services are probed at once.
+ *
+ * The Router meters requests per API key — `x-ratelimit-remaining` counts down from 500 a
+ * minute — and every service in the roster used to start at the same instant. At ten that
+ * opening burst is survivable: epoch 496591 never drove the counter below 375. At fifteen it
+ * is not: epoch 496514 drove it to exactly 0 at 62 seconds in and took 12 rejections there,
+ * and a 429 is attributed to the PROVIDER, not to us — see `faultSide` in `aggregate.ts`. A
+ * roster of 38 starting at once would arrive nearly four times as fast as the one that
+ * already exhausted the key.
+ *
+ * Ten, because that is the width every surviving epoch was measured at: a wider roster then
+ * changes what is measured rather than how hard the key is pushed. The probes inside one
+ * service stay sequential either way — concurrent calls to one provider would measure our
+ * own queueing as their latency.
+ */
+const CONCURRENCY = Number(opt('--concurrency', '10'));
 
 const modeIndex = (name: string) => Math.max(0, MODES.indexOf(name as never));
 
@@ -209,8 +227,10 @@ async function main() {
     );
     console.log(YEL('  calls under the next epoch, and the ledger is write-once.'));
   }
-  console.log(DIM('parallel across providers, sequential within each — concurrent calls to one'));
-  console.log(DIM('provider would measure our own queueing as their latency.\n'));
+  console.log(
+    DIM(`${Math.min(CONCURRENCY, roster.length)} services at a time, sequential within each —`),
+  );
+  console.log(DIM('concurrent calls to one provider would measure our queueing as their latency.\n'));
 
   const budget = new Budget(BUDGET_USD);
   const results: CallResult[] = [];
@@ -219,56 +239,54 @@ async function main() {
   const aborts: string[] = [];
   const abortReason = (): string | undefined => aborts[0];
 
-  await Promise.all(
-    roster.map(async (t) => {
-      for (const probe of PROBES) {
-        if (aborts.length) return;
-        // Held before the call, not merely tested: 15 workers all pass the same test
-        // against the same remaining dollar, and only a hold stops them spending it twice.
-        const held = budget.reserve(reservationUsd(t, probe));
-        if (!held) {
-          aborts.push(`budget cap reached at $${budget.spentUsd.toFixed(6)}`);
-          return;
-        }
-
-        let r: CallResult;
-        try {
-          r = await callPinned({
-            apiKey,
-            baseUrl: ROUTER_API,
-            providerAddress: t.address,
-            model: t.modelId,
-            probe,
-            params: t.params,
-            maxPriceUsdPrompt: t.maxPriceUsdPrompt,
-            maxPriceUsdCompletion: t.maxPriceUsdCompletion,
-            timeoutMs: 60_000,
-          });
-        } catch (e) {
-          // Nothing was billed, so the hold must go back rather than starve the roster.
-          held.release();
-          throw e;
-        }
-
-        // Evidence first: written before anything can throw on it.
-        appendFileSync(transcriptPath, `${JSON.stringify(r)}\n`);
-        results.push(r);
-
-        try {
-          held.settle(callCostUsd(r, t));
-        } catch (e) {
-          if (e instanceof BudgetExceeded) aborts.push(e.message);
-          else throw e;
-        }
-
-        if (r.ok && !pinHeld(r, t.address)) {
-          aborts.push(`PIN DID NOT HOLD: pinned ${t.address}, served by ${r.servedBy ?? 'nothing'}`);
-          return;
-        }
-        process.stdout.write(r.ok ? '.' : RED('x'));
+  await mapWithConcurrency(roster, CONCURRENCY, async (t) => {
+    for (const probe of PROBES) {
+      if (aborts.length) return;
+      // Held before the call, not merely tested: 15 workers all pass the same test
+      // against the same remaining dollar, and only a hold stops them spending it twice.
+      const held = budget.reserve(reservationUsd(t, probe));
+      if (!held) {
+        aborts.push(`budget cap reached at $${budget.spentUsd.toFixed(6)}`);
+        return;
       }
-    }),
-  );
+
+      let r: CallResult;
+      try {
+        r = await callPinned({
+          apiKey,
+          baseUrl: ROUTER_API,
+          providerAddress: t.address,
+          model: t.modelId,
+          probe,
+          params: t.params,
+          maxPriceUsdPrompt: t.maxPriceUsdPrompt,
+          maxPriceUsdCompletion: t.maxPriceUsdCompletion,
+          timeoutMs: 60_000,
+        });
+      } catch (e) {
+        // Nothing was billed, so the hold must go back rather than starve the roster.
+        held.release();
+        throw e;
+      }
+
+      // Evidence first: written before anything can throw on it.
+      appendFileSync(transcriptPath, `${JSON.stringify(r)}\n`);
+      results.push(r);
+
+      try {
+        held.settle(callCostUsd(r, t));
+      } catch (e) {
+        if (e instanceof BudgetExceeded) aborts.push(e.message);
+        else throw e;
+      }
+
+      if (r.ok && !pinHeld(r, t.address)) {
+        aborts.push(`PIN DID NOT HOLD: pinned ${t.address}, served by ${r.servedBy ?? 'nothing'}`);
+        return;
+      }
+      process.stdout.write(r.ok ? '.' : RED('x'));
+    }
+  });
   const endedAt = new Date();
   console.log('\n');
 
