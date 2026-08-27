@@ -629,6 +629,89 @@ td.dur .tick {
   background: var(--muted);
 }
 
+/* ── the series ─────────────────────────────────────────────────────────────
+ *
+ * One line per service, its p50 across every epoch published so far. The page read the whole
+ * epoch list off the chain and then showed one of them; this is the rest of what was already
+ * being fetched.
+ *
+ * Same single ink as everything else that carries a magnitude. The line says what was
+ * measured and when — never whether it was good, which is the one thing this page does not
+ * draw. The upright mark is the epoch the table is showing, so a reader can place the figures
+ * beside it in the series they belong to.
+ */
+
+td.spark {
+  width: 6.5rem;
+  padding-right: 0;
+}
+
+td.spark svg {
+  display: block;
+  margin-left: auto;
+}
+
+td.spark .line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+td.spark .dot {
+  fill: var(--muted);
+}
+
+/* The epoch on screen, marked but not emphasised: it locates the table in the series and is
+   not itself a reading. Drawn behind the line, in the rule's own weight, so it reads as the
+   graticule of the instrument rather than as a sixth measurement. */
+td.spark .at {
+  stroke: var(--rule);
+  stroke-width: 4;
+}
+
+td.spark .none {
+  color: var(--faint);
+  font-size: 0.72rem;
+}
+
+/* ── which epoch is being read ──────────────────────────────────────────────
+ *
+ * A native select. The list is the prober's history exactly as `epochsOf` returns it, and the
+ * platform control brings keyboard handling, a usable list on a phone and screen-reader
+ * support that none of this file would have to get right.
+ */
+
+.epoch-picker {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.epoch-picker select {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+  cursor: pointer;
+}
+
+.epoch-picker select:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+
+.epoch-picker .of {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--faint);
+}
+
 /* ── the measurement table on a narrow screen ───────────────────────────────
  *
  * Seven columns do not fit a phone, and the previous behaviour was the worst of the

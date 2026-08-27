@@ -9,6 +9,8 @@ import {
   type ProviderRow,
 } from './rows.js';
 import { Masthead } from './Masthead.js';
+import { seriesFor, seriesScale, type SeriesPoint } from './history.js';
+import { Sparkline } from './Sparkline.js';
 import { Primer } from './Primer.js';
 import { observe } from './findings.js';
 import { ModeBadge } from './ModeBadge.js';
@@ -25,6 +27,13 @@ export function Providers(props: {
   providers: readonly ProviderRecord[];
   /** The transaction that published this epoch, so every row traces to a source. */
   txHash: string | null;
+  /** Every epoch read so far, newest last. One member while the series is still arriving. */
+  records: readonly EpochRecord[];
+  /** Whether the epochs behind the newest one have finished loading. */
+  history: 'loading' | 'ready';
+  /** Every epoch this prober has published, whether or not its record has arrived. */
+  epochs: readonly number[];
+  onEpoch: (epoch: number) => void;
 }) {
   const groups = groupByModel(props.epoch, props.providers);
   const observations = observe(groups);
@@ -43,6 +52,14 @@ export function Providers(props: {
   const lo = durations.length > 0 ? Math.min(...durations) : 0;
   const hi = durations.length > 0 ? Math.max(...durations) : 0;
 
+  // One scale across every service's series, for the reason `seriesScale` gives: a per-row
+  // scale would draw a provider that moved by 100ms with the same profile as one that moved
+  // by 38 seconds.
+  const series = new Map<number, SeriesPoint[]>(
+    props.epoch.measurements.map((m) => [m.providerId, seriesFor(m.providerId, props.records)]),
+  );
+  const [seriesLo, seriesHi] = seriesScale([...series.values()]);
+
   return (
     <section>
       <Primer />
@@ -51,8 +68,15 @@ export function Providers(props: {
         readings={[
           {
             label: 'epoch',
-            hint: 'One measurement run. The prober takes one per clock hour, and the ledger accepts one record per epoch per prober.',
-            value: props.epoch.epoch,
+            hint: 'One measurement run. The prober takes one per clock hour, and the ledger accepts one record per epoch per prober. Every epoch this prober has published is listed here.',
+            value: (
+              <EpochPicker
+                epochs={props.epochs}
+                selected={props.epoch.epoch}
+                pending={props.history === 'loading'}
+                onEpoch={props.onEpoch}
+              />
+            ),
           },
           {
             label: 'observed',
@@ -115,8 +139,28 @@ export function Providers(props: {
         group — the spread between its providers is the finding, not noise to summarise away.
       </p>
 
+      {props.records.length > 1 && (
+        <p className="grouping series-note">
+          The history column carries each service&rsquo;s p50 across all{' '}
+          {props.records.length} published epochs, oldest on the left, on one scale shared by
+          every row. A flat line is a service that held steady, not a service with no readings;
+          the line breaks where an epoch measured nothing for it.
+        </p>
+      )}
+
       {groups.map((g) => (
-        <ModelBlock key={g.model} group={g} net={props.net} lo={lo} hi={hi} />
+        <ModelBlock
+          key={g.model}
+          group={g}
+          net={props.net}
+          lo={lo}
+          hi={hi}
+          series={series}
+          seriesLo={seriesLo}
+          seriesHi={seriesHi}
+          at={props.epoch.epoch}
+          history={props.history}
+        />
       ))}
 
       {gaps.length > 0 && (
@@ -145,7 +189,17 @@ export function Providers(props: {
   );
 }
 
-function ModelBlock(props: { group: ModelGroup; net: NetworkConfig; lo: number; hi: number }) {
+function ModelBlock(props: {
+  group: ModelGroup;
+  net: NetworkConfig;
+  lo: number;
+  hi: number;
+  series: ReadonlyMap<number, SeriesPoint[]>;
+  seriesLo: number;
+  seriesHi: number;
+  at: number;
+  history: 'loading' | 'ready';
+}) {
   const { group } = props;
   const modes = [...new Set(group.rows.map((r) => r.mode))].sort();
 
@@ -206,6 +260,11 @@ function ModelBlock(props: { group: ModelGroup; net: NetworkConfig; lo: number; 
             <th className="num" role="columnheader">
               <abbr title="Probe calls this service answered in this epoch.">calls</abbr>
             </th>
+            <th className="num" role="columnheader">
+              <abbr title="This service's p50 across every epoch published so far, oldest on the left. The line breaks at an epoch that measured nothing for it, and the upright mark is the epoch shown in this table.">
+                history
+              </abbr>
+            </th>
           </tr>
         </thead>
         <tbody role="rowgroup">
@@ -216,6 +275,11 @@ function ModelBlock(props: { group: ModelGroup; net: NetworkConfig; lo: number; 
               net={props.net}
               lo={props.lo}
               hi={props.hi}
+              series={props.series.get(r.providerId) ?? []}
+              seriesLo={props.seriesLo}
+              seriesHi={props.seriesHi}
+              at={props.at}
+              history={props.history}
               isReference={group.referenceAddress === r.address}
             />
           ))}
@@ -230,6 +294,11 @@ function Row(props: {
   net: NetworkConfig;
   lo: number;
   hi: number;
+  series: readonly SeriesPoint[];
+  seriesLo: number;
+  seriesHi: number;
+  at: number;
+  history: 'loading' | 'ready';
   isReference: boolean;
 }) {
   const { row } = props;
@@ -262,6 +331,13 @@ function Row(props: {
       <td className="num" role="cell" data-label="calls">
         {row.calls}
       </td>
+      {props.history === 'loading' ? (
+        <td className="num spark" role="cell" data-label="history">
+          <span className="none">reading…</span>
+        </td>
+      ) : (
+        <Sparkline series={props.series} lo={props.seriesLo} hi={props.seriesHi} at={props.at} />
+      )}
     </tr>
   );
 }
@@ -284,5 +360,51 @@ function Duration(props: { label: string; ms: number; lo: number; hi: number }) 
         </span>
       )}
     </td>
+  );
+}
+
+/**
+ * Which epoch the table is reading.
+ *
+ * A plain `<select>` on purpose. The list is the prober's whole history — the same list
+ * `epochsOf` returns on chain, in the same order — and a native control gets keyboard
+ * handling, a scrollable list on a phone and screen-reader support without any of it being
+ * written here.
+ *
+ * The newest is marked rather than assumed. A reader arriving on an epoch two days old
+ * because they followed a link should be able to see that it is not the current one.
+ */
+function EpochPicker(props: {
+  epochs: readonly number[];
+  selected: number;
+  /** The older records have not arrived yet, so choosing one would show an empty table. */
+  pending: boolean;
+  onEpoch: (epoch: number) => void;
+}) {
+  const newest = props.epochs.at(-1);
+
+  if (props.epochs.length <= 1) return <>{props.selected}</>;
+
+  return (
+    <span className="epoch-picker">
+      <select
+        aria-label="Which epoch to read"
+        value={props.selected}
+        disabled={props.pending}
+        onChange={(e) => props.onEpoch(Number(e.target.value))}
+      >
+        {[...props.epochs]
+          .sort((a, b) => b - a)
+          .map((e) => (
+            <option key={e} value={e}>
+              {e}
+              {e === newest ? ' · newest' : ''}
+            </option>
+          ))}
+      </select>
+      <span className="of">
+        {props.pending ? 'reading the series…' : `of ${props.epochs.length} published`}
+      </span>
+    </span>
   );
 }
