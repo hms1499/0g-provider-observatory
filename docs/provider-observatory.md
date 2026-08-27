@@ -506,4 +506,3 @@ Design draft v3.1 · positioning: independent measurement · task-based build ·
 2026-08-21
 Network figures measured 2026-08-21 from `router-api.0g.ai/v1/providers` · 42
 services · 20 addresses · 6 operators
-0G Bridge by AKINDO · Wave 3 · deadline 2026-08-30 22:00
