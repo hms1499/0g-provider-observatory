@@ -6,6 +6,7 @@ import { Masthead } from './Masthead.js';
 import { RatioCell } from './RatioCell.js';
 import { serviceLabel } from './rows.js';
 import { measureGroup } from './measureGroup.js';
+import { formatTokens, formatUsd, groupUsage, type PriceTable } from './estimate.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
 
 const GATEWAY_TIMEOUT_MS = 30_000;
@@ -33,6 +34,8 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [report, setReport] = useState<ReproduceReport | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  const [prices, setPrices] = useState<PriceTable | null>(null);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   useEffect(() => {
     if (newest === undefined) return;
@@ -80,6 +83,46 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
     };
   }, [props.net, newest]);
 
+  /**
+   * The advertised price list, once there is a key to ask for it with.
+   *
+   * Reading the catalogue sends no probe and bills nothing, but it does put the key through
+   * the relay, so it happens only after one has been typed and the paragraph above the input
+   * says it will. Debounced, because otherwise it would fire on every keystroke of a paste.
+   *
+   * A failure here is not a failure of the panel: the token counts below are read from the
+   * evidence and stand without it. Only the money is withheld.
+   */
+  useEffect(() => {
+    if (apiKey.length < 8) {
+      setPrices(null);
+      setPriceError(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/router/prices', {
+          headers: { authorization: `Bearer ${apiKey}` },
+        });
+        const body = await res.json();
+        if (cancelled) return;
+        if (!res.ok) throw new Error(String(body?.error ?? `the relay returned ${res.status}`));
+        setPrices((body?.prices ?? {}) as PriceTable);
+        setPriceError(null);
+      } catch (e: any) {
+        if (cancelled) return;
+        setPrices(null);
+        setPriceError(String(e?.message ?? e));
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [apiKey]);
+
   /** Only models with two or more providers: a lone provider has nothing to diverge from. */
   const groups = useMemo(() => {
     if (!bundle) return [];
@@ -92,6 +135,11 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
   }, [bundle]);
 
   const selected = groups.find((g) => g.canonicalId === group) ?? groups[0];
+
+  const usage = useMemo(() => {
+    if (!bundle || !selected) return null;
+    return groupUsage(bundle.results as any, bundle.roster as any, selected.canonicalId, prices);
+  }, [bundle, selected, prices]);
 
   async function run() {
     if (!bundle || !selected) return;
@@ -145,6 +193,11 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
         origin check. It is not stored and not logged. Use a key with <code>inference</code>{' '}
         scope only. This is the one part of this page that asks you to trust us.
       </p>
+      <p>
+        Typing a key also reads the network&rsquo;s advertised price list through that same
+        relay, so the figure below is in your rates. That is one request, it sends no probe and
+        it bills nothing.
+      </p>
 
       {loadError && <p>Could not read epoch {newest}: {loadError}.</p>}
 
@@ -165,10 +218,16 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
               { label: 'group', value: selected.canonicalId },
               { label: 'providers', value: selected.services },
               { label: 'calls', value: selected.calls },
+              {
+                label: 'cost',
+                hint: 'What this group cost the published run, priced at the rates advertised now. The tokens are read from the evidence; only the price applied to them is current. Yours will differ — a reasoning model that thinks for longer bills more.',
+                value: <Cost usage={usage} hasKey={apiKey.length >= 8} error={priceError} />,
+              },
             ]}
             note={{
               label: 'billed to',
-              value: 'your key, at whatever those providers charge — the relay caps each call at three times the advertised rate',
+              value:
+                'your key, at whatever those providers charge — the relay caps each call at three times the advertised rate',
             }}
           />
 
@@ -296,5 +355,66 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * What this run is going to cost, at every stage of knowing.
+ *
+ * Four states, and the difference between them matters more than the number does. Nothing is
+ * ever rendered as `$0.00`: an amount that rounds to zero against a button which spends real
+ * credit reads as free, and this button is not free.
+ *
+ * With no key there is still something true to say — the tokens the published run spent are in
+ * the evidence and needed no permission to read. That is the honest half of the answer, and it
+ * is offered rather than withheld until the reader has handed over a key.
+ */
+function Cost(props: {
+  usage: ReturnType<typeof groupUsage> | null;
+  hasKey: boolean;
+  error: string | null;
+}) {
+  const { usage } = props;
+  if (!usage) return <span className="pending">—</span>;
+
+  const tokens = (
+    <span className="of">
+      {formatTokens(usage.promptTokens + usage.completionTokens)} tokens in the published run
+    </span>
+  );
+
+  if (usage.usd !== null) {
+    return (
+      <>
+        ≈ {formatUsd(usage.usd)} {tokens}
+      </>
+    );
+  }
+
+  if (props.error) {
+    return (
+      <>
+        <span className="pending">not priced</span> <span className="of">{props.error}</span>
+      </>
+    );
+  }
+
+  if (usage.unpriced.length > 0) {
+    return (
+      <>
+        <span className="pending">not priced</span>{' '}
+        <span className="of">
+          the price list carries no rate for {usage.unpriced.length} of these providers, and a
+          total missing one would understate what you spend
+        </span>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <span className="pending">{props.hasKey ? 'pricing…' : 'add a key to price it'}</span>{' '}
+      {tokens}
+    </>
   );
 }

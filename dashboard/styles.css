@@ -676,6 +676,12 @@ td.spark .none {
   font-size: 0.72rem;
 }
 
+/* A figure that is not there yet, or deliberately withheld. Muted rather than coloured:
+   "not priced" is a statement about what we know, not a warning about the run. */
+.masthead .pending {
+  color: var(--faint);
+}
+
 /* ── which epoch is being read ──────────────────────────────────────────────
  *
  * A native select. The list is the prober's history exactly as `epochsOf` returns it, and the
