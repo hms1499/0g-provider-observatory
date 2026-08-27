@@ -26,6 +26,7 @@
     "upload-epoch": "tsx src/scripts/upload-epoch.ts",
     "verify": "tsx src/scripts/verify-epoch.ts",
     "reproduce": "tsx src/scripts/reproduce.ts",
+    "pick": "tsx src/scripts/pick-provider.ts",
     "dashboard:dev": "vite",
     "dashboard:build": "vite build",
     "dashboard:preview": "vite preview --outDir ../dashboard-dist",

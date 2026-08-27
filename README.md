@@ -106,6 +106,7 @@ the code in `contracts/` are the same thing, and the ABI is public:
 | 496591 | 2026-08-26 07:18 | 10 | 149 | [`0x73d3f088…`](https://chainscan.0g.ai/tx/0x73d3f088264e408f582031cb22da523e1bfecdcc207c86d1d0205a4963f85d79) |
 | 496592 | 2026-08-26 08:34 | 10 | 149 | [`0x0958e353…`](https://chainscan.0g.ai/tx/0x0958e353c1731dd295062bdd96c6ec5d8e3f18d720a6ac57be1d421522720208) |
 | 496609 | 2026-08-27 01:41 | 10 | 149 | [`0xc4ccf300…`](https://chainscan.0g.ai/tx/0xc4ccf300bc36e6159bc38124b4b3c45687fd4025aeebd216ddd73ca461ec5079) |
+| 496610 | 2026-08-27 02:47 | 10 | 149 | [`0x3057cd97…`](https://chainscan.0g.ai/tx/0x3057cd97da4af2915bc313fa1d16d713a248c22cf5cf151be70d0b466d84b2bd) |
 
 `Calls` is the number of samples the published figures rest on, summed over the ten services
 — the same `calls` field each on-chain measurement carries. Every epoch sent 150.
@@ -194,6 +195,54 @@ both flags to measure only the pinned series instead: 10 services, about **$0.05
 > Flags must be written as `--flag=value`. Through `pnpm`, the space-separated form is
 > swallowed before the script sees it.
 
+## Use it from code
+
+The figures are on chain, so picking a provider by them needs no API of ours and no sign-up.
+
+```bash
+pnpm pick glm-5.2 --mode=TeeML
+pnpm pick deepseek-v4-flash-0731 --max-p95=10000 --order-by=p95
+```
+
+```ts
+import { pickProvider } from './src/sdk/pickProvider.js';
+
+const { best } = await pickProvider({ model: 'glm-5.2', mode: 'TeeML', maxP95Ms: 60000 });
+if (!best) throw new Error('nothing met those criteria');
+
+await fetch('https://router-api.0g.ai/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    authorization: `Bearer ${process.env.ROUTER_API_KEY}`,
+    'content-type': 'application/json',
+    'X-0G-Provider-Address': best.address,
+  },
+  body: JSON.stringify({ model: best.model, messages }),
+});
+```
+
+It reads the ledger directly and never calls the Router, so it never sees your key. It answers
+one question — which address to pin — and you make the request yourself. Used alongside the
+Router, not as a replacement.
+
+**Four rules it holds to**, because a function that says *use this one* carries more than a
+table that says *here is what I measured*:
+
+- **You name the axis; it never invents one.** There is no blended score. `orderBy` is a single
+  named field and it is yours, because one number mixing latency, errors and divergence is a
+  league table with its weights hidden inside it.
+- **No criterion is ever relaxed.** Ask for `TeeML` and get nothing rather than `TeeTLS`. Every
+  rejection comes back named and reasoned, so "nobody serves this model" stays distinguishable
+  from "four do and all four were slower than your ceiling".
+- **p95 is the worst epoch in the window, not the average of them.** At fifteen probes an
+  epoch's p95 *is* its slowest call, so averaging five of them yields a number no call ever
+  took. The error rate is pooled properly, by calls rather than by averaging rates.
+- **What is not known travels with the answer.** `epochsUsed`, `measuredAt` and `modeChanged`
+  are on every result, because a figure resting on five epochs and one resting on a single
+  unlucky minute should not look alike.
+
+By default it pools the newest **5** epochs. One would be a decision taken on one slow call.
+
 ## Run it locally
 
 Everything below works from a cold clone. None of it needs a key or costs anything.
@@ -250,6 +299,7 @@ TDX enclave. It is shown with its technical reason and is never scored down.
 | `src/storage/` | evidence bundles and 0G Storage upload |
 | `src/verify/` | independent recomputation and cross-run comparison. Imports nothing from `src/probes/` |
 | `src/relay/` | the relay's rules as pure functions: what it forwards, what it refuses |
+| `src/sdk/` | picking a provider from the published measurements. `select.ts` is pure and holds the whole decision |
 | `src/scripts/` | every `pnpm` command in this README |
 | `api/router/` | the relay itself — one call forwarded, no secret, no chain, no measurement |
 | `dashboard/` | the public view |
