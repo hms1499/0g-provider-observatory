@@ -15,9 +15,17 @@ import { Sparkline } from './Sparkline.js';
 import { Primer } from './Primer.js';
 import { observe } from './findings.js';
 import { ModeBadge } from './ModeBadge.js';
+import { isUnmeasured } from '../src/chain/encoding.js';
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
 
-/** An address is 42 characters and no reader holds one in their head. Enough to tell apart. */
+/**
+ * An address is 42 characters and no reader holds one in their head. Enough to tell apart.
+ *
+ * Every shortened address carries the whole one in its `title`. The elision is for reading;
+ * anyone who wants to *use* the address — `pnpm pick <address>`, a script, a search on the
+ * explorer — had to open the explorer in a new tab and copy it back out, which is a detour
+ * through a third-party site to recover something this page already has.
+ */
 const short = (address: string) => `${address.slice(0, 10)}…${address.slice(-4)}`;
 
 const utc = (d: Date) => `${d.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
@@ -176,7 +184,12 @@ export function Providers(props: {
             {gaps.map((g) => (
               <div key={g.address}>
                 <dt>
-                  <a href={explorerAddress(props.net, g.address)} target="_blank" rel="noreferrer">
+                  <a
+                    href={explorerAddress(props.net, g.address)}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={g.address}
+                  >
                     {short(g.address)}
                   </a>
                 </dt>
@@ -214,19 +227,51 @@ function ModelBlock(props: {
         </span>
       </h3>
 
+      {/*
+        A lone group is three different situations wearing one shape, and the row count cannot
+        tell them apart — only the divergence field can.
+
+        `divergenceLookup` stores a plain 0 for a service that was never grouped: "no divergence
+        entry at all was never grouped, so 0 is the measured truth for it". The sentinel means
+        something else entirely — grouped, compared, but the noise floor the comparison must be
+        corrected against was never measured. And a real figure on a service sitting alone means
+        it WAS compared, against peers the registry files under a different model string: the
+        prober groups by the Router's `canonical_id`, this page groups by the exact string on
+        chain, and the two disagree on the live network at `glm-5` / `zai-org/GLM-5-FP8`.
+
+        The 0 case is the one that needed saying most. Fourteen of the twenty-one blocks in the
+        first wide epoch are lone services reading 0%, and a reader who takes that for "agreed
+        with its peers" has read the opposite of what happened.
+
+        One ambiguity is left standing rather than papered over: a split-string service whose
+        answers genuinely matched would also store 0, and nothing in the record separates that
+        from never having been compared. It cannot occur on the network as it stands.
+      */}
       {group.rows.length === 1 && (
         <p className="aside">
-          One provider serves this model in this epoch, so there is nothing to diverge from.
-          Its divergence column reads as a gap rather than as zero.
+          {isUnmeasured(group.rows[0]!.divergenceBps) ? (
+            <>
+              This service was compared, but the noise floor that the comparison has to be
+              corrected against was not measured this epoch, so its divergence column reads as
+              a gap rather than as a figure the evidence does not support.
+            </>
+          ) : group.rows[0]!.divergenceBps === 0 ? (
+            <>
+              One provider serves this model in this epoch, so nothing was compared against it.
+              Its divergence reads 0% because there was nothing to differ from — not because
+              its answers matched another provider&rsquo;s.
+            </>
+          ) : (
+            <>
+              One provider serves this model under this exact name, but a divergence figure was
+              published for it: the prober compared it against services the registry records
+              under a different string for the same model. The figure is real; the providers it
+              was measured against are in another block on this page.
+            </>
+          )}
         </p>
       )}
 
-      {/*
-        Roles are spelled out because the narrow layout below 40rem sets `display` on every
-        element here, and a table whose parts are no longer `display: table-*` loses its
-        semantics in most engines. Stated explicitly, the columns stay announced as columns at
-        every width, while the visual labels come from `data-label` on each cell.
-      */}
       <table className="readings" role="table">
         <thead role="rowgroup">
           <tr role="row">
@@ -249,7 +294,7 @@ function ModelBlock(props: {
               <span className="unit">s</span>
             </th>
             <th className="num" role="columnheader">
-              <abbr title="Share of calls that failed in a way attributed to the provider. Failures that were ours — a timeout we set, an output ceiling we chose — are excluded.">
+              <abbr title="Share of calls that failed in a way attributed to the provider, including one that did not answer inside the 60-second ceiling this prober sets — a call that never came back is counted against the service, though the deadline is ours. Excluded as ours: an answer cut off by the output ceiling we chose, and a request the Router refused before it reached the service.">
                 errors
               </abbr>
             </th>
@@ -306,7 +351,12 @@ function Row(props: {
   return (
     <tr role="row">
       <td role="cell">
-        <a href={explorerAddress(props.net, row.address)} target="_blank" rel="noreferrer">
+        <a
+          href={explorerAddress(props.net, row.address)}
+          target="_blank"
+          rel="noreferrer"
+          title={row.address}
+        >
           {short(row.address)}
         </a>
         {props.isReference && (
