@@ -21,8 +21,24 @@
   --bg: #fbfaf7;
   --panel: #f2f1ec;
   --ink: #141a21;
-  --muted: #5a6672;
-  --faint: #8b96a1;
+  /*
+   * Three tiers of ink, and every one of them clears WCAG AA against BOTH grounds — the page
+   * at --bg and the panels and footer at --panel, which is the darker of the two and is where
+   * the first attempt at this still failed.
+   *
+   *   ink 15.5:1   muted 6.6:1   faint 4.7:1     (on --panel, the worse ground)
+   *
+   * --faint was #8b96a1 and measured 2.88:1, failing at the 11.2px it is mostly set in. The
+   * worst-placed instance was the sentence under the observations reading "Observations, not
+   * verdicts" — the line that keeps this page an instrument rather than an indictment was the
+   * least legible text on the site.
+   *
+   * --muted moved with it. Raising --faint alone would have brought the two within a hair of
+   * each other and flattened the scale into two tiers wearing three names; the whole scale
+   * steps down instead, which also makes the body text of every aside easier to read.
+   */
+  --muted: #4b5661;
+  --faint: #616c77;
   --rule: #d9d4c8;
   --accent: #146a75;
   --ok: #2c6e4e;
@@ -39,8 +55,10 @@
     --bg: #10141a;
     --panel: #171d25;
     --ink: #e6e8e5;
-    --muted: #9aa5b1;
-    --faint: #6e7a86;
+    /* The same three tiers, same rule, measured against --panel #171d25 which is the LIGHTER
+       ground here and therefore the harder one: ink 13.8:1, muted 8.1:1, faint 5.1:1. */
+    --muted: #aab5c0;
+    --faint: #828e9b;
     --rule: #2a333d;
     --accent: #5fb3bd;
     --ok: #6cbf95;
@@ -50,6 +68,16 @@
 
 * {
   box-sizing: border-box;
+}
+
+/*
+ * The header is sticky and about 112px tall, so anything the browser scrolls to on its own —
+ * a focused control reached by keyboard, an element brought into view by script — arrives
+ * underneath it and cannot be read. Reserving the header's height means the browser stops
+ * short of it instead.
+ */
+html {
+  scroll-padding-top: 8rem;
 }
 
 body {
