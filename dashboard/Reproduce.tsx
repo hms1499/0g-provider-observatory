@@ -260,9 +260,19 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
           {(report.onlyPublished.length > 0 || report.onlyIndependent.length > 0) && (
             <>
               <h3>Not comparable</h3>
+              {/*
+                Two different things end up in this list and the old copy named only one of
+                them. A service can be missing because its run returned too few usable samples
+                — that was the whole story while every epoch measured the same locked roster.
+                Since epoch 496616 probed all 38 services against the other epochs' 10, the
+                commoner reason by far is that the two runs did not set out to measure the same
+                set at all, and calling that a sampling failure describes the wrong thing.
+              */}
               <p>
-                Measured by one run and not the other. Not a fault on either side — a service
-                that returned too few usable samples is dropped rather than published thin.
+                Measured by one run and not the other, which happens two ways: the two runs
+                measured different rosters, or a service returned too few usable samples and
+                was dropped rather than published thin. Neither is a fault on either side, and
+                only the second says anything about the service.
               </p>
               <ul>
                 {report.onlyPublished.map((s) => (
