@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Caveats } from './Caveats.js';
 import { Measure } from './Measure.js';
 import { DEFAULT_NETWORK, NETWORKS, type NetworkKey } from './networks.js';
@@ -20,6 +20,26 @@ export default function App() {
   // Reset with the chain, because an epoch number on mainnet names a different run on testnet.
   const [chosen, setChosen] = useState<number | null>(null);
   useEffect(() => setChosen(null), [key]);
+
+  /*
+   * A tab is a different section, so it starts at its beginning.
+   *
+   * Without this the scroll position carried across, and since these panels are thousands of
+   * pixels long a reader deep in the Providers table who pressed Measure landed halfway down
+   * it — past the paragraph that tells them their key passes through this site's server, which
+   * is the one thing on that panel nobody should arrive below.
+   *
+   * Instant, not smooth: this is a change of document, not a movement through one, and an
+   * animation here would be motion for its own sake.
+   */
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [panel]);
 
   const shown =
     (chosen === null ? undefined : data.records.find((r) => r.epoch === chosen)) ?? data.latest;
