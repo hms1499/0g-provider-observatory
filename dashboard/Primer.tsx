@@ -13,6 +13,12 @@ const REMEMBERED = 'observatory.primer.open';
  * The tabs are the part worth stating out loud, because their order is an argument. They
  * escalate from "show me" to "I do not believe you, let me run it myself", and a reader who
  * sees that reads the whole site differently from one who sees four similar words.
+ *
+ * The last paragraph exists because the figures outlived the page. They are on chain, so they
+ * read from a program as readily as from here — and until it was written down, the only way to
+ * find that out was to open the repository. It is a sentence, deliberately: a control on this
+ * page that ordered providers by speed would be a league table under this project's own domain,
+ * aimed at the people running the network, which is the one thing the site does not build.
  */
 export function Primer() {
   /*
@@ -75,6 +81,12 @@ export function Primer() {
       </dl>
       <p className="ladder-note">
         Each tab doubts the one before it. You do not have to take any of it on trust.
+      </p>
+      <p className="ladder-note">
+        These figures also read from code, straight off the chain, with no API of ours in the
+        path: <code>pnpm pick glm-5.2</code> picks a provider by them. It invents no ranking of
+        its own — you name the field it sorts on, and it reports every service it rejected and
+        why.
       </p>
     </details>
   );

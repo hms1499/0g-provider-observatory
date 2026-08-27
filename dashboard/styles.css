@@ -95,6 +95,23 @@ main {
   padding-bottom: 4rem;
 }
 
+/*
+ * Inline code, in prose.
+ *
+ * The face is named rather than left to the browser's default monospace, which on macOS is
+ * not the one the rest of the page is set in and reads as a different document.
+ *
+ * `nowrap` because every inline code here is a command someone might run, and a command broken
+ * across two lines is harder to read and cannot be selected with a double click. The longest
+ * currently on the page is 17 characters against a 311px column at the narrowest width, so
+ * there is a wide margin — but the margin is the reason this is safe, not the rule itself.
+ */
+code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  white-space: nowrap;
+}
+
 /* ── site header ────────────────────────────────────────────────────────────
  *
  * Two rows, two jobs. The top is identity and context: the mark, the wordmark, and which

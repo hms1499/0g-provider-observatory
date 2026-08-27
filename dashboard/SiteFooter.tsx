@@ -65,7 +65,8 @@ export function SiteFooter({ net }: { net: NetworkConfig }) {
             >
               Source on GitHub
             </a>{' '}
-            — the prober, the contracts, and this page.
+            — the prober, the contracts, and this page. The same figures pick a provider from
+            code: <code>pnpm pick</code>, reading this chain directly.
           </p>
           <dl>
             <div>
