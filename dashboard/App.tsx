@@ -1,26 +1,89 @@
 import { useEffect, useRef, useState } from 'react';
 import { Caveats } from './Caveats.js';
 import { Measure } from './Measure.js';
-import { DEFAULT_NETWORK, NETWORKS, type NetworkKey } from './networks.js';
+import { NETWORKS, type NetworkKey } from './networks.js';
 import { Providers } from './Providers.js';
 import { Reproduce } from './Reproduce.js';
 import { SiteFooter } from './SiteFooter.js';
 import { SiteHeader, type Panel } from './SiteHeader.js';
 import { ProvidersSkeleton } from './Skeleton.js';
 import { useEpochTxHash, useObservatory } from './useObservatory.js';
+import { formatHash, parseHash } from './urlState.js';
 import { Verify } from './Verify.js';
 
 export default function App() {
-  const [key, setKey] = useState<NetworkKey>(DEFAULT_NETWORK);
-  const [panel, setPanel] = useState<Panel>('providers');
+  /*
+   * Which chain, which section, which epoch — read out of the address once, then written back
+   * to it as the reader moves. See `urlState.ts` for the format and why it exists; the short
+   * version is that a reload used to lose the reader's place and there was no way to send
+   * anyone a link to a particular epoch.
+   *
+   * Read at the first render rather than in an effect, so the first paint is already the view
+   * the link asked for. Reading it afterwards would render the default first and then replace
+   * it, which is a flash of the wrong epoch on exactly the link that names one.
+   */
+  const [initial] = useState(() => parseHash(window.location.hash));
+  const [key, setKey] = useState<NetworkKey>(initial.network);
+  const [panel, setPanel] = useState<Panel>(initial.panel);
   const net = NETWORKS[key];
   const data = useObservatory(net);
 
   // Null means "whichever is newest", so the page keeps following the series as epochs are
   // published rather than pinning itself to the epoch that happened to be newest on load.
-  // Reset with the chain, because an epoch number on mainnet names a different run on testnet.
-  const [chosen, setChosen] = useState<number | null>(null);
-  useEffect(() => setChosen(null), [key]);
+  const [chosen, setChosen] = useState<number | null>(initial.epoch);
+
+  /*
+   * Reset the epoch with the chain, because an epoch number on mainnet names a different run
+   * on testnet.
+   *
+   * Guarded by the chain this effect last saw, not by a first-render flag. The first render
+   * can already carry an epoch that came out of the link, and so can a hash the reader pastes
+   * in later — in both cases the address named the chain and the epoch together, and clearing
+   * one of them would break the single address this whole thing exists to make work. `sync`
+   * below moves the guard forward for the same reason.
+   */
+  const lastKey = useRef(key);
+  useEffect(() => {
+    if (lastKey.current === key) return;
+    lastKey.current = key;
+    setChosen(null);
+  }, [key]);
+
+  /*
+   * The address follows the page. `replaceState`, not `pushState`: the header calls these
+   * four panels sections of one document, and a Back button that walked backwards through
+   * sections would strand a reader who arrived from somewhere else and wants to leave. What
+   * the hash is for is surviving a reload and being copied out of the bar, and replacing does
+   * both.
+   */
+  useEffect(() => {
+    const next = formatHash({ network: key, panel, epoch: chosen });
+    if (window.location.hash !== next) history.replaceState(null, '', next);
+  }, [key, panel, chosen]);
+
+  /*
+   * The one direction that is not ours: a reader editing the address bar, or following a
+   * second link into a page that is already open. Our own writes replace rather than push, so
+   * they raise no `hashchange` and this cannot feed back into itself.
+   *
+   * It normalises here rather than leaving that to the effect above, because a hash that
+   * parses to the view already on screen — `#garbage`, or a link from an older format —
+   * changes no state, so nothing downstream would run and the bar would go on describing a
+   * page that is not there.
+   */
+  useEffect(() => {
+    const sync = () => {
+      const view = parseHash(window.location.hash);
+      lastKey.current = view.network;
+      setKey(view.network);
+      setPanel(view.panel);
+      setChosen(view.epoch);
+      const canonical = formatHash(view);
+      if (window.location.hash !== canonical) history.replaceState(null, '', canonical);
+    };
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
 
   /*
    * A tab is a different section, so it starts at its beginning.
