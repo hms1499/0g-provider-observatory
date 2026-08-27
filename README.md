@@ -154,10 +154,13 @@ differ on whether one model diverged from its peers.
 Take your own measurement with your own Router key and compare it against a published epoch.
 Two ways:
 
-**From the dashboard**, on the Measure panel — pick a group, see the call count before you
-spend anything, paste a key with `inference` scope. The probes come from the published
-epoch's evidence, not from this repository. No clone, no flags. The cheapest group costs
-about **$0.003**.
+**From the dashboard**, on the Measure panel — pick a group, paste a key with `inference`
+scope, and the panel prices the run before you start it: the tokens the published epoch
+actually spent on that group, at the rates advertised right now. The probes come from that
+epoch's evidence, not from this repository. No clone, no flags. On epoch 496609 the cheapest
+group prices at **$0.0009** and the dearest at **$0.043**, but read the figure from the panel
+rather than from here — advertised rates move, and a number written down in a README does
+not.
 
 > **This path asks one thing of you.** Your key passes through a small server of ours at
 > `/api/router` on its way to 0G's Router. It has to: the Router will not answer a browser
