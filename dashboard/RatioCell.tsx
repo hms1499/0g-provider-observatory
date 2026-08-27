@@ -8,10 +8,10 @@
  */
 import { ratioPosition } from './rows.js';
 
-export function RatioCell({ ratio }: { ratio: number }) {
+export function RatioCell({ ratio, label }: { ratio: number; label: string }) {
   const at = ratioPosition(ratio);
   return (
-    <td className="num dur">
+    <td className="num dur" role="cell" data-label={label}>
       <span className="figure">{ratio.toFixed(2)}&times;</span>
       {at !== null && (
         <span className="track parity" aria-hidden="true">

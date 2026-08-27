@@ -166,43 +166,49 @@ function ModelBlock(props: { group: ModelGroup; net: NetworkConfig; lo: number; 
         </p>
       )}
 
-      <table>
-        <thead>
-          <tr>
-            <th>operator</th>
-            <th>
+      {/*
+        Roles are spelled out because the narrow layout below 40rem sets `display` on every
+        element here, and a table whose parts are no longer `display: table-*` loses its
+        semantics in most engines. Stated explicitly, the columns stay announced as columns at
+        every width, while the visual labels come from `data-label` on each cell.
+      */}
+      <table className="readings" role="table">
+        <thead role="rowgroup">
+          <tr role="row">
+            <th role="columnheader">operator</th>
+            <th role="columnheader">
               <abbr title="What the operator's registry entry declares about how this model is run. A kind of guarantee, never a grade — see the notes at the foot of the page.">
                 mode
               </abbr>
             </th>
-            <th className="num">
+            <th className="num" role="columnheader">
               <abbr title="Median response time. Half this service's calls came back faster than this.">
                 p50
               </abbr>{' '}
               <span className="unit">s</span>
             </th>
-            <th className="num">
+            <th className="num" role="columnheader">
               <abbr title="At 15 probes per service, p95 is this service's slowest call in this epoch. It carries almost no tail information until epochs are pooled.">
                 p95
               </abbr>{' '}
               <span className="unit">s</span>
             </th>
-            <th className="num">
+            <th className="num" role="columnheader">
               <abbr title="Share of calls that failed in a way attributed to the provider. Failures that were ours — a timeout we set, an output ceiling we chose — are excluded.">
                 errors
               </abbr>
             </th>
-            <th className="num">
+            <th className="num" role="columnheader">
               <abbr title="How often this service's answers differed from other providers of the same model, after subtracting how often it disagrees with itself. A dash means it could not be measured, not that it was zero.">
                 divergence
               </abbr>
             </th>
-            <th className="num">
+            <th className="num" role="columnheader">
               <abbr title="Probe calls this service answered in this epoch.">calls</abbr>
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
           {group.rows.map((r) => (
             <Row
               key={r.providerId}
@@ -228,8 +234,8 @@ function Row(props: {
 }) {
   const { row } = props;
   return (
-    <tr>
-      <td>
+    <tr role="row">
+      <td role="cell">
         <a href={explorerAddress(props.net, row.address)} target="_blank" rel="noreferrer">
           {short(row.address)}
         </a>
@@ -242,14 +248,20 @@ function Row(props: {
           </span>
         )}
       </td>
-      <td>
+      <td role="cell" data-label="mode">
         <ModeBadge mode={row.mode} />
       </td>
-      <Duration ms={row.p50Ms} lo={props.lo} hi={props.hi} />
-      <Duration ms={row.p95Ms} lo={props.lo} hi={props.hi} />
-      <td className="num">{formatBps(row.errorRateBps)}</td>
-      <td className="num">{formatBps(row.divergenceBps)}</td>
-      <td className="num">{row.calls}</td>
+      <Duration label="p50 s" ms={row.p50Ms} lo={props.lo} hi={props.hi} />
+      <Duration label="p95 s" ms={row.p95Ms} lo={props.lo} hi={props.hi} />
+      <td className="num" role="cell" data-label="errors">
+        {formatBps(row.errorRateBps)}
+      </td>
+      <td className="num" role="cell" data-label="divergence">
+        {formatBps(row.divergenceBps)}
+      </td>
+      <td className="num" role="cell" data-label="calls">
+        {row.calls}
+      </td>
     </tr>
   );
 }
@@ -261,10 +273,10 @@ function Row(props: {
  * took, never whether that is good — colouring it by value would rank the operators, and the
  * operators here are the people running this network.
  */
-function Duration(props: { ms: number; lo: number; hi: number }) {
+function Duration(props: { label: string; ms: number; lo: number; hi: number }) {
   const at = scalePosition(props.ms, props.lo, props.hi);
   return (
-    <td className="num dur">
+    <td className="num dur" role="cell" data-label={props.label}>
       <span className="figure">{formatSeconds(props.ms)}</span>
       {at !== null && (
         <span className="track" aria-hidden="true">

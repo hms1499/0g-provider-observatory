@@ -189,22 +189,28 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
           {report.disagreements.length > 0 && (
             <>
               <h3>Where the two runs disagree</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>service</th>
-                    <th>what</th>
-                    <th>epoch {earlier}</th>
-                    <th>epoch {later}</th>
+              <table className="readings" role="table">
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th role="columnheader">service</th>
+                    <th role="columnheader">what</th>
+                    <th role="columnheader">epoch {earlier}</th>
+                    <th role="columnheader">epoch {later}</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {report.disagreements.map((d, i) => (
-                    <tr key={i}>
-                      <td>{serviceLabel(d.service)}</td>
-                      <td>{d.kind}</td>
-                      <td>{show(d.published)}</td>
-                      <td>{show(d.independent)}</td>
+                    <tr key={i} role="row">
+                      <td role="cell">{serviceLabel(d.service)}</td>
+                      <td role="cell" data-label="what">
+                        {d.kind}
+                      </td>
+                      <td role="cell" data-label={`epoch ${earlier}`}>
+                        {show(d.published)}
+                      </td>
+                      <td role="cell" data-label={`epoch ${later}`}>
+                        {show(d.independent)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -213,20 +219,24 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
           )}
 
           <h3>Latency, as a ratio</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>service</th>
-                <th className="num">p50</th>
-                <th className="num">p95</th>
+          <table className="readings" role="table">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th role="columnheader">service</th>
+                <th className="num" role="columnheader">
+                  p50
+                </th>
+                <th className="num" role="columnheader">
+                  p95
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
               {report.latency.map((l) => (
-                <tr key={l.service}>
-                  <td>{serviceLabel(l.service)}</td>
-                  <RatioCell ratio={l.p50Ratio} />
-                  <RatioCell ratio={l.p95Ratio} />
+                <tr key={l.service} role="row">
+                  <td role="cell">{serviceLabel(l.service)}</td>
+                  <RatioCell ratio={l.p50Ratio} label="p50" />
+                  <RatioCell ratio={l.p95Ratio} label="p95" />
                 </tr>
               ))}
             </tbody>

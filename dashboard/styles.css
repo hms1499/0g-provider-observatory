@@ -629,6 +629,106 @@ td.dur .tick {
   background: var(--muted);
 }
 
+/* ── the measurement table on a narrow screen ───────────────────────────────
+ *
+ * Seven columns do not fit a phone, and the previous behaviour was the worst of the
+ * available failures. `table { overflow-x: auto }` made the row scrollable but drew no
+ * affordance, so at 390px a p95 of 30.94 rendered as `30.` against the right edge and the
+ * divergence column — the figure this project exists to publish — sat entirely off screen
+ * with nothing to say it was there.
+ *
+ * A clipped digit is not a cramped layout. It is a wrong number, printed by an instrument,
+ * and that is a different class of fault from an ugly one.
+ *
+ * So below 40rem each row becomes a card: the operator as its heading, then one line per
+ * measurement with its own label. Nothing is dropped, nothing is abbreviated, and no reader
+ * has to discover a hidden scroll to see a column. The labels come from `data-label`; the
+ * table's semantics are held by the explicit roles in the markup, so a screen reader still
+ * hears column headers here.
+ */
+
+@media (max-width: 40rem) {
+  table.readings {
+    display: block;
+    overflow-x: visible;
+    white-space: normal;
+  }
+
+  table.readings thead {
+    /* Visually redundant once every cell carries its own label, but kept in the tree:
+       removing it would take the column headers away from a screen reader too. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  table.readings tbody {
+    display: block;
+  }
+
+  table.readings tbody tr {
+    display: block;
+    padding: 0.85rem 0 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  table.readings tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  table.readings tbody td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    width: auto;
+    padding: 0.18rem 0;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  table.readings tbody td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    text-align: left;
+  }
+
+  /* The operator is the card's heading, not one of its readings. */
+  table.readings tbody td:first-child {
+    display: block;
+    padding: 0 0 0.45rem;
+    text-align: left;
+    font-size: 0.86rem;
+  }
+
+  /* A duration keeps its track, which now spans the card under the label and figure. */
+  table.readings tbody td.dur {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  table.readings tbody td.dur .figure {
+    display: inline;
+    grid-column: 2;
+  }
+
+  /* Thinner and inset here, so it cannot be mistaken for the rule that separates two
+     providers. On the desktop table the track sits inside a column and that ambiguity does
+     not arise; on a card it runs the full width and it does. */
+  table.readings tbody td.dur .track {
+    grid-column: 1 / -1;
+    height: 2px;
+    margin: 4px 0 2px 4.5rem;
+  }
+}
+
 /* ── the measurement gaps ───────────────────────────────────────────────────
  *
  * Nine operators had a service this epoch did not reach, and the previous layout gave each
