@@ -60,10 +60,17 @@ prober                0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD
 
 38 provider/model pairs registered. Published so far:
 
-| Epoch | Services | Calls | Transaction |
-|---|---|---|---|
-| 496539 | 10 | 146 | [`0xf3f1de65…`](https://chainscan.0g.ai/tx/0xf3f1de65f0b25652ea0e88cde51d2cc3ee879e574609863b12b97fcb53ca83b2) |
-| 496540 | 10 | 145 | [`0xec8f6a1e…`](https://chainscan.0g.ai/tx/0xec8f6a1e456d3194b9476c7f8e04e3bfcb5f0c2750d19de6f0c8f7cb1e3676a1) |
+| Epoch | Written (UTC) | Services | Calls | Transaction |
+|---|---|---|---|---|
+| 496539 | 2026-08-24 03:31 | 10 | 146 | [`0xf3f1de65…`](https://chainscan.0g.ai/tx/0xf3f1de65f0b25652ea0e88cde51d2cc3ee879e574609863b12b97fcb53ca83b2) |
+| 496540 | 2026-08-24 04:10 | 10 | 145 | [`0xec8f6a1e…`](https://chainscan.0g.ai/tx/0xec8f6a1e456d3194b9476c7f8e04e3bfcb5f0c2750d19de6f0c8f7cb1e3676a1) |
+| 496591 | 2026-08-26 07:18 | 10 | 149 | [`0x73d3f088…`](https://chainscan.0g.ai/tx/0x73d3f088264e408f582031cb22da523e1bfecdcc207c86d1d0205a4963f85d79) |
+| 496592 | 2026-08-26 08:34 | 10 | 149 | [`0x0958e353…`](https://chainscan.0g.ai/tx/0x0958e353c1731dd295062bdd96c6ec5d8e3f18d720a6ac57be1d421522720208) |
+
+`Calls` is the number of samples the published figures rest on, summed over the ten services
+— the same `calls` field each on-chain measurement carries. Every epoch sent 150.
+The prober's full history is `epochsOf(0x691Bb0Cc…)` on `MeasurementRegistry`; this table
+is that list, not a selection from it.
 
 ## Check it yourself
 
