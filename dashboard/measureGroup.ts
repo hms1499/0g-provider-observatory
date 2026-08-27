@@ -33,6 +33,80 @@ import type { Probe } from '../src/probes/suite.js';
 import { compareRuns, type ComparableService, type ReproduceReport } from '../src/verify/reproduce.js';
 import { recompute, type VerifiableBundle } from '../src/verify/recompute.js';
 
+export interface GroupChoice {
+  canonicalId: string;
+  /** How many providers of this model the published run set out to measure. */
+  services: number;
+  /** What a replay of the whole group would send. */
+  calls: number;
+  /** False when the published run could not measure every member — `short` says who. */
+  replayable: boolean;
+  /** Members that fell short of the bundle's own `minSamples`. Empty when replayable. */
+  short: Array<{ address: string; modelId: string; successes: number }>;
+}
+
+/**
+ * Every consistency group in an epoch, and whether a reader's key could settle it.
+ *
+ * The panel used to offer any group with two or more entries in `bundle.roster`. Roster
+ * membership is what the prober *intended* to measure, not what came back — and the first
+ * wide epoch made the difference expensive. Epoch 496616 carries three Anthropic groups whose
+ * every call returned HTTP 400 (`not available on the openai API format`), so the panel
+ * offered a reader thirty calls that cannot succeed, and priced them at $0 because failed
+ * calls report no usage. "Free" and "impossible" rendered identically.
+ *
+ * A group is replayable only when every one of its members cleared the bundle's own
+ * `minSamples` rule in the run being replayed. That threshold is read from the bundle rather
+ * than chosen here, for the same reason `measureGroup` borrows the bundle's rulebook: the
+ * comparison is against what that epoch published, under the rules it published beneath.
+ *
+ * **Every member, not most of them.** A replay is scored against the published group, and a
+ * member the published run could not measure has nothing on the other side of the comparison.
+ *
+ * **One list, not two.** The unreplayable groups stay in the picker beside the rest, disabled
+ * and labelled, rather than being filtered out of it. Removing them answers the question a
+ * reader has not asked yet — someone who came to check the Anthropic services would find them
+ * simply absent, which reads as an instrument that never looked. Present and greyed says the
+ * true thing: measured, and the answer is that this epoch cannot support the comparison.
+ *
+ * Replayable first so the picker's default is always one a key can actually run, then cheapest
+ * first within each half: the smallest group is the one a reader spends least to check.
+ */
+export function measurableGroups(bundle: VerifiableBundle): GroupChoice[] {
+  const byGroup = new Map<string, ReturnType<typeof recompute>>();
+  for (const s of recompute(bundle)) {
+    const arr = byGroup.get(s.canonicalId);
+    if (arr) arr.push(s);
+    else byGroup.set(s.canonicalId, [s]);
+  }
+
+  const out: GroupChoice[] = [];
+  for (const [canonicalId, members] of byGroup) {
+    // A lone provider has nothing to diverge from, so it is not a comparison at all. It does
+    // not belong in the picker as a choice or as a refusal.
+    if (members.length < 2) continue;
+
+    const short = members
+      .filter((m) => !m.sufficient)
+      .map((m) => ({ address: m.address, modelId: m.modelId, successes: m.successes }));
+
+    out.push({
+      canonicalId,
+      services: members.length,
+      calls: members.length * bundle.probes.length,
+      replayable: short.length === 0,
+      short,
+    });
+  }
+
+  return out.sort(
+    (a, b) =>
+      Number(b.replayable) - Number(a.replayable) ||
+      a.calls - b.calls ||
+      a.canonicalId.localeCompare(b.canonicalId),
+  );
+}
+
 export interface MeasureProgress {
   done: number;
   total: number;

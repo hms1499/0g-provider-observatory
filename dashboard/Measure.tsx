@@ -5,7 +5,7 @@ import type { ReproduceReport } from '../src/verify/reproduce.js';
 import { Masthead } from './Masthead.js';
 import { RatioCell } from './RatioCell.js';
 import { serviceLabel } from './rows.js';
-import { measureGroup } from './measureGroup.js';
+import { measurableGroups, measureGroup } from './measureGroup.js';
 import { formatTokens, formatUsd, groupUsage, type PriceTable } from './estimate.js';
 import { Bar, MastheadSkeleton } from './Skeleton.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
@@ -124,18 +124,20 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
     };
   }, [apiKey]);
 
-  /** Only models with two or more providers: a lone provider has nothing to diverge from. */
-  const groups = useMemo(() => {
-    if (!bundle) return [];
-    const counts = new Map<string, number>();
-    for (const s of bundle.roster) counts.set(s.canonicalId, (counts.get(s.canonicalId) ?? 0) + 1);
-    return [...counts.entries()]
-      .filter(([, n]) => n > 1)
-      .map(([canonicalId, n]) => ({ canonicalId, services: n, calls: n * bundle.probes.length }))
-      .sort((a, b) => a.calls - b.calls);
-  }, [bundle]);
+  /**
+   * Which groups are worth a reader's key, and which are not — see `measurableGroups`. The
+   * decision is made from what the published run actually got back, not from what its roster
+   * intended to measure; the two stopped agreeing the moment an epoch probed every service.
+   */
+  const choices = useMemo(() => (bundle ? measurableGroups(bundle) : []), [bundle]);
+  const offered = useMemo(() => choices.filter((g) => g.replayable), [choices]);
+  const withheld = useMemo(() => choices.filter((g) => !g.replayable), [choices]);
 
-  const selected = groups.find((g) => g.canonicalId === group) ?? groups[0];
+  // Only a replayable group can be selected, whatever the picker shows. `group` comes from
+  // the select, which cannot yield a disabled option — but the fallback matters on a change
+  // of epoch, where a group replayable in the last one may not be in this one.
+  const selected = offered.find((g) => g.canonicalId === group) ?? offered[0];
+  const probeCount = bundle?.probes.length ?? 0;
 
   const usage = useMemo(() => {
     if (!bundle || !selected) return null;
@@ -218,8 +220,8 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
 
       {bundle && !selected && (
         <p>
-          Epoch {newest} measured no model served by two or more providers, so there is no
-          consistency group to replay.
+          Epoch {newest} published no consistency group both its providers answered, so there
+          is nothing here a replay could be compared against.
         </p>
       )}
 
@@ -247,9 +249,18 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
           <label>
             group{' '}
             <select value={selected.canonicalId} onChange={(e) => setGroup(e.target.value)}>
-              {groups.map((g) => (
-                <option key={g.canonicalId} value={g.canonicalId}>
-                  {g.canonicalId} — {g.services} providers, {g.calls} calls
+              {/*
+                Every group in the epoch, with the ones this epoch cannot support disabled in
+                place rather than filtered out — see `measurableGroups`. A reader looking for a
+                model finds it and learns why it is unavailable, instead of finding nothing and
+                concluding the instrument skipped it.
+              */}
+              {choices.map((g) => (
+                <option key={g.canonicalId} value={g.canonicalId} disabled={!g.replayable}>
+                  {g.canonicalId} — {g.services} providers,{' '}
+                  {g.replayable
+                    ? `${g.calls} calls`
+                    : `not replayable from epoch ${newest}`}
                 </option>
               ))}
             </select>
@@ -366,6 +377,39 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
             </>
           )}
         </>
+      )}
+
+      {/*
+        Named, not hidden. A group whose published run could not measure every member has
+        nothing to compare a replay against, so it is not offered — but a reader who came to
+        check a particular model is owed the reason, and the reason is a fact about this epoch
+        rather than a policy of ours.
+      */}
+      {withheld.length > 0 && (
+        <div className="gaps">
+          <h3>Groups this epoch cannot support a replay of</h3>
+          <p>
+            A replay is scored against what the published run measured. Where that run could
+            not get enough usable answers from every provider of a model, there is no published
+            figure on the other side of the comparison, so the group is left out rather than
+            offered as though your key could settle it.
+          </p>
+          <dl>
+            {withheld.map((g) => (
+              <div key={g.canonicalId}>
+                <dt>{g.canonicalId}</dt>
+                <dd>
+                  {g.short.map((sv) => (
+                    <span key={`${sv.address}|${sv.modelId}`}>
+                      {serviceLabel(`${sv.address} ${sv.modelId}`)} answered {sv.successes} of{' '}
+                      {probeCount} probes usably.{' '}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       )}
     </section>
   );

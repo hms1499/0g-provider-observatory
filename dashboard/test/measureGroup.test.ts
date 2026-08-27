@@ -3,10 +3,15 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import type { CallResult } from '../../src/probes/router-client.js';
 import type { VerifiableBundle } from '../../src/verify/recompute.js';
-import { measureGroup } from '../measureGroup.js';
+import { measurableGroups, measureGroup } from '../measureGroup.js';
 
 const bundle = JSON.parse(
   readFileSync('data/epochs/496540-2026-08-24T040551787Z.bundle.json', 'utf8'),
+) as VerifiableBundle;
+
+/** The first epoch that probed every healthy service, so the first with unmeasurable groups. */
+const wide = JSON.parse(
+  readFileSync('data/epochs/496616-2026-08-27T080843441Z.bundle.json', 'utf8'),
 ) as VerifiableBundle;
 
 /** Answers every probe correctly and instantly, so the run is deterministic. */
@@ -127,5 +132,67 @@ describe('measureGroup', () => {
         measureGroup({ bundle: noSentParams, canonicalId: 'qwen3-vl-30b', apiKey: 'sk-test', call: perfectCall }),
       /does not record the generation parameters/i,
     );
+  });
+});
+
+describe('measurableGroups', () => {
+  it('marks a group replayable when the published run measured every provider of it', () => {
+    const choices = measurableGroups(bundle);
+    const g = choices.find((c) => c.canonicalId === 'qwen3-vl-30b');
+    assert.ok(g?.replayable);
+    assert.deepEqual(g.short, []);
+    assert.equal(g.calls, g.services * bundle.probes.length);
+  });
+
+  it('keeps every group of the epoch in one list, replayable or not', () => {
+    // The picker shows all of them and disables the rest, so none may be dropped here.
+    const choices = measurableGroups(wide);
+    assert.equal(choices.length, 10);
+    assert.equal(choices.filter((c) => c.replayable).length, 6);
+    assert.equal(choices.filter((c) => !c.replayable).length, 4);
+  });
+
+  it('orders replayable first, so the picker default is always one a key can run', () => {
+    const choices = measurableGroups(wide);
+    const firstUnreplayable = choices.findIndex((c) => !c.replayable);
+    assert.ok(choices.slice(0, firstUnreplayable).every((c) => c.replayable));
+    assert.ok(choices.slice(firstUnreplayable).every((c) => !c.replayable));
+    assert.ok(choices[0]!.replayable);
+  });
+
+  it('orders by cost within each half, cheapest first', () => {
+    for (const half of [true, false]) {
+      const calls = measurableGroups(wide).filter((c) => c.replayable === half).map((c) => c.calls);
+      assert.deepEqual(calls, [...calls].sort((a, b) => a - b));
+    }
+  });
+
+  it('refuses the Anthropic groups of epoch 496616, whose every call was rejected', () => {
+    const choices = measurableGroups(wide);
+    for (const id of ['claude-sonnet-5', 'claude-opus-5', 'claude-opus-4-8']) {
+      const g = choices.find((c) => c.canonicalId === id);
+      assert.ok(g, `${id} must still appear in the picker`);
+      assert.equal(g.replayable, false);
+      // Every member failed, so every member is named with the samples it managed.
+      assert.equal(g.short.length, g.services);
+      for (const sv of g.short) assert.equal(sv.successes, 0);
+    }
+  });
+
+  it('refuses a group where only one member fell short, not just where all did', () => {
+    // glm-5 is three providers; zai-org/GLM-5-FP8 spent its output ceiling before answering.
+    const g = measurableGroups(wide).find((c) => c.canonicalId === 'glm-5')!;
+    assert.equal(g.replayable, false);
+    assert.equal(g.services, 3);
+    assert.equal(g.short.length, 1);
+    assert.match(g.short[0]!.modelId, /GLM-5-FP8/);
+  });
+
+  it('leaves a lone provider out entirely — it is not a comparison to offer or to refuse', () => {
+    const choices = measurableGroups(wide);
+    for (const id of ['hy3', 'minimax-m3', 'gpt-5.5']) {
+      assert.ok(!choices.some((c) => c.canonicalId === id));
+    }
+    for (const c of choices) assert.ok(c.services >= 2, `${c.canonicalId} has ${c.services}`);
   });
 });
