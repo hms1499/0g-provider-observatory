@@ -8,6 +8,10 @@ take their own measurement and compare.
 
 It reports divergence. It does not attribute motive.
 
+**[og-provider-observatory.vercel.app](https://og-provider-observatory.vercel.app)** — the
+dashboard, reading 0G mainnet in your browser. No account, no wallet, nothing served from a
+database of ours.
+
 ---
 
 ## The problem
@@ -22,6 +26,13 @@ providers claiming the same model actually answer alike.
 
 This project measures that, and publishes the evidence alongside the result.
 
+Measuring has already turned up one thing worth stating plainly. The `verifiability` field
+returned by the network's own service registry reads `TeeML` for 21 of 23 services, but only
+6 run the model inside the enclave — the distinction lives in a different field,
+`TargetSeparated`, inside the metadata blob. A developer following the documented path reads
+a stronger guarantee than 15 of those services provide. That is a measurement, not an accusation, and it is written
+up with the method in [`docs/network-findings.md`](docs/network-findings.md) §3.
+
 ## How it works
 
 ```mermaid
@@ -31,16 +42,27 @@ flowchart TB
   C["0G Chain · MeasurementRegistry<br/>the summary, and a pointer to that transcript<br/>write-once: no update, no delete, no owner override"]
   D["Dashboard<br/>reads chain and Storage directly, in your browser"]
 
+  X["Relay · /api/router<br/>forwards one call and nothing else<br/>no key, no chain, no measurement"]
+
   P -->|"probe prompts"| R["0G Compute<br/>the services being measured"]
   R -->|"answers + timings"| P
   P -->|"upload transcript"| S
-  S -.->|"root hash"| P
+  S -->|"root hash"| P
   P ==>|"write the summary"| C
   C --> D
   S --> D
+  D -.->|"your key, your call"| X
+  X -.-> R
 ```
 
-Three numbers per service, per epoch:
+The solid arrows are the instrument: it runs from a clone or a schedule, and nothing of ours
+sits between the prober and the services it measures. The dotted arrows are optional and exist
+only on the dashboard's Measure panel, where a reader takes their own measurement with their
+own key — the relay is there because the network's Router will not answer a browser page it
+does not recognise. It is 83 lines and holds no secret; §3 below says what it can and cannot
+see.
+
+What each epoch records, per service:
 
 | | |
 |---|---|
@@ -50,6 +72,17 @@ Three numbers per service, per epoch:
 
 An **epoch** is one measurement run. One per clock hour.
 
+### Which 0G components this uses, and how
+
+| Component | Where in this repo | How it is used |
+|---|---|---|
+| **0G Chain** — mainnet, chain 16661 | `contracts/`, `src/chain/` | Two contracts. `ProviderRegistry` names the 38 provider/model pairs being measured; `MeasurementRegistry` is the write-once ledger — one transaction per epoch, no update, no delete, no owner override. Both source-verified on ChainScan. |
+| **0G Storage** | `src/storage/`, `src/verify/` | The full transcript of every run. The merkle root is computed locally *before* the upload and checked against what the indexer reports, then written into the on-chain record. A verifier refetches the evidence through the public gateway with `curl` alone — no SDK, no wallet, no key. |
+| **0G Compute** | `src/probes/` | The subject of the measurement. 15 fixed probes per service, sent through the 0G Router with the provider pinned by `X-0G-Provider-Address` and a price ceiling attached per call, so a run measures the service it means to measure and cannot overspend. |
+
+Not used: 0G DA, Agentic ID, 0G Pay. Nothing here needs them, and claiming a component this
+project does not exercise would be the first unverifiable line in it.
+
 ### Live on 0G Aristotle mainnet — chain 16661
 
 ```
@@ -57,6 +90,12 @@ ProviderRegistry      0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6
 MeasurementRegistry   0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333
 prober                0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD
 ```
+
+Both contracts are source-verified on the explorer, `exactMatch` — the deployed bytecode and
+the code in `contracts/` are the same thing, and the ABI is public:
+[ProviderRegistry](https://chainscan.0g.ai/address/0x25165feDACd1B78e103c3B49FcAF7CAeB118b9D6)
+· [MeasurementRegistry](https://chainscan.0g.ai/address/0xF2fC195A72Ed74e09530b31C568c1e0CBF6c0333)
+· [prober](https://chainscan.0g.ai/address/0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD).
 
 38 provider/model pairs registered. Published so far:
 
@@ -66,6 +105,7 @@ prober                0x691Bb0Cc823A03f7dcaF272Dc62896668f81D2FD
 | 496540 | 2026-08-24 04:10 | 10 | 145 | [`0xec8f6a1e…`](https://chainscan.0g.ai/tx/0xec8f6a1e456d3194b9476c7f8e04e3bfcb5f0c2750d19de6f0c8f7cb1e3676a1) |
 | 496591 | 2026-08-26 07:18 | 10 | 149 | [`0x73d3f088…`](https://chainscan.0g.ai/tx/0x73d3f088264e408f582031cb22da523e1bfecdcc207c86d1d0205a4963f85d79) |
 | 496592 | 2026-08-26 08:34 | 10 | 149 | [`0x0958e353…`](https://chainscan.0g.ai/tx/0x0958e353c1731dd295062bdd96c6ec5d8e3f18d720a6ac57be1d421522720208) |
+| 496609 | 2026-08-27 01:41 | 10 | 149 | [`0xc4ccf300…`](https://chainscan.0g.ai/tx/0xc4ccf300bc36e6159bc38124b4b3c45687fd4025aeebd216ddd73ca461ec5079) |
 
 `Calls` is the number of samples the published figures rest on, summed over the ten services
 — the same `calls` field each on-chain measurement carries. Every epoch sent 150.
@@ -80,7 +120,7 @@ Three checks, each doubting the one before it. Pick how far you want to go.
 
 ```bash
 pnpm install
-pnpm verify 496540
+pnpm verify 496609
 ```
 
 No wallet, no API key, no cost. It reads the chain record, fetches the evidence its
@@ -94,14 +134,20 @@ else.
 ### 2. Does the instrument give the same answer twice?
 
 ```bash
-pnpm reproduce data/epochs/<bundle>.json 496539
+pnpm reproduce data/epochs/496609-2026-08-27T013715480Z.bundle.json 496592
 ```
 
-Also free. Two runs an hour apart see different load, so latency is reported as a **ratio and
-never scored**. What is stable enough to compare is the conclusion: observed mode, whether
-divergence was measurable, whether the service diverges at all, and error rate past 1000 bps.
+Also free. Two runs at two different times see different load, so latency is reported as a
+**ratio and never scored**. What is stable enough to compare is the conclusion: observed
+mode, whether divergence was measurable, whether the service diverges at all, and error rate
+past 1000 bps.
 
-Neither run is treated as correct. Where they disagree, the tool names the disagreement.
+Neither run is treated as correct. Where they disagree, the tool names the disagreement and
+stops there.
+
+That example does disagree, which is the point of running it rather than a cleaner pair: two
+mainnet epochs a day apart agree on all ten services' observed modes and error rates, and
+differ on whether one model diverged from its peers.
 
 ### 3. Do you get the same result?
 
@@ -136,7 +182,7 @@ pnpm epoch --no-lock --budget-usd=0.80 --exclude=
 pnpm epoch --confirm --no-lock --budget-usd=0.80 --exclude=
 
 # compare it against a published epoch
-pnpm reproduce data/epochs/<your-bundle>.json 496540
+pnpm reproduce data/epochs/<your-bundle>.json 496609
 ```
 
 That measures all 10 multi-provider groups — 23 services, 345 calls, about **$0.78**. Drop
@@ -148,6 +194,9 @@ both flags to measure only the pinned series instead: 10 services, about **$0.05
 ## Run it locally
 
 Everything below works from a cold clone. None of it needs a key or costs anything.
+
+Node 22 or newer and `pnpm`. Foundry is needed only for `contracts:test` — everything else
+runs without it.
 
 ```bash
 pnpm install
@@ -161,7 +210,8 @@ pnpm dashboard:dev    # the dashboard, reading mainnet
 ```
 
 The Measure panel needs the relay, which only exists on a real deployment or under
-`npx vercel dev` — not under `pnpm dashboard:dev`.
+`npx vercel dev` — not under `pnpm dashboard:dev`. The deployment at
+[og-provider-observatory.vercel.app](https://og-provider-observatory.vercel.app) has it.
 
 For a live prober run you also need a `.env`; copy `.env.example` and fill in `PRIVATE_KEY`
 and `ROUTER_API_KEY`.
@@ -190,6 +240,7 @@ TDX enclave. It is shown with its technical reason and is never scored down.
 | | |
 |---|---|
 | `contracts/` | Foundry. `MeasurementRegistry` is write-once — no update, no delete, no owner override |
+| `script/` | the Foundry deploy script for both registries |
 | `src/probes/` | the 15-probe suite, provider pinning, roster fitting, divergence |
 | `src/sources/` | the Router and the on-chain service registry, reconciled against each other |
 | `src/chain/` | reading and writing the ledger |
@@ -199,6 +250,8 @@ TDX enclave. It is shown with its technical reason and is never scored down.
 | `src/scripts/` | every `pnpm` command in this README |
 | `api/router/` | the relay itself — one call forwarded, no secret, no chain, no measurement |
 | `dashboard/` | the public view |
+| `data/` | the evidence: every epoch's transcript and bundle, the network snapshots, the pinned series roster |
+| `docs/network-findings.md` | what measuring this network turned up — the `TeeML` gap, the Router's CORS allowlist, the explorer's verification API |
 | `docs/HANDOFF.md` | task board, measured findings, and what is still open |
 
 Built for [0G Bridge by AKINDO](https://akindo.io), Wave 3.
