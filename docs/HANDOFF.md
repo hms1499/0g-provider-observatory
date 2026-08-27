@@ -1,19 +1,25 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-25 (measuring from the page)
+**Updated:** 2026-08-26 (contracts verified on ChainScan)
 
 ---
 
 ## What this is
 
 **0G Provider Observatory** — an independent measurement layer for 0G's inference network.
-Submission for **0G Bridge by AKINDO, Wave 3**. Hard deadline **2026-08-30 22:00**.
+Hard deadline **2026-08-30 22:00**.
 
 Design doc (v3.1): https://claude.ai/code/artifact/d4f6a199-c73f-470d-bc63-e90a22cdd02c
 The architecture was revised after T19 — the relay is a component now, and section 05's
 claim that no component has to trust our server is no longer true of the Measure path.
-**The published artifact is still v3 until someone republishes the file.**
+**Republished 2026-08-26: the artifact now serves v3.1**, with the relay in Figure 1, Flow C
+in section 07, and the trust surface written up as an open risk rather than a fixed one.
 Source file: `docs/provider-observatory.html` — edit the file and republish to the same URL.
+
+**One catch on the share link.** The artifact is shared with anyone who has the link, but
+sharing is pinned to a version: people opening the link keep seeing the version that was
+pinned when it was shared, not v3.1, until the pin is moved from the page's share menu. If
+the design doc goes in the submission, move the pin first — otherwise a judge reads v3.
 
 ## How we work
 
@@ -87,6 +93,7 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T18 | Reproducibility is a panel on the dashboard, not a page of pnpm commands | `dashboard/Reproduce.tsx`, `dashboard/reproduceEpochs.ts` |
 | T19 | A reader measures a group from the page, with their own key, through a relay that holds nothing | `api/router/chat/completions.ts`, `src/relay/`, `dashboard/Measure.tsx`, `dashboard/measureGroup.ts` |
 | T20 | **Public repository and a production deployment — the relay exists on the open internet now** | https://github.com/hms1499/0g-provider-observatory · https://og-provider-observatory.vercel.app |
+| T21 | Both mainnet contracts verified on ChainScan — source and ABI public, `exactMatch` | `deployments/aristotle-16661.json`, `docs/network-findings.md` §6 |
 
 ### Ready now
 
@@ -319,13 +326,18 @@ a floor of 0 or 10000 from its single duplicate pair. Running 14 epochs separate
 fix this on its own, and the ledger is write-once. Either add pooling to the write path
 before mainnet, or accept that the floor stays coarse and say so.
 
-### Blocked on Huy — these are the only things Claude cannot do
+### Blocked on Huy — nothing is blocked
 
-| | Blocker | Unblocks | How |
+All three blockers are cleared. Kept as a record of what they were and how they went away.
+
+| | Blocker | Unblocked | Resolved |
 |---|---|---|---|
-| B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | pc.0g.ai -> connect wallet -> fund ~$5 of 0G -> Dashboard -> API Keys -> `inference` scope -> `sk-…` into `.env`. See "Why the API key must be mainnet" below |
-| B2 | ~$10–20 of 0G on **mainnet** | T12 | Buy, or ask in 0G's Telegram. Faucet is testnet-only. **This gates the submission** |
-| B3 | Top up Router credit — **~$2-3 is now enough**, not $10 | T10 | See "Cost" below. ~$0.09 left, under one epoch |
+| B1 | `ROUTER_API_KEY` (**mainnet**) | T10 | Done — the live epochs ran against it |
+| B2 | ~$10–20 of 0G on **mainnet** | T12 | Done — mainnet deploy, 38 providers registered, first epoch written |
+| B3 | Top up Router credit | T10 | Done (Huy, confirmed 2026-08-26). The "~$0.09 left" figure under Funding predates the top-up and is stale — read the balance from the Router dashboard, not from this file |
+
+Nothing now stands between here and a complete submission except wall-clock time on epochs
+and T13 itself.
 
 ### Blocked on other tasks
 
@@ -467,9 +479,10 @@ billed against it.
 | Live `reasoning_effort` test, 3 calls to glm-5 | ~$0.037 |
 | **Left** | **~$0.09** |
 
-At the lean roster's $0.073/epoch that is roughly one more epoch. **B3 does not need $10** —
-$2-3 of credit covers all 14 epochs on the lean roster with room to spare. Do not skimp on
-B2 instead: mainnet gas and the deploy are the actual submission gate.
+At the lean roster's $0.073/epoch that was roughly one more epoch. **Superseded: Huy topped
+the Router up again and confirmed it on 2026-08-26**, so the ~$0.09 above is history, not the
+current balance. The sizing argument still holds — $2-3 of credit covers all 14 epochs on the
+lean roster with room to spare.
 
 The earlier open question about the deposit address is left below because it was never
 actually answered — the top-up worked, but nothing confirmed *why*.

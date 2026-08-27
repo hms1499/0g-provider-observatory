@@ -150,7 +150,45 @@ Running the CLI from a clone skips the relay entirely: `run-epoch.ts` calls the 
 
 ---
 
-## 6. Design impact
+## 6. ChainScan's verification API is undocumented, and its field names are not Etherscan's
+
+Measured 2026-08-26 while verifying the two mainnet contracts. `chainscan.0g.ai` is a ConfluxScan
+derivative, not Blockscout and not Etherscan, so `forge verify-contract` does not reach it and the
+Etherscan-compatible parameter names are silently ignored — an ignored name is not rejected, it just
+produces `bytecode_length_mismatch`, which reads like a compiler-settings problem and is not one.
+
+The endpoint is `POST https://chainscan.0g.ai/v1/contract/verify`, JSON body. Three companion
+endpoints list what it will accept: `/v1/contract/compiler`, `/v1/contract/evm-version`,
+`/v1/contract/license`.
+
+| Field | Value that works | The name that silently fails |
+|---|---|---|
+| `address` | contract address | — |
+| `sourceCode` | flattened source | — |
+| `compiler` | `v0.8.28+commit.7893614a` | — |
+| `name` | the contract to select from the flattened file | `contractName`, `contractname`, `contract` |
+| `optimize` | `true` | `optimization`, `optimizationUsed` |
+| `optimizeRuns` | `20000` | `runs` |
+| `evmVersion` | `cancun` | — |
+| `license` | `3` (= MIT, from `/v1/contract/license`) | — |
+| `constructorArguments` | hex, no `0x` | — |
+
+Two things cost real time here:
+
+**`evmVersion` tops out at `cancun`.** The list has no `prague`, which is what Foundry 1.5 compiles
+with by default. Recompiling at `cancun` produces byte-identical output for these contracts, so this
+is only a submission parameter — but a mismatch here is silent too.
+
+**Without a working `name`, the server picks a contract on its own.** A flattened file holds several,
+and `MeasurementRegistry.flat.sol` also carries `ProviderRegistry`; when the name is ignored the
+server compiles the wrong one and reports a length mismatch against the right address.
+`ProviderRegistry` verified anyway with the name ignored — the file's first non-abstract contract
+happened to be the one being verified, which is exactly the sort of accident that makes a wrong
+diagnosis look confirmed.
+
+Both contracts now read `exactMatch: true`, with source and ABI public on the explorer.
+
+## 7. Design impact
 
 1. **Stop treating the HTTP Router as the primary source.** On-chain carries enough to derive the
    correct mode. The Router becomes a cross-check, and the gap between the two is itself a measurement.

@@ -48,5 +48,17 @@
     "note": "Two earlier keys are retired and must never be used here.",
     "0xaBaCa14B88Ee1E392985e4dF315ae4e70CC734DB": "testnet-only; generated inside a Claude Code session",
     "0x94f7268ca8b29d536f8c5cd0753753d55Fb06459": "retired unused; its private key was printed into a session transcript before any deploy, so it was rotated and drained first"
+  },
+  "sourceVerified": {
+    "explorer": "https://chainscan.0g.ai",
+    "verifiedAt": "2026-08-26",
+    "exactMatch": true,
+    "compiler": "v0.8.28+commit.7893614a",
+    "evmVersion": "cancun",
+    "optimizer": {
+      "enabled": true,
+      "runs": 20000
+    },
+    "note": "POST /v1/contract/verify with flattened source. Field names are ConfluxScan's, not Etherscan's - see docs/network-findings.md section 6."
   }
 }
