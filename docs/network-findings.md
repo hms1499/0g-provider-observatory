@@ -188,7 +188,104 @@ diagnosis look confirmed.
 
 Both contracts now read `exactMatch: true`, with source and ABI public on the explorer.
 
-## 7. Design impact
+## 7. A 429 is recorded against the provider, and some of them are ours
+
+Measured 2026-08-27 by re-reading every transcript in `data/epochs/`. Three of the nine runs on
+disk carry HTTP 429s, and they are not all the same thing.
+
+| epoch | services | 429s | `x-ratelimit-remaining` at the rejection | when |
+|---|---|---|---|---|
+| 496514 | 15 | 12 | **0** | 62 s in |
+| 496516 | 15 | 15 | 429–494 | first 10 s, all on one service |
+| 496591 | 10 | 8 | 462–478 | first 8 s, two services |
+
+`faultSide()` in `src/probes/aggregate.ts` maps `rate_limit` to `'provider'`, so every one of
+these is published as that provider's error rate on a write-once ledger. In epoch 496591 —
+already on mainnet — that is 5 rejections out of 15 for `0x61C00071…`, an error rate of 3333 bps,
+and 3 of 15 for `0xB01EBd79…`.
+
+**The two shapes have different causes, and only one of them is ours.**
+
+*The key's own ceiling.* In 496514 the counter reads exactly 0 at every rejection. The Router
+meters per API key at 500 requests a minute, the run started all fifteen services at the same
+instant, and it exhausted the key a minute in. That is our call pattern, published against four
+operators. `--concurrency` now defaults to 10 for this reason — the width every surviving epoch
+was measured at.
+
+*A provider's own limit.* In 496516 and 496591 the counter still had 430–490 of its 500 left, so
+the key was nowhere near its ceiling. The rejections land in the first ten seconds, on the
+fastest model on the roster — `deepseek-v4-flash-0731` answers in about 850 ms, so a single
+sequential worker issues roughly 1.2 requests a second against one address — and on two of that
+model's four providers, not all four. Both services then recovered and answered the rest of the
+suite. This looks like a per-provider limit meeting a probe pattern no ordinary client produces.
+
+**Nothing is being reclassified.** Moving `rate_limit` off `'provider'` would be defensible for
+the first shape and wrong for the second, and it would break F7 outright: `verify-epoch.ts`
+recomputes each record from its bundle with the current code, so changing the attribution makes
+every epoch already on chain fail to reproduce. The ledger is write-once and the verification
+path is the argument the project rests on; neither is worth trading for a cleaner number.
+
+**What this costs a reader.** An error rate on this dashboard is an upper bound on the provider's
+own failures. Fifteen probes back to back is not a client workload, and a service that meters its
+callers will show up here in a way it would not under ordinary use. That belongs next to the
+figure, not in a footnote — and it is the sharpest example so far of the difference between
+reporting a measurement and levelling an accusation.
+
+## 8. Anthropic models are on the Router but not on the endpoint the prober speaks
+
+Measured 2026-08-27 in epoch 496616, the first run that probed every healthy service. All seven
+Anthropic services refused every one of their fifteen probes with HTTP 400 and the same body:
+
+```
+prepare HTTP request: model 'claude-sonnet-5' is not available on the openai API format
+(supported: [anthropic]); use the matching endpoint
+```
+
+That is 105 calls, 15 of 15 on each of `0xd3f02c1a…` (claude-sonnet-5, claude-opus-5,
+claude-opus-4-8) and `0x1F444c8A…` (the same three plus claude-fable-5). The Router lists them,
+prices them and reports them healthy; `/v1/chat/completions` is simply not where they are served.
+
+**Nothing was published against them, and that is the machinery working.** `bad_request` maps to
+`'prober'` in `faultSide()`, so the failures never reach an error rate, and with zero successful
+calls `toMeasurements` drops each service with `only 0 successful calls`. The epoch went on chain
+with 30 measurements out of 38 services, and the eight absentees appear on the dashboard under
+"Registered, not measured this epoch" rather than as a row of noughts.
+
+**Worth noticing how long this stayed hidden.** Six of the seven sit in `DEFAULT_EXCLUDE` and the
+seventh is the only provider of its model, so `groupsOnly` dropped it — the roster has never
+included them. Both filters were chosen on cost, and they happened to conceal a reachability fact
+about seven of the network's thirty-eight services. A cost lever is not a survey design, and the
+first wide run is what turned one into the other.
+
+This is the same class of gap as the three services on the contract that the Router never exposes
+(section 4): a part of the network this instrument cannot reach, for reasons of protocol rather
+than of quality. Saying which services those are is more honest than a sample that quietly omits
+them.
+
+## 9. One service is defeated by our own output ceiling
+
+Also epoch 496616. `0xd9966e13…` serving `zai-org/GLM-5-FP8` answered all fifteen probes with
+HTTP 200 and was still dropped from the record.
+
+Fourteen of the fifteen replies came back `truncated`, twelve of them with no usable content at
+all — the model spends the whole output allowance before it reaches an answer. It happens at
+every ceiling in the suite, including the two 4096-token probes: `arith-mult` truncated, and
+`arith-mult-repeat` was the single reply that did not.
+
+Three usable answers is below what `sufficient` requires, so the service was skipped. The
+attribution is right — `no_content` is `'prober'`, because the ceiling is ours — but the outcome
+is that a healthy, responsive service produces no measurement, and the reason lives in our probe
+design rather than in its behaviour.
+
+**It also costs a comparison.** The Router groups this service with the two `glm-5` providers
+under one `canonical_id`, so that consistency group should have three members and reached chain
+with two.
+
+Raising the ceiling is not free: `max_tokens` drives the projected cost of every probe, and the
+suite's token profile was measured at the current values. Left as it is for now, recorded here so
+the gap is not mistaken for a provider that failed.
+
+## 10. Design impact
 
 1. **Stop treating the HTTP Router as the primary source.** On-chain carries enough to derive the
    correct mode. The Router becomes a cross-check, and the gap between the two is itself a measurement.
@@ -196,6 +293,13 @@ Both contracts now read `exactMatch: true`, with source and ABI public on the ex
 3. **F7 keeps its strong scope** — a complete public verification path exists.
 4. **A funded wallet is needed** before any real inference call. Everything here is read-only
    and costs nothing.
+5. **Cap the probe width, and read an error rate as an upper bound.** See section 7: the run's
+   own concurrency has put rejections on providers' records, and a 429 cannot be attributed
+   cleanly after the fact.
+6. **A wide run is a survey; the default roster is not.** Sections 8 and 9: filters picked for
+   cost hid an entire model family that cannot be reached at all, and a probe ceiling of ours
+   silences a service that answers everything. State both on the page rather than letting the
+   roster imply the network.
 
 ---
 
