@@ -674,6 +674,69 @@ td.dur .tick {
   background: var(--muted);
 }
 
+/* ── waiting ────────────────────────────────────────────────────────────────
+ *
+ * See `Skeleton.tsx` for why these exist: the first page load scored a CLS of 0.49 because the
+ * caveats block sat near the top of a short page and two thousand pixels of table were later
+ * inserted above it. It reads 0.0007 now.
+ *
+ * Drawn in `--rule` — the ink of the lines between rows, never the ink of a figure. A
+ * placeholder that looked like a value would be worse than an empty space, and a `—` is
+ * already taken: everywhere else on this site it means measured and withheld.
+ */
+
+.skel {
+  display: inline-block;
+  height: 0.7em;
+  vertical-align: middle;
+  border-radius: 2px;
+  background: var(--rule);
+  animation: skel-pulse 1.6s ease-in-out infinite;
+}
+
+/* The smallest signal that separates "still working" from "rendered wrong". No shimmer sweep:
+   an instrument with nothing to report should not be performing. */
+@keyframes skel-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel {
+    animation: none;
+  }
+}
+
+/* Rows shaped like the table's, so the block occupies the height a table will. */
+.skel-rows {
+  margin-top: 0.9rem;
+}
+
+/* Metrics copied from `td`, not chosen, so a block of N skeleton rows stands roughly as tall as
+   a table of N rows and "how many rows" stays a question about the data rather than a number to
+   tune against a score. */
+.skel-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 0.35rem 0;
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.skel-row .skel:first-child {
+  margin-right: auto;
+}
+
+.skel-row:last-child {
+  border-bottom: none;
+}
+
 /* ── the series ─────────────────────────────────────────────────────────────
  *
  * One line per service, its p50 across every epoch published so far. The page read the whole

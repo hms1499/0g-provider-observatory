@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ObservatoryReader } from '../src/chain/registry.js';
 import { Masthead } from './Masthead.js';
+import { MastheadSkeleton, RowsSkeleton } from './Skeleton.js';
 import { RatioCell } from './RatioCell.js';
 import { newestPair, orderedPair, serviceLabel } from './rows.js';
 import type { NetworkConfig } from './networks.js';
@@ -155,7 +156,21 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
         </div>
       )}
 
-      {busy && <p>Fetching both bundles through the public gateway…</p>}
+      {/* This panel compares the newest pair as soon as it opens, so the reader is waiting on
+          something they did not ask for and a line of text was all they had.
+
+          Sized to the report's shape, not to a score. An earlier version of this was tuned
+          against a CLS figure that turned out to be an artefact of driving the page with
+          synthetic clicks — see the note in `Skeleton.tsx`. What justifies it is the reader
+          seeing the shape of what is coming, which needs no metric to defend. */}
+      {busy && (
+        <div aria-busy="true">
+          <MastheadSkeleton labels={['earlier', 'later', 'compared', 'disagreements']} />
+          <p className="grouping">Fetching both bundles through the public gateway…</p>
+          <RowsSkeleton rows={2} heading />
+          <RowsSkeleton rows={10} heading />
+        </div>
+      )}
 
       {outcome?.state === 'failed' && (
         <p>

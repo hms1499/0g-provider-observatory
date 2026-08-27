@@ -7,6 +7,7 @@ import { RatioCell } from './RatioCell.js';
 import { serviceLabel } from './rows.js';
 import { measureGroup } from './measureGroup.js';
 import { formatTokens, formatUsd, groupUsage, type PriceTable } from './estimate.js';
+import { Bar, MastheadSkeleton } from './Skeleton.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
 
 const GATEWAY_TIMEOUT_MS = 30_000;
@@ -201,7 +202,19 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
 
       {loadError && <p>Could not read epoch {newest}: {loadError}.</p>}
 
-      {!bundle && !loadError && <p>Fetching epoch {newest}&rsquo;s evidence through the public gateway…</p>}
+      {/* The evidence fetch starts the moment this tab opens, so the reader is waiting on
+          something they did not ask for, and a single line of text was all this said. */}
+      {!bundle && !loadError && (
+        <div aria-busy="true">
+          <MastheadSkeleton
+            labels={['replaying', 'group', 'providers', 'calls', 'cost']}
+            note="billed to"
+          />
+          <p className="grouping">
+            Fetching epoch {newest}&rsquo;s evidence through the public gateway…
+          </p>
+        </div>
+      )}
 
       {bundle && !selected && (
         <p>
@@ -411,10 +424,17 @@ function Cost(props: {
     );
   }
 
+  if (props.hasKey) {
+    return (
+      <>
+        <Bar w="6ch" /> {tokens}
+      </>
+    );
+  }
+
   return (
     <>
-      <span className="pending">{props.hasKey ? 'pricing…' : 'add a key to price it'}</span>{' '}
-      {tokens}
+      <span className="pending">add a key to price it</span> {tokens}
     </>
   );
 }

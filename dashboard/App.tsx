@@ -6,6 +6,7 @@ import { Providers } from './Providers.js';
 import { Reproduce } from './Reproduce.js';
 import { SiteFooter } from './SiteFooter.js';
 import { SiteHeader, type Panel } from './SiteHeader.js';
+import { ProvidersSkeleton } from './Skeleton.js';
 import { useEpochTxHash, useObservatory } from './useObservatory.js';
 import { Verify } from './Verify.js';
 
@@ -60,7 +61,17 @@ export default function App() {
           </p>
         )}
 
-        {data.state === 'loading' && <p>Reading the ledger from {net.rpcUrl}…</p>}
+        {/*
+          The skeleton stands only where the Providers panel will. The other three tabs are
+          mostly prose that renders instantly and a result area a reader has not asked for yet;
+          putting a placeholder there would be waiting theatre for a wait that is not happening.
+        */}
+        {data.state === 'loading' && panel === 'providers' && (
+          <ProvidersSkeleton rpcUrl={net.rpcUrl} />
+        )}
+        {data.state === 'loading' && panel !== 'providers' && (
+          <p>Reading the ledger from {net.rpcUrl}…</p>
+        )}
         {data.state === 'not-deployed' && (
           <p>
             The Observatory contracts are not deployed on {net.name} yet. Nothing has been
@@ -101,7 +112,15 @@ export default function App() {
           verification panel they explained guarantee modes to a reader rehashing a bundle,
           which is a different question, and took more than half the page doing it.
         */}
-        {panel === 'providers' && <Caveats />}
+        {/*
+          Held back until there are figures for it to qualify.
+          
+          This is where the 0.49 came from. Rendered during the read, the caveats sat near the
+          top of a short page and were shoved two thousand pixels down the moment the tables
+          arrived — the single largest shift on the page, and it moved the only thing a reader
+          had to look at while waiting.
+        */}
+        {panel === 'providers' && data.state === 'ready' && <Caveats />}
       </main>
 
       <SiteFooter net={net} />

@@ -10,6 +10,7 @@ import {
 } from './rows.js';
 import { Masthead } from './Masthead.js';
 import { seriesFor, seriesScale, type SeriesPoint } from './history.js';
+import { Bar } from './Skeleton.js';
 import { Sparkline } from './Sparkline.js';
 import { Primer } from './Primer.js';
 import { observe } from './findings.js';
@@ -332,8 +333,11 @@ function Row(props: {
         {row.calls}
       </td>
       {props.history === 'loading' ? (
+        // The series arrives in a second pass, so this cell is the one thing on a finished row
+        // still waiting. A bar the width of the drawing keeps the column from resizing under a
+        // reader when ten of them fill in at once.
         <td className="num spark" role="cell" data-label="history">
-          <span className="none">reading…</span>
+          <Bar w="96px" />
         </td>
       ) : (
         <Sparkline series={props.series} lo={props.seriesLo} hi={props.seriesHi} at={props.at} />
