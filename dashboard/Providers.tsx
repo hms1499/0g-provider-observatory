@@ -9,7 +9,8 @@ import {
   type ModelGroup,
   type ProviderRow,
 } from './rows.js';
-import { Masthead } from './Masthead.js';
+import { censusOf } from './census.js';
+import { EpochLede } from './EpochLede.js';
 import { seriesFor, seriesScale, type SeriesPoint } from './history.js';
 import type { HistoryState } from './selectEpoch.js';
 import { Bar } from './Skeleton.js';
@@ -39,10 +40,7 @@ export function Providers(props: {
   const groups = groupByModel(props.epoch, props.providers);
   const observations = observe(groups);
   const gaps = groupByOperator(props.epoch, props.providers).filter((g) => g.unmeasured.length > 0);
-
-  const measured = props.epoch.measurements.length;
-  const registered = props.providers.filter((p) => p.model !== null).length;
-  const calls = props.epoch.measurements.reduce((n, m) => n + m.calls, 0);
+  const census = censusOf(groups, props.providers);
 
   // One scale for the whole epoch, so a tick means the same thing in every group. Built from
   // both columns together: p50 and p95 sharing a track is what makes a service's spread — the
@@ -63,77 +61,47 @@ export function Providers(props: {
 
   return (
     <section>
-      <Primer />
-
-      <Masthead
-        readings={[
-          {
-            label: 'epoch',
-            hint: 'One measurement run. The prober takes one per clock hour, and the ledger accepts one record per epoch per prober. Every epoch this prober has published is listed here.',
-            value: (
-              <EpochPicker
-                epochs={props.epochs}
-                selected={props.epoch.epoch}
-                pending={props.history === 'loading'}
-                onEpoch={props.onEpoch}
-              />
-            ),
-          },
-          {
-            label: 'observed',
-            hint: 'When this run was written to the chain.',
-            value: utc(props.epoch.writtenAt),
-          },
-          {
-            label: 'services',
-            hint: 'Measured this epoch, out of every service registered on chain. A service is not measured when the prober could not reach it, or when too few calls succeeded to support a number.',
-            value: (
-              <>
-                {measured} measured{' '}
-                <span className="of">· {registered - measured} not reached</span>
-              </>
-            ),
-          },
-          {
-            label: 'calls',
-            hint: 'Probe calls this epoch made in total, across every service it measured.',
-            value: calls,
-          },
-        ]}
-        note={{
-          label: 'published in',
-          value: (
-            <>
-              {props.txHash ? (
-                <a href={explorerTx(props.net, props.txHash)} target="_blank" rel="noreferrer">
-                  one transaction
-                </a>
-              ) : (
-                'one transaction'
-              )}
-              , derived from{' '}
-              <a href={bundleUrl(props.net, props.epoch.storageRoot)} target="_blank" rel="noreferrer">
-                this evidence
+      {/*
+        The reading first, the manual after it.
+        
+        `Primer` used to stand here, above everything, so the first screen of a site called an
+        observatory held an explanation of its own tabs and no observation. It is unchanged and
+        still open by default — a reader who has never seen this project needs it — but it now
+        follows the one thing they came for. One screen of scrolling either way; the difference
+        is which of the two a stranger meets first.
+      */}
+      <EpochLede
+        census={census}
+        observations={observations}
+        observedAt={utc(props.epoch.writtenAt)}
+        network={props.net.name}
+        picker={
+          <EpochPicker
+            epochs={props.epochs}
+            selected={props.epoch.epoch}
+            pending={props.history === 'loading'}
+            onEpoch={props.onEpoch}
+          />
+        }
+        provenance={
+          <>
+            published in{' '}
+            {props.txHash ? (
+              <a href={explorerTx(props.net, props.txHash)} target="_blank" rel="noreferrer">
+                one transaction
               </a>
-            </>
-          ),
-        }}
+            ) : (
+              'one transaction'
+            )}
+            , derived from{' '}
+            <a href={bundleUrl(props.net, props.epoch.storageRoot)} target="_blank" rel="noreferrer">
+              this evidence
+            </a>
+          </>
+        }
       />
 
-      {observations.length > 0 && (
-        <div className="observed">
-          <h3>What stands out in this epoch</h3>
-          <ul>
-            {observations.map((o) => (
-              <li key={o.text}>{o.text}</li>
-            ))}
-          </ul>
-          <p>
-            Observations, not verdicts. Each names a service and a number and stops there —
-            why two providers of one model differ is not a question this instrument can answer.
-          </p>
-        </div>
-      )}
+      <Primer />
 
       <p className="grouping">
         Grouped by the exact model string the registry records. Nothing is averaged across a

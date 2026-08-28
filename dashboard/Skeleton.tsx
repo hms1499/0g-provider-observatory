@@ -109,19 +109,43 @@ export function RowsSkeleton({ rows = 3, heading }: { rows?: number; heading?: b
  * fill the fold, which is all a skeleton has to do.
  */
 export function ProvidersSkeleton({ rpcUrl }: { rpcUrl: string }) {
-  const readings = ['epoch', 'observed', 'services', 'calls'];
-
   return (
     <section aria-busy="true">
       {/*
-        The real primer, not a placeholder for one. It needs nothing from the chain, it opens to
-        several hundred pixels, and it sits above the masthead in the finished panel — leaving
-        it out would mean inserting it later and pushing everything under it down, which is the
-        shift this whole file exists to remove.
+        Shaped like the lede, which is what lands here: a line of conditions, two sentences of
+        reading, and the findings block under its rule. The masthead this replaced was four
+        small readings, so the real content arrived taller than its placeholder and pushed the
+        primer down by the difference — the shift this whole file exists to remove.
+      */}
+      <div className="lede">
+        <p className="where">
+          <Bar w="22ch" />
+        </p>
+        <p className="reach">
+          <Bar w="min(38ch, 100%)" />
+        </p>
+        <p className="compare">
+          <Bar w="min(34ch, 100%)" />
+        </p>
+        <div className="found">
+          <h2>
+            <Bar w="12ch" />
+          </h2>
+          <p className="note">
+            <Bar w="min(30ch, 100%)" />
+          </p>
+        </div>
+        <p className="provenance">
+          <Bar w="26ch" />
+        </p>
+      </div>
+
+      {/*
+        The real primer, not a placeholder for one. It needs nothing from the chain and opens
+        to several hundred pixels, so leaving it out would mean inserting it later and pushing
+        everything under it down.
       */}
       <Primer />
-
-      <MastheadSkeleton labels={readings} note="published in" />
 
       <p className="grouping">Reading the ledger from {rpcUrl}…</p>
 
