@@ -1403,13 +1403,17 @@ button:disabled {
  * rather than a stamp, because a stamp asserts and the pair shows.
  */
 
+/* One device for both panel openings, not two.
+ *
+ * This carried a full border, a rounded corner and a panel fill on top of the accent rule,
+ * while the Providers lede — which does the same job one tab away — carried the accent rule
+ * alone. Two treatments for one role read as two designers. The box came off: it was holding
+ * type that is already the largest on the site and needed no help being found. */
 .roots {
   margin: 2rem 0 2.5rem;
-  padding: 1.5rem 1.75rem 1.25rem;
-  border: 1px solid var(--rule);
+  padding: 0 0 0 1.5rem;
   border-left: 2px solid var(--accent);
-  border-radius: 3px;
-  background: var(--panel);
+  max-width: 46rem;
 }
 
 .roots .where {

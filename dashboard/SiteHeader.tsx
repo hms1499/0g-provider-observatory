@@ -1,15 +1,29 @@
 import { NETWORKS, type NetworkKey } from './networks.js';
 
-/** The tab icon's glyph, inline. The mark on the page and the mark in the browser tab being
- *  the same drawing is most of what makes a site feel like one thing rather than a template. */
+/**
+ * The tab icon's glyph, inline. The mark on the page and the mark in the browser tab being the
+ * same drawing is most of what makes a site feel like one thing rather than a template — so
+ * this and `public/favicon.svg` carry the same four paths, and changing one means changing
+ * both.
+ *
+ * Three readings on one scale: every tick the same length, only its position differing. It is
+ * the drawing the Providers table puts under every duration, which is the point — the mark
+ * says what the instrument does rather than what category of software it is.
+ *
+ * The strokes were 9, 15 and 9 tall, under a comment in the favicon saying the mark was
+ * "deliberately not bars of differing height, which would read as a ranking of the providers
+ * being measured". The comment was right and the drawing was not: a small-medium-small bar
+ * chart sat on the tab and in the header of a site whose first rule is that it does not rank
+ * the people it measures.
+ */
 function Mark() {
   return (
     <svg className="mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
       <g fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
         <path d="M4 23h24" />
-        <path d="M8 23v-9" />
-        <path d="M16 23v-15" />
-        <path d="M24 23v-9" />
+        <path d="M8 23v-10" />
+        <path d="M14 23v-10" />
+        <path d="M25 23v-10" />
       </g>
     </svg>
   );

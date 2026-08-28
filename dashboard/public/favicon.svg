@@ -1,9 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <!--
-    A scale with its ticks: an instrument, not a scoreboard. Deliberately not bars of
-    differing height, which would read as a ranking of the providers being measured.
-    The tab icon follows the browser chrome, not the page, so the stroke is defined for
-    both themes rather than assuming a light one.
+    Three readings on one scale.
+
+    Every tick is the same length. Only where it sits on the scale differs, which is the
+    same drawing the Providers table puts under every duration: one shared track, identical
+    ink, position carrying the whole of the measurement. A mark for an instrument cannot
+    encode magnitude by size, because size reads as rank and the things being measured are
+    named companies.
+
+    This used to be three strokes of 9, 15 and 9 under a comment saying it was "deliberately
+    not bars of differing height, which would read as a ranking of the providers being
+    measured". The comment was right and the drawing was not.
+
+    The scale runs past the outermost tick at both ends: what was measured is not the whole
+    of what there is.
+
+    The tab icon follows the browser chrome, not the page, so the stroke is defined for both
+    themes rather than assuming a light one.
   -->
   <style>
     .mark { stroke: #1a1a18; }
@@ -11,8 +24,8 @@
   </style>
   <g class="mark" fill="none" stroke-width="2.6" stroke-linecap="round">
     <path d="M4 23h24" />
-    <path d="M8 23v-9" />
-    <path d="M16 23v-15" />
-    <path d="M24 23v-9" />
+    <path d="M8 23v-10" />
+    <path d="M14 23v-10" />
+    <path d="M25 23v-10" />
   </g>
 </svg>
