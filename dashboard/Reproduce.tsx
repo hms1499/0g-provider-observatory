@@ -23,8 +23,15 @@ function show(value: string | number): string {
  *
  * The Verify panel asks whether a published number follows from its evidence. That check
  * would pass even if the method itself were unstable — it only proves the arithmetic was
- * not tampered with. This panel asks the other question: take two runs of the same roster
- * and see whether they reached the same conclusions.
+ * not tampered with. This panel asks the other question: take two runs and see whether they
+ * reached the same conclusions about the services both of them measured.
+ *
+ * It used to say "two runs of the same roster", which was true while every epoch measured the
+ * same ten locked services and stopped being true at 496616 — that run probed thirty, and
+ * pairing it with an earlier one compares ten services against thirty. Nothing breaks: the
+ * services only one run measured are named under "not comparable", and the paragraph there
+ * gives both reasons a service lands in that list. But the claim above it had to stop being
+ * made, because the page cannot promise a reader something the epoch list contradicts.
  *
  * Nothing here costs the reader anything. Both runs are already published, both bundles
  * are already on 0G Storage, and the comparison happens in this page.
@@ -101,7 +108,7 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
       <section>
         <h2>Reproducibility</h2>
         <p>
-          This compares two runs of the same roster against each other. {props.net.name} holds{' '}
+          This compares two published runs against each other. {props.net.name} holds{' '}
           {props.epochs.length} epoch{props.epochs.length === 1 ? '' : 's'}, so there is nothing
           to compare yet.
         </p>
@@ -117,8 +124,8 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
       <p>
         Verifying an epoch proves its numbers follow from its evidence. It cannot tell you
         whether the instrument gives the same answer twice. This takes epochs{' '}
-        <strong>{earlier}</strong> and <strong>{later}</strong> — two runs of the same pinned
-        roster — and compares what each concluded, from their published evidence, in this page.
+        <strong>{earlier}</strong> and <strong>{later}</strong> — two runs of this network —
+        and compares what each concluded, from their published evidence, in this page.
       </p>
       <p>
         Latency is reported as a ratio and never scored: two runs at two times see different

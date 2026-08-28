@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-27 (README rewritten · 5 epochs on chain · demo video recorded)
+**Updated:** 2026-08-28 (all four dashboard panels audited · 9 epochs on chain · demo video recorded)
 
 ---
 
@@ -96,27 +96,39 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T21 | Both mainnet contracts verified on ChainScan — source and ABI public, `exactMatch` | `deployments/aristotle-16661.json`, `docs/network-findings.md` §6 |
 | T22 | The README describes the project that exists: live link, the relay on the diagram, the 0G components named, every example run before being written down | `README.md` |
 | T13a | **Demo video recorded and hosted on YouTube** (Huy, 2026-08-27) — the link is not in this file yet | — |
+| T23 | Audit of all four panels: nine defects found and fixed, each verified in a browser against mainnet | `ea5325c`, `16f9d92` |
 
 ### Ready now
 
-**Accumulate epochs — 5 of the 14 the argument needs.** One command, roughly $0.055 each:
+**Accumulate epochs — 9 of the 14 the argument needs.** One command, roughly $0.055 each:
 
     pnpm epoch --confirm --write-chain
 
-    496539  2026-08-24 03:31      496592  2026-08-26 08:34
-    496540  2026-08-24 04:10      496609  2026-08-27 01:41
-    496591  2026-08-26 07:18
+    496539  2026-08-24 03:31  10      496610  2026-08-27 02:47  10
+    496540  2026-08-24 04:10  10      496615  2026-08-27 07:09  10
+    496591  2026-08-26 07:18  10      496616  2026-08-27 08:15  30
+    496592  2026-08-26 08:34  10      496620  2026-08-27 12:58  28
+    496609  2026-08-27 01:41  10
+
+Read off the chain on 2026-08-28, not copied forward from an earlier version of this file.
+The third column is how many services that run measured.
 
 One epoch per clock hour, and the ledger takes one record per (epoch, prober) — a second
 run in the same hour reverts. Start with at least 20 minutes left in the hour or the run
 crosses the boundary and refuses to write, which is the safe direction but wastes the calls.
 
-The series is not continuous: two days separate 496540 from 496591, and the README's table
-shows that rather than hiding it. Nine more epochs reach 12, which is where the noise floor
-argument starts to hold. **Gas is not the constraint** — measured over all five, an epoch
-costs 0.0022 0G to write plus 0.0012 to put its evidence on Storage, so the 0.156 0G left in
-the wallet buys about 45 more. Router credit is the thing to watch, and it is not readable
-from here.
+**The series is not one roster any more, and that is now a fact the code has to carry.**
+The first seven epochs measured the same ten locked services; 496616 probed thirty and
+496620 probed twenty-eight. Pairing a narrow epoch with a wide one is a legitimate
+comparison of the services both of them measured, and the Reproducibility panel names the
+rest under "not comparable" — but nothing may describe two arbitrary epochs as "two runs of
+the same roster", because for most pairs on this chain that is false.
+
+The series is also not continuous: two days separate 496540 from 496591, and the README's
+table shows that rather than hiding it. Five more epochs reach 14. **Gas is not the
+constraint** — an epoch costs 0.0022 0G to write plus 0.0012 to put its evidence on
+Storage, and the prober held 0.1364 0G on 2026-08-28, which buys about 40 more. Router
+credit is the thing to watch, and it is not readable from here.
 
 **Then T13, and only two pieces of it are left.** The README is done (T22) and the video is
 recorded (T13a). What remains is the public X post — project name, a screenshot or clip,
@@ -135,10 +147,64 @@ leak. And a `curl | grep` of the served HTML proves nothing about what shipped: 
 renders client-side, so the initial HTML is an empty root element whichever build is live.
 Check the built JS bundle, or render the page.
 
-**Superseded, kept because the reasoning still applies.** The Measure panel 404s under
-`pnpm dashboard:preview`, which serves the built page with no functions. It needs a real
-Vercel deployment or
-`npx vercel dev`. Not yet verified in a browser against mainnet — see T19.
+**The Measure panel needs a real deployment or `npx vercel dev`.** `pnpm dashboard:preview`
+serves the built page with no functions, so `/api/router` is not there.
+
+**Correction, measured 2026-08-28: that path answers 200, not 404.** An earlier version of
+this file said 404, and the difference is load-bearing rather than pedantic. Vite's preview
+server rewrites an unknown path to `index.html` and returns 200, so the relay-presence check
+added in T23 refuses on 200 as well as on 404 — had it trusted the 404 written here, it
+would have passed the one situation anybody can reproduce locally. Measure what the thing
+does; do not carry a number forward from a note.
+
+Why the check exists at all: `callPinned` never throws, so a page served without its relay
+does not error. Every call 404s, the bundle's own `faultAttribution` charges `not_found` to
+the **provider**, and the panel renders two named operators at a 100% error rate against a
+published run that saw none. An instrument that manufactures an indictment out of our own
+deployment fault is the one output this project may not produce, so the endpoint is asked
+whether it exists before the reader's key is spent — the relay exports only `POST`, so a
+`GET` is answered 405 by the platform without the handler running.
+
+### T23 — what the audit of the four panels found
+
+Nine defects, `ea5325c` and `16f9d92`, each reproduced before it was fixed and each checked
+in a browser against mainnet afterwards. They are worth reading as four recurring shapes
+rather than as nine separate bugs, because every one of them was written by somebody being
+reasonable at the time.
+
+**A figure shown in place of one that was asked for.** Providers fell back to the newest
+epoch for any epoch it could not find, so a link to 496591 rendered 496620's figures under
+496620's timestamp while the address bar went on naming 496591. Measure kept a report after
+the group it was measured for had changed. The rule these break is the project's first one:
+every number traces to a source, and a number under the wrong heading traces to the wrong
+one. `dashboard/selectEpoch.ts` now separates "still arriving" from "not on this chain".
+
+**`epochs.at(-1)` as "the newest".** Three times, in three panels. `epochsOf` returns the
+order the ledger was written in, which is a fact about how it filled, not a promise about
+which number is largest. Use `newestEpoch()`.
+
+**A sentinel rendered as a measurement.** Reproducibility reported 0 for a ratio it could
+not take and printed it as `0.00x` — twenty rows of it in the 496616/496620 comparison,
+every one reading as a service that had become infinitely fast. The cell contradicted
+itself while doing it, because `ratioPosition` already refused a non-positive ratio and drew
+no tick. `ratio()` returns null now and both the page and the CLI print a dash. The same
+shape sat in `reproduce()`, which died inside the recomputation on a bundle written before
+schema /2 and let the panel call the result a read failure; it is refused by name now.
+
+**Our fault charged to somebody else's service.** The relay one, above. The most serious
+of the nine and the least visible, because it produced a plausible-looking table rather
+than an error.
+
+Two things about verification, both learned the hard way in this pass:
+
+- **Two of the nine were things I was wrong about until I ran them.** `picked` surviving a
+  chain switch in the Reproducibility panel looked like the same defect as the epoch
+  fallback; it is not, because the panel unmounts while the new chain loads. And the
+  preview server answers 200 where this file said 404. Reason about the code to find the
+  candidate, then run it before writing it down.
+- **A browser is the only place three of these were visible.** `pnpm test` passed at 411
+  before the audit and passes at 435 after it; not one of the nine would have been caught
+  by running it.
 
 ### T19 — measuring from the page, through a relay that holds nothing
 
