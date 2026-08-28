@@ -5,7 +5,7 @@ import type { ReproduceReport } from '../src/verify/reproduce.js';
 import { Masthead } from './Masthead.js';
 import { RatioCell } from './RatioCell.js';
 import { serviceLabel } from './rows.js';
-import { measurableGroups, measureGroup } from './measureGroup.js';
+import { loneServices, measurableGroups, measureGroup } from './measureGroup.js';
 import { formatTokens, formatUsd, groupUsage, type PriceTable } from './estimate.js';
 import { Bar, MastheadSkeleton } from './Skeleton.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
@@ -136,6 +136,7 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
   const choices = useMemo(() => (bundle ? measurableGroups(bundle) : []), [bundle]);
   const offered = useMemo(() => choices.filter((g) => g.replayable), [choices]);
   const withheld = useMemo(() => choices.filter((g) => !g.replayable), [choices]);
+  const lone = useMemo(() => (bundle ? loneServices(bundle) : []), [bundle]);
 
   // Only a replayable group can be selected, whatever the picker shows. `group` comes from
   // the select, which cannot yield a disabled option — but the fallback matters on a change
@@ -426,6 +427,39 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
                     </span>
                   ))}
                 </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {/*
+        The larger of the two silences, and the last one on this panel. Fifteen of epoch
+        496620's twenty-five groups leave through `measurableGroups`' first filter, and until
+        this section existed they left without a word — a reader who came to check MiniMax-M3
+        found it on the Providers panel and simply not here.
+
+        Not a picker and not a refusal: there is nothing to enable. A key cannot settle
+        whether a provider agrees with peers it does not have, and no epoch will change that
+        until somebody else registers the same model.
+      */}
+      {lone.length > 0 && (
+        <div className="gaps">
+          <h3>Measured, but not a comparison</h3>
+          <p>
+            This epoch measured {lone.length} more model
+            {lone.length === 1 ? '' : 's'} that only one provider serves. There is nothing to
+            replay them against — divergence is a distance between providers of the same
+            model, and a lone provider has none — so they are not offered here. Their
+            latency, error rate and mode are on the Providers panel, measured like everything
+            else.
+          </p>
+          <dl>
+            {lone.map((s) => (
+              <div key={`${s.address}|${s.modelId}`}>
+                <dt>{s.canonicalId}</dt>
+                <dd>{serviceLabel(`${s.address} ${s.modelId}`)} — the only provider of it in
+                  epoch {newest}.</dd>
               </div>
             ))}
           </dl>

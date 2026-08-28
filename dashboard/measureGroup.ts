@@ -107,6 +107,41 @@ export function measurableGroups(bundle: VerifiableBundle): GroupChoice[] {
   );
 }
 
+/** A model this epoch measured that no second provider serves. Not a comparison. */
+export interface LoneService {
+  canonicalId: string;
+  address: string;
+  modelId: string;
+}
+
+/**
+ * The models this epoch measured that only one provider serves.
+ *
+ * These are the groups `measurableGroups` drops. Dropping them from the *picker* is right —
+ * a lone provider has nothing to diverge from, so it is not a comparison a key could settle,
+ * and offering it as a disabled option would suggest it might become selectable one day.
+ * Dropping them from the *page* was not: fifteen of epoch 496620's twenty-five groups leave
+ * this way, and a reader who came to check MiniMax-M3 found it on the Providers panel and
+ * nowhere here, with nothing accounting for the difference.
+ *
+ * That is the same argument this file already makes for keeping unreplayable groups visible
+ * and greyed rather than filtering them out, applied to the larger of the two silences.
+ *
+ * Read from the roster rather than from `recompute()`. How many providers serve a model is a
+ * fact about who registered, not about what came back, and it needs no recomputation to
+ * establish — checked against `recompute()` on epochs 496540, 496616 and 496620, which
+ * partition the roster identically.
+ */
+export function loneServices(bundle: VerifiableBundle): LoneService[] {
+  const counts = new Map<string, number>();
+  for (const s of bundle.roster) counts.set(s.canonicalId, (counts.get(s.canonicalId) ?? 0) + 1);
+
+  return bundle.roster
+    .filter((s) => counts.get(s.canonicalId) === 1)
+    .map((s) => ({ canonicalId: s.canonicalId, address: s.address, modelId: s.modelId }))
+    .sort((a, b) => a.canonicalId.localeCompare(b.canonicalId));
+}
+
 export interface MeasureProgress {
   done: number;
   total: number;

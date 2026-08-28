@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import type { CallResult } from '../../src/probes/router-client.js';
 import type { VerifiableBundle } from '../../src/verify/recompute.js';
-import { measurableGroups, measureGroup } from '../measureGroup.js';
+import { loneServices, measurableGroups, measureGroup } from '../measureGroup.js';
 
 const bundle = JSON.parse(
   readFileSync('data/epochs/496540-2026-08-24T040551787Z.bundle.json', 'utf8'),
@@ -141,6 +141,42 @@ describe('measureGroup', () => {
  * 100% error rate against a published run that saw none — an indictment manufactured out of
  * our own deployment fault. Reproduced against epoch 496620 before this check existed.
  */
+describe('loneServices', () => {
+  it('names every model of the epoch that only one provider serves', () => {
+    const lone = loneServices(wide);
+    assert.equal(lone.length, 15);
+    assert.ok(lone.some((s) => s.canonicalId === 'minimax-m3'));
+  });
+
+  it('finds none in an epoch where every model has at least two providers', () => {
+    assert.deepEqual(loneServices(bundle), []);
+  });
+
+  /*
+   * The two lists have to partition the epoch between them, or a model leaves the panel
+   * through neither and nothing on the page accounts for it — the defect this function was
+   * added to close.
+   */
+  it('accounts for every group in the epoch, with the picker and nothing left over', () => {
+    const inPicker = measurableGroups(wide).length;
+    const groups = new Set(wide.roster.map((s) => s.canonicalId));
+    assert.equal(inPicker + loneServices(wide).length, groups.size);
+  });
+
+  it('names one service per group, never the group twice', () => {
+    const ids = loneServices(wide).map((s) => s.canonicalId);
+    assert.equal(new Set(ids).size, ids.length);
+  });
+
+  it('agrees with the recomputed run about which groups are lone', () => {
+    // Read from the roster rather than from recompute(), so the two must not drift.
+    const fromPicker = new Set(measurableGroups(wide).map((g) => g.canonicalId));
+    for (const s of loneServices(wide)) {
+      assert.equal(fromPicker.has(s.canonicalId), false, `${s.canonicalId} is in both lists`);
+    }
+  });
+});
+
 describe('measureGroup · the relay has to be there first', () => {
   const respond = (status: number) => async () => new Response(null, { status });
 
