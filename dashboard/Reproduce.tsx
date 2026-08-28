@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ObservatoryReader } from '../src/chain/registry.js';
+import { LiveStatus } from './LiveStatus.js';
 import { Masthead } from './Masthead.js';
 import { MastheadSkeleton, RowsSkeleton } from './Skeleton.js';
 import { RatioCell } from './RatioCell.js';
@@ -169,6 +170,17 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
           </span>
         </div>
       )}
+
+      <LiveStatus>
+        {busy
+          ? `Comparing epochs ${earlier} and ${later}. Fetching both bundles.`
+          : outcome?.state === 'failed'
+            ? `Epochs ${earlier} and ${later} were not compared: ${outcome.error}.`
+            : report
+              ? `Epochs ${earlier} and ${later}: ${report.compared} service${report.compared === 1 ? '' : 's'} measured by both runs, ` +
+                `${report.disagreements.length === 0 ? 'and every conclusion matched' : `with ${report.disagreements.length} disagreement${report.disagreements.length === 1 ? '' : 's'}`}.`
+              : ''}
+      </LiveStatus>
 
       {/* This panel compares the newest pair as soon as it opens, so the reader is waiting on
           something they did not ask for and a line of text was all they had.

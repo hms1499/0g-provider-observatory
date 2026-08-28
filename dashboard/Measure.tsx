@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ObservatoryReader } from '../src/chain/registry.js';
 import type { VerifiableBundle } from '../src/verify/recompute.js';
 import type { ReproduceReport } from '../src/verify/reproduce.js';
+import { LiveStatus } from './LiveStatus.js';
 import { Masthead } from './Masthead.js';
 import { RatioCell } from './RatioCell.js';
 import { serviceLabel } from './rows.js';
@@ -219,6 +220,20 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
         relay, so the figure below is in your rates. That is one request, it sends no probe and
         it bills nothing.
       </p>
+
+      <LiveStatus>
+        {/* The count is deliberately not in here. It ticks once per call, and a polite region
+            that changes thirty times reads the reader thirty sentences to say one thing. The
+            visible button carries the running total; this says only that a run is under way. */}
+        {progress
+          ? `Measuring ${selected?.canonicalId ?? ''}: ${progress.total} calls under way.`
+          : runError
+            ? `The run stopped: ${runError}.`
+            : report
+              ? `${report.compared} service${report.compared === 1 ? '' : 's'} measured by both runs, ` +
+                `${report.disagreements.length === 0 ? 'and every conclusion matched' : `with ${report.disagreements.length} disagreement${report.disagreements.length === 1 ? '' : 's'}`}.`
+              : ''}
+      </LiveStatus>
 
       {loadError && <p>Could not read epoch {newest}: {loadError}.</p>}
 

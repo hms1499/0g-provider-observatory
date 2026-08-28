@@ -1418,6 +1418,39 @@ button:disabled {
  * see where they are, and a reader who has asked their system for less motion must get it.
  */
 
+/* Text that exists for a screen reader and would be a duplicate on screen.
+ *
+ * The same clip the responsive table uses on its `thead`, which is kept in the tree for the
+ * same reason: removing an element to hide it takes it from everybody, including the readers
+ * who need it most. Used only where the words are already visible in another form — see
+ * `LiveStatus.tsx`. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Interactive ink moves rather than jumps.
+ *
+ * The tabs already eased their colour; nothing else did, so a link, an epoch chip or the
+ * chain switch changed in a single frame beside a row that did not. Same 0.12s and the same
+ * properties the tabs chose — short enough to read as responsiveness rather than as an
+ * effect.
+ *
+ * Colour and border only, never a transform or a size: this is feedback that a control is
+ * live under the pointer, and a control that grows when looked at is asking for attention
+ * an instrument does not need. It carries no information either, so the reduced-motion rule
+ * below removes it with nothing lost.
+ *
+ * Zero specificity, so every rule in this file still wins on the values themselves. */
+:where(a, button, select, input) {
+  transition: color 0.12s, border-color 0.12s, background-color 0.12s;
+}
+
 :where(a, button, select, input):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

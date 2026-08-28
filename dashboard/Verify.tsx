@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ObservatoryReader, type ProviderRecord } from '../src/chain/registry.js';
 import { Masthead } from './Masthead.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
+import { LiveStatus } from './LiveStatus.js';
 import { newestEpoch } from './selectEpoch.js';
 import { MastheadSkeleton, RowsSkeleton } from './Skeleton.js';
 import { verifyEpochInBrowser, type VerifyOutcome } from './verifyEpoch.js';
@@ -114,6 +115,16 @@ export function Verify(props: {
           </ul>
         </>
       )}
+
+      <LiveStatus>
+        {busy
+          ? `Checking epoch ${selected}. Fetching its evidence and recomputing every figure.`
+          : outcome
+            ? `Epoch ${selected}: ${outcome.verdict === 'verified' ? 'verified' : 'not verified'}. ` +
+              `${outcome.checked} measurement${outcome.checked === 1 ? '' : 's'} recomputed. ` +
+              `${outcome.findings.length === 0 ? 'No advisories' : `${outcome.findings.length} advisor${outcome.findings.length === 1 ? 'y' : 'ies'}`}.`
+            : ''}
+      </LiveStatus>
 
       {/* The gateway fetch takes a few seconds, and until this existed the panel answered a
           click with a tag beside the button and nothing else — the result area stayed empty,
