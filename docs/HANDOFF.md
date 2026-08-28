@@ -1,6 +1,6 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-28 (all four dashboard panels audited · 9 epochs on chain · demo video recorded)
+**Updated:** 2026-08-28 (all four dashboard panels audited · 10 epochs on chain · demo video recorded)
 
 ---
 
@@ -100,15 +100,38 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 
 ### Ready now
 
-**Accumulate epochs — 9 of the 14 the argument needs.** One command, roughly $0.055 each:
+**Accumulate epochs — 10 of the 14 the argument needs.** One command, roughly $0.055 each:
 
     pnpm epoch --confirm --write-chain
+
+**A wide run needs four flags, and the default `--exclude` is one of them:**
+
+    pnpm epoch --all --no-lock --no-fit --budget-usd=0.60 --confirm --write-chain
+
+`--all` past the groups-only filter, `--no-lock` past the pinned series roster, `--no-fit`
+past the $0.13 cap trimming the roster, and a real `--budget-usd` because the cap is a hard
+stop measured against usage as it is billed. Measured cost: **$0.35 for 38 services (496620),
+$0.53 for 30 (496636)** — the wider run cost less because most of its calls failed for free.
+The projection printed by the planner said $1.41; it is a worst case, not an estimate.
+
+**Do not clear `--exclude` on a wide run.** It is not only about money. The four excluded
+groups fail *instantly* — median 581 ms against 3303 ms for a real answer — so each of their
+services burns fifteen probes in under a second, and eight of them together produce a burst
+of ~120 near-simultaneous calls. That burst is what drained the key: epoch 496620 ran 570
+calls in 254 s, took its `x-ratelimit-remaining` from 499 to **0**, and collected **137 HTTP
+429s in the final 8 seconds**. `faultSide` charges `rate_limit` to the **provider**
+(`src/probes/aggregate.ts:41`), so six named services are published on mainnet at a 100%
+error rate that is our key running out, not their failure.
+
+Epoch 496636 kept the exclusions, ran 450 calls over 435 s, never took the counter below
+**362**, and collected **zero** 429s — 428 of 450 calls answered against 397 of 570. The
+exclusion list is what keeps a wide epoch from becoming an accusation.
 
     496539  2026-08-24 03:31  10      496610  2026-08-27 02:47  10
     496540  2026-08-24 04:10  10      496615  2026-08-27 07:09  10
     496591  2026-08-26 07:18  10      496616  2026-08-27 08:15  30
     496592  2026-08-26 08:34  10      496620  2026-08-27 12:58  28
-    496609  2026-08-27 01:41  10
+    496609  2026-08-27 01:41  10      496636  2026-08-28 04:12  29
 
 Read off the chain on 2026-08-28, not copied forward from an earlier version of this file.
 The third column is how many services that run measured.
