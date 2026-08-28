@@ -163,6 +163,20 @@ export function orderedPair(a: number, b: number): [number, number] {
 }
 
 /**
+ * An address shortened for reading. 42 characters and no reader holds one in their head.
+ *
+ * Every place that renders one of these keeps the whole address within reach — in a `title`,
+ * or in the explorer link the short form sits inside. The elision is for the eye; anyone who
+ * wants to *use* the address should not have to go to a third-party site to copy it back out.
+ *
+ * One definition rather than a copy per panel, so a table row, an observation and a
+ * verification step all elide at the same place and read as the same address.
+ */
+export function shortAddress(address: string): string {
+  return `${address.slice(0, 10)}…${address.slice(-4)}`;
+}
+
+/**
  * A service label with its address shortened, for reading rather than for copying.
  *
  * `compareRuns` names a service by its full address and model, which is right for a CLI whose
@@ -175,7 +189,7 @@ export function orderedPair(a: number, b: number): [number, number] {
 export function serviceLabel(service: string): string {
   const [address, ...rest] = service.split(' ');
   if (!/^0x[0-9a-fA-F]{40}$/.test(address ?? '')) return service;
-  return [`${address.slice(0, 10)}…${address.slice(-4)}`, ...rest].join(' ');
+  return [shortAddress(address!), ...rest].join(' ');
 }
 
 /**

@@ -127,6 +127,39 @@ describe('compareRuns · latency', () => {
     assert.equal(report.latency[0].p50Ratio, 2.5);
     assert.equal(report.latency[0].p95Ratio, 1.5);
   });
+
+  /*
+   * A service that answered no call has no median, and the ledger stores no zero-filled
+   * placeholder for it. This used to report 0, which the dashboard printed as `0.00x` beside
+   * a named operator — twelve rows of it in the 496616/496620 comparison, every one reading
+   * as a service that had become infinitely fast.
+   */
+  it('has no ratio where the later run published no figure', () => {
+    const report = compareRuns(
+      { services: [measured({ p50Ms: 100, p95Ms: 200 })] },
+      { services: [measured({ p50Ms: 0, p95Ms: 0 })] },
+    );
+    assert.equal(report.latency[0].p50Ratio, null);
+    assert.equal(report.latency[0].p95Ratio, null);
+  });
+
+  it('has no ratio where the earlier run published no figure', () => {
+    const report = compareRuns(
+      { services: [measured({ p50Ms: 0, p95Ms: 0 })] },
+      { services: [measured({ p50Ms: 100, p95Ms: 200 })] },
+    );
+    assert.equal(report.latency[0].p50Ratio, null);
+    assert.equal(report.latency[0].p95Ratio, null);
+  });
+
+  it('still takes a ratio per field, so one missing figure does not withhold the other', () => {
+    const report = compareRuns(
+      { services: [measured({ p50Ms: 100, p95Ms: 200 })] },
+      { services: [measured({ p50Ms: 250, p95Ms: 0 })] },
+    );
+    assert.equal(report.latency[0].p50Ratio, 2.5);
+    assert.equal(report.latency[0].p95Ratio, null);
+  });
 });
 
 /**
@@ -149,6 +182,37 @@ describe('reproduce · two real mainnet runs of the same roster', { skip: !haveB
 
   it('finds no service whose observed mode changed between the two runs', () => {
     assert.deepEqual(report!.disagreements.filter((d) => d.kind === 'mode'), []);
+  });
+});
+
+/**
+ * Bundles written before schema /2 carry no `rules`. `recompute()` reads the rulebook out of
+ * the bundle on purpose, so there is no honest way to score one of these — and epoch 496514,
+ * on testnet, is one of them.
+ */
+const OLD = 'data/epochs/496514-2026-08-23T025915129Z.bundle.json';
+
+describe('reproduce · a run that recorded no rulebook', { skip: !existsSync(OLD) || !haveBoth }, () => {
+  const ancient = JSON.parse(readFileSync(OLD, 'utf8')) as VerifiableBundle;
+  const modern = JSON.parse(readFileSync(B, 'utf8')) as VerifiableBundle;
+
+  it('refuses rather than scoring it under the other run rulebook', () => {
+    assert.throws(() => reproduce(ancient, modern), /records no rulebook/);
+  });
+
+  it('names which of the two runs it is refusing', () => {
+    assert.throws(() => reproduce(ancient, modern), /the earlier run \(epoch 496514/);
+    assert.throws(() => reproduce(modern, ancient), /the later run \(epoch 496514/);
+  });
+
+  /* The failure a reader used to see was `Cannot read properties of undefined (reading
+     'truncationSafeComparators')`, printed on the page under the sentence "This is a read
+     failure" — which it was not. */
+  it('does not leak a property access from the recomputation', () => {
+    assert.throws(() => reproduce(ancient, modern), (e: Error) => {
+      assert.doesNotMatch(e.message, /Cannot read properties/);
+      return true;
+    });
   });
 });
 

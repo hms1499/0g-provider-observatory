@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Caveats } from './Caveats.js';
 import { Measure } from './Measure.js';
+import { NoEpoch } from './NoEpoch.js';
 import { NETWORKS, type NetworkKey } from './networks.js';
 import { Providers } from './Providers.js';
 import { Reproduce } from './Reproduce.js';
+import { selectEpoch } from './selectEpoch.js';
 import { SiteFooter } from './SiteFooter.js';
 import { SiteHeader, type Panel } from './SiteHeader.js';
 import { ProvidersSkeleton } from './Skeleton.js';
@@ -105,8 +107,22 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [panel]);
 
-  const shown =
-    (chosen === null ? undefined : data.records.find((r) => r.epoch === chosen)) ?? data.latest;
+  /*
+   * Which epoch is on the page, and — when it is not the one the address named — why.
+   *
+   * This used to fall back to `data.latest` for anything it could not find, which answered
+   * "still arriving" and "not on this chain" with the same thing: another epoch's figures,
+   * under another epoch's timestamp, while the address bar went on naming the one the reader
+   * had asked for. `selectEpoch` separates the cases and this panel reports them.
+   */
+  const view = selectEpoch({
+    chosen,
+    records: data.records,
+    epochs: data.epochs,
+    history: data.history,
+    latest: data.latest,
+  });
+  const shown = view.state === 'record' ? view.record : undefined;
   const isLatest = shown !== undefined && shown.epoch === data.latest?.epoch;
   // The newest epoch's transaction arrived with it; any other is fetched only when asked for.
   const olderTxHash = useEpochTxHash(net, isLatest || !shown ? null : shown.epoch);
@@ -144,10 +160,10 @@ export default function App() {
         {data.state === 'error' && (
           <p>Could not read {net.name}: {data.error}. This is a read failure, not a measurement.</p>
         )}
-        {data.state === 'ready' && panel === 'providers' && shown && (
+        {data.state === 'ready' && panel === 'providers' && view.state === 'record' && (
           <Providers
             net={net}
-            epoch={shown}
+            epoch={view.record}
             providers={data.providers}
             txHash={isLatest ? data.latestTxHash ?? null : olderTxHash}
             records={data.records}
@@ -156,8 +172,13 @@ export default function App() {
             onEpoch={setChosen}
           />
         )}
-        {data.state === 'ready' && panel === 'providers' && !shown && (
-          <p>No epochs have been written on {net.name} yet.</p>
+        {data.state === 'ready' && panel === 'providers' && view.state !== 'record' && (
+          <NoEpoch
+            view={view}
+            net={net}
+            epochs={data.epochs}
+            onNewest={() => setChosen(null)}
+          />
         )}
         {data.state === 'ready' && panel === 'verify' && (
           <Verify net={net} epochs={data.epochs} providers={data.providers} />
@@ -183,7 +204,7 @@ export default function App() {
           arrived — the single largest shift on the page, and it moved the only thing a reader
           had to look at while waiting.
         */}
-        {panel === 'providers' && data.state === 'ready' && <Caveats />}
+        {panel === 'providers' && data.state === 'ready' && view.state === 'record' && <Caveats />}
       </main>
 
       <SiteFooter net={net} />

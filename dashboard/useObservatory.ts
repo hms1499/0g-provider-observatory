@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ObservatoryReader, type EpochRecord, type ProviderRecord } from '../src/chain/registry.js';
 import { mapWithConcurrency } from '../src/chain/concurrency.js';
 import { isDeployed, type NetworkConfig } from './networks.js';
+import type { HistoryState } from './selectEpoch.js';
 
 export interface ObservatoryData {
   state: 'loading' | 'error' | 'ready' | 'not-deployed';
@@ -16,8 +17,8 @@ export interface ObservatoryData {
    * see the second phase below.
    */
   records: EpochRecord[];
-  /** Whether the epochs behind the newest one have finished arriving. */
-  history: 'loading' | 'ready';
+  /** How far the epochs behind the newest one have got. */
+  history: HistoryState;
 }
 
 const EMPTY: ObservatoryData = {
@@ -40,9 +41,12 @@ const EMPTY: ObservatoryData = {
  * thing missing is the history line, and the panel says it is still loading rather than
  * drawing a short series as though it were the whole one.
  *
- * The history failing is not the page failing. A second-phase error leaves `history` at
- * `loading` and the epoch that already rendered stays on screen — the alternative is throwing
- * away a good reading because a later request timed out.
+ * The history failing is not the page failing. A second-phase error moves `history` to
+ * `failed` and the epoch that already rendered stays on screen — the alternative is throwing
+ * away a good reading because a later request timed out. It is reported rather than swallowed
+ * because two things downstream wait on this phase: the series column, which would otherwise
+ * hold a skeleton for as long as the page is open, and a reader who asked for an older epoch
+ * by link, who would otherwise be told it was still arriving forever.
  */
 export function useObservatory(net: NetworkConfig): ObservatoryData {
   const [data, setData] = useState<ObservatoryData>(EMPTY);
@@ -111,7 +115,10 @@ export function useObservatory(net: NetworkConfig): ObservatoryData {
           };
         });
       } catch {
-        // Deliberately swallowed: the page already has an epoch on it. See the note above.
+        // Not rethrown: the page already has an epoch on it. Recorded, though — see the note
+        // above — because a wait that will never end has to stop being drawn as a wait.
+        if (cancelled) return;
+        setData((d) => (d.state === 'ready' ? { ...d, history: 'failed' } : d));
       }
     })();
 

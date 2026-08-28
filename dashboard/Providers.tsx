@@ -5,11 +5,13 @@ import {
   groupByModel,
   groupByOperator,
   scalePosition,
+  shortAddress as short,
   type ModelGroup,
   type ProviderRow,
 } from './rows.js';
 import { Masthead } from './Masthead.js';
 import { seriesFor, seriesScale, type SeriesPoint } from './history.js';
+import type { HistoryState } from './selectEpoch.js';
 import { Bar } from './Skeleton.js';
 import { Sparkline } from './Sparkline.js';
 import { Primer } from './Primer.js';
@@ -17,16 +19,6 @@ import { observe } from './findings.js';
 import { ModeBadge } from './ModeBadge.js';
 import { isUnmeasured } from '../src/chain/encoding.js';
 import type { EpochRecord, ProviderRecord } from '../src/chain/registry.js';
-
-/**
- * An address is 42 characters and no reader holds one in their head. Enough to tell apart.
- *
- * Every shortened address carries the whole one in its `title`. The elision is for reading;
- * anyone who wants to *use* the address — `pnpm pick <address>`, a script, a search on the
- * explorer — had to open the explorer in a new tab and copy it back out, which is a detour
- * through a third-party site to recover something this page already has.
- */
-const short = (address: string) => `${address.slice(0, 10)}…${address.slice(-4)}`;
 
 const utc = (d: Date) => `${d.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 
@@ -38,8 +30,8 @@ export function Providers(props: {
   txHash: string | null;
   /** Every epoch read so far, newest last. One member while the series is still arriving. */
   records: readonly EpochRecord[];
-  /** Whether the epochs behind the newest one have finished loading. */
-  history: 'loading' | 'ready';
+  /** How far the epochs behind the newest one have got. */
+  history: HistoryState;
   /** Every epoch this prober has published, whether or not its record has arrived. */
   epochs: readonly number[];
   onEpoch: (epoch: number) => void;
@@ -212,7 +204,7 @@ function ModelBlock(props: {
   seriesLo: number;
   seriesHi: number;
   at: number;
-  history: 'loading' | 'ready';
+  history: HistoryState;
 }) {
   const { group } = props;
   const modes = [...new Set(group.rows.map((r) => r.mode))].sort();
@@ -344,7 +336,7 @@ function Row(props: {
   seriesLo: number;
   seriesHi: number;
   at: number;
-  history: 'loading' | 'ready';
+  history: HistoryState;
   isReference: boolean;
 }) {
   const { row } = props;
@@ -382,14 +374,28 @@ function Row(props: {
       <td className="num" role="cell" data-label="calls">
         {row.calls}
       </td>
-      {props.history === 'loading' ? (
+      {props.history === 'loading' && (
         // The series arrives in a second pass, so this cell is the one thing on a finished row
         // still waiting. A bar the width of the drawing keeps the column from resizing under a
         // reader when ten of them fill in at once.
         <td className="num spark" role="cell" data-label="history">
           <Bar w="96px" />
         </td>
-      ) : (
+      )}
+      {props.history === 'failed' && (
+        // The epochs behind the newest one did not arrive. Drawing what did would put a line
+        // through an unknown number of missing readings and let it read as the whole series —
+        // the same claim the broken line in `Sparkline` exists to avoid making.
+        <td className="num spark" role="cell" data-label="history">
+          <span
+            className="none"
+            title="The earlier epochs could not be read from the chain, so there is no series to draw. This says nothing about the figures in this row, which came from the epoch shown above."
+          >
+            —
+          </span>
+        </td>
+      )}
+      {props.history === 'ready' && (
         <Sparkline series={props.series} lo={props.seriesLo} hi={props.seriesHi} at={props.at} />
       )}
     </tr>

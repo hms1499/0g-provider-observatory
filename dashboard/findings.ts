@@ -18,7 +18,13 @@
  * observations come out in roster order rather than sorted by size, because a list sorted by
  * how bad a number is is a leaderboard with extra steps.
  */
-import { formatBps, formatSeconds, type ModelGroup, type ProviderRow } from './rows.js';
+import {
+  formatBps,
+  formatSeconds,
+  shortAddress as short,
+  type ModelGroup,
+  type ProviderRow,
+} from './rows.js';
 import { isUnmeasured } from '../src/chain/encoding.js';
 
 export type ObservationKind = 'error-rate-gap' | 'latency-spread' | 'short-sample';
@@ -52,8 +58,6 @@ export const ERROR_RATE_TOLERANCE_BPS = 1000;
  * a spread five times wider than anything this rule would flag.
  */
 export const LATENCY_SPREAD_RATIO = 2;
-
-const short = (address: string) => `${address.slice(0, 10)}…${address.slice(-4)}`;
 
 const measured = (rows: readonly ProviderRow[]) => rows.filter((r) => r.p50Ms > 0);
 

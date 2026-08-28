@@ -3,10 +3,24 @@ import type { VerifiableBundle } from '../src/verify/recompute.js';
 import { reproduce, type ReproduceReport } from '../src/verify/reproduce.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
 
+/**
+ * Why a comparison did not happen. Two different things, and the panel used to call both of
+ * them a read failure — which was a claim about the network in front of a message that was
+ * sometimes about the evidence itself.
+ */
+export type FailureKind =
+  /** The bundles could not be fetched, parsed, or found. Nothing was compared because
+   *  nothing arrived. */
+  | 'unreadable'
+  /** The evidence arrived and cannot be compared — a run that recorded no rulebook, so
+   *  recomputing it would mean scoring it under somebody else's rules. */
+  | 'incomparable';
+
 export interface ReproduceOutcome {
   state: 'ready' | 'failed';
   report?: ReproduceReport;
   error?: string;
+  reason?: FailureKind;
 }
 
 /**
@@ -33,10 +47,17 @@ export async function reproduceInBrowser(args: {
       load(args.fetchBytes, bundleUrl(args.net, args.later.storageRoot)),
     ]);
   } catch (e: any) {
-    return { state: 'failed', error: String(e?.message ?? e) };
+    return { state: 'failed', error: String(e?.message ?? e), reason: 'unreadable' };
   }
 
-  return { state: 'ready', report: reproduce(a, b) };
+  // Its own try. `reproduce` refuses a bundle that records no rulebook, and that refusal is
+  // about what the evidence supports — grouping it with the fetch above would have the panel
+  // tell a reader the gateway failed when it answered perfectly.
+  try {
+    return { state: 'ready', report: reproduce(a, b) };
+  } catch (e: any) {
+    return { state: 'failed', error: String(e?.message ?? e), reason: 'incomparable' };
+  }
 }
 
 async function load(

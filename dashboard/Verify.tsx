@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ObservatoryReader, type ProviderRecord } from '../src/chain/registry.js';
 import { Masthead } from './Masthead.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
+import { newestEpoch } from './selectEpoch.js';
+import { MastheadSkeleton, RowsSkeleton } from './Skeleton.js';
 import { verifyEpochInBrowser, type VerifyOutcome } from './verifyEpoch.js';
 
 /** How long to wait for the storage gateway before treating the fetch as failed. Chain reads
@@ -18,6 +20,7 @@ export function Verify(props: {
   const [outcome, setOutcome] = useState<VerifyOutcome | null>(null);
   const [root, setRoot] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const newest = newestEpoch(props.epochs);
 
   async function run(epochNumber: number) {
     setSelected(epochNumber);
@@ -90,22 +93,46 @@ export function Verify(props: {
             Newest first. The chain hands these back oldest-first, which was fine at two and
             unreadable at the fourteen this series is heading for: the epoch a reader almost
             always wants would have been the last chip in a wall of identical ones.
+
+            Sorted and tagged by value rather than by position. `epochsOf` returns the order
+            the records were written in, which is a fact about how the ledger was filled and
+            not a promise about which number is largest — and the `newest` tag is a claim
+            about the number.
           */}
           <ul>
-            {[...props.epochs].reverse().map((e, i) => (
-              <li key={e}>
-                <button onClick={() => run(e)} disabled={busy} aria-pressed={selected === e}>
-                  epoch {e}
-                </button>
-                {i === 0 && <span className="tag">newest</span>}
-                {selected === e && busy && <span className="tag">checking…</span>}
-              </li>
-            ))}
+            {[...props.epochs]
+              .sort((a, b) => b - a)
+              .map((e) => (
+                <li key={e}>
+                  <button onClick={() => run(e)} disabled={busy} aria-pressed={selected === e}>
+                    epoch {e}
+                  </button>
+                  {e === newest && <span className="tag">newest</span>}
+                  {selected === e && busy && <span className="tag">checking…</span>}
+                </li>
+              ))}
           </ul>
         </>
       )}
 
-      {outcome && (
+      {/* The gateway fetch takes a few seconds, and until this existed the panel answered a
+          click with a tag beside the button and nothing else — the result area stayed empty,
+          which reads as a click that did not register. Same reasoning as the Reproducibility
+          and Measure panels, and the same shape: the masthead's real labels at the height
+          they will keep, then rows where the log is about to be. Not tuned against a CLS
+          score; see the note at the top of `Skeleton.tsx`. */}
+      {busy && (
+        <div className="log" aria-busy="true">
+          <MastheadSkeleton labels={['epoch', 'steps', 'measurements', 'advisories']} />
+          <p className="pick">
+            Fetching epoch {selected}&rsquo;s evidence through the public gateway, then
+            recomputing every figure in it…
+          </p>
+          <RowsSkeleton rows={5} />
+        </div>
+      )}
+
+      {!busy && outcome && (
         <div className="log">
           <Masthead
             readings={[

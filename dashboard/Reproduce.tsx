@@ -91,6 +91,10 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
   }, [props.net, pairs?.join(',')]);
 
   const [earlier, later] = pairs ?? [0, 0];
+  const descending = useMemo(
+    () => [...props.epochs].sort((a, b) => b - a),
+    [props.epochs.join(',')],
+  );
 
   if (!pairs) {
     return (
@@ -124,13 +128,16 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
 
       {props.epochs.length > 2 && (
         <div className="pair">
+          {/* Newest first in both lists, as the epoch picker and the Verify panel have it.
+              The chain returns these in the order they were written, which puts the epoch a
+              reader almost always reaches for at the bottom of a list heading for fourteen. */}
           <label>
             earlier{' '}
             <select
               value={earlier}
               onChange={(e) => setPicked(orderedPair(Number(e.target.value), later))}
             >
-              {props.epochs.map((e) => (
+              {descending.map((e) => (
                 <option key={e} value={e} disabled={e === later}>
                   {e}
                 </option>
@@ -143,7 +150,7 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
               value={later}
               onChange={(e) => setPicked(orderedPair(earlier, Number(e.target.value)))}
             >
-              {props.epochs.map((e) => (
+              {descending.map((e) => (
                 <option key={e} value={e} disabled={e === earlier}>
                   {e}
                 </option>
@@ -172,10 +179,22 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
         </div>
       )}
 
-      {outcome?.state === 'failed' && (
+      {outcome?.state === 'failed' && outcome.reason !== 'incomparable' && (
         <p>
           Could not compare these epochs: {outcome.error}. This is a read failure, not a
           disagreement between the runs.
+        </p>
+      )}
+
+      {/* The evidence arrived and cannot be compared, which is not the same as failing to
+          read it — saying "read failure" here would blame the gateway for a property of the
+          run. Nothing is offered in its place: a comparison this panel cannot make honestly
+          is one it does not make. */}
+      {outcome?.state === 'failed' && outcome.reason === 'incomparable' && (
+        <p>
+          These two epochs cannot be compared: {outcome.error}. The evidence was fetched and
+          read — this is a limit of what one of these runs wrote down, not a fault in either
+          measurement.
         </p>
       )}
 

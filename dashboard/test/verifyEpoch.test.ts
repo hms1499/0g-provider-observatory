@@ -75,10 +75,41 @@ describe('verifyEpochInBrowser', () => {
       net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
       fetchBytes: async () => BUNDLE,
     });
-    assert.equal(
-      out.steps.find((s) => /claims this epoch/i.test(s.label))?.status,
-      'fail',
-    );
+    const step = out.steps.find((s) => /claims this epoch/i.test(s.label));
+    assert.equal(step?.status, 'fail');
+    assert.match(step?.detail ?? '', /the bundle says epoch 496516, the record 1/);
+    assert.doesNotMatch(step?.detail ?? '', /written by/, 'the prober matched, so it is not named');
     assert.equal(out.verdict, 'failed');
+  });
+
+  /*
+   * The ledger keys a record by (epoch, prober), so a bundle for the right epoch written by
+   * somebody else is a different measurement. The step used to report the epoch whatever had
+   * gone wrong, which put a FAIL next to a number that agreed.
+   */
+  it('names the prober, not the epoch, when it is the prober that disagrees', async () => {
+    const out = await verifyEpochInBrowser({
+      epoch: epochRecord({ prober: '0x1111111111111111111111111111111111111111' }),
+      providers: providersFromBundle(),
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
+      fetchBytes: async () => BUNDLE,
+    });
+    const step = out.steps.find((s) => /claims this epoch/i.test(s.label));
+    assert.equal(step?.status, 'fail');
+    assert.match(step?.detail ?? '', /the bundle was written by 0xaBaCa14B…34DB, the record by 0x11111111…1111/);
+    assert.doesNotMatch(step?.detail ?? '', /says epoch/, 'the epoch matched, so it is not named');
+    assert.equal(out.verdict, 'failed');
+  });
+
+  it('states both claims when they hold', async () => {
+    const out = await verifyEpochInBrowser({
+      epoch: epochRecord(),
+      providers: providersFromBundle(),
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
+      fetchBytes: async () => BUNDLE,
+    });
+    const step = out.steps.find((s) => /claims this epoch/i.test(s.label));
+    assert.equal(step?.status, 'ok');
+    assert.equal(step?.detail, 'epoch 496516, prober 0xaBaCa14B…34DB');
   });
 });

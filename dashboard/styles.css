@@ -306,6 +306,35 @@ header.site .tabs button[aria-pressed='true'] {
   color: var(--muted);
 }
 
+/* The epoch a link named, when it is not on the page.
+ *
+ * Deliberately plain: this stands where a table of figures would, and anything with the
+ * weight of an alert would read as the instrument having failed. It usually has not — the
+ * commonest case is an epoch a second or two behind the page.
+ *
+ * The way back to the newest epoch is a button, not a redirect, so it stays a choice the
+ * reader makes. Same rule as the tabs: it moves the reader, so it is underlined rather than
+ * filled. */
+.no-epoch {
+  margin: 2rem 0 3rem;
+  max-width: 46rem;
+  color: var(--muted);
+}
+
+.no-epoch button {
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 0.1rem;
+  cursor: pointer;
+}
+
+.no-epoch button:hover {
+  border-bottom-color: var(--ink);
+}
+
 /* ── site footer ────────────────────────────────────────────────────────────
  *
  * The colophon: what the instrument is, and every address a reader needs to look the project
@@ -655,6 +684,12 @@ td.dur {
 
 td.dur .figure {
   display: block;
+}
+
+/* No ratio to take, because one of the two runs published no figure to divide. Muted, like
+   every other "not there" mark on the site: it reports what is missing, not a bad reading. */
+td.dur .figure.none {
+  color: var(--faint);
 }
 
 td.dur .track {

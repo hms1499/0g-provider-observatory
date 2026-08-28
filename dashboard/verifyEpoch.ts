@@ -3,6 +3,7 @@ import { merkleRootOf } from '../src/storage/merkle.js';
 import { compareToChain, type Finding, type ProviderLookup } from '../src/verify/check.js';
 import { recompute, type VerifiableBundle } from '../src/verify/recompute.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
+import { shortAddress } from './rows.js';
 
 export interface VerifyStep {
   label: string;
@@ -76,14 +77,24 @@ export async function verifyEpochInBrowser(args: {
     detail: `${bundle.schema}, ${bundle.results.length} calls`,
   });
 
+  /*
+   * Two claims, checked together because either one alone is not enough: a bundle for the
+   * right epoch written by a different prober is a different measurement, and the ledger
+   * keys records by the pair for exactly that reason.
+   *
+   * The detail names whichever side disagreed. It used to read `bundle says epoch N`
+   * whatever had happened, so a prober mismatch printed the epoch the record agreed on and
+   * left a reader looking at a FAIL beside a number that matched.
+   */
+  const sameEpoch = bundle.epoch === args.epoch.epoch;
+  const sameProber = bundle.prober.toLowerCase() === args.epoch.prober.toLowerCase();
   steps.push({
     label: 'the evidence claims this epoch and prober',
-    status:
-      bundle.epoch === args.epoch.epoch &&
-      bundle.prober.toLowerCase() === args.epoch.prober.toLowerCase()
-        ? 'ok'
-        : 'fail',
-    detail: `bundle says epoch ${bundle.epoch}`,
+    status: sameEpoch && sameProber ? 'ok' : 'fail',
+    detail: claimDetail(
+      { epoch: bundle.epoch, prober: bundle.prober },
+      { epoch: args.epoch.epoch, prober: args.epoch.prober },
+    ),
   });
 
   const lookup: ProviderLookup = Object.fromEntries(
@@ -99,6 +110,31 @@ export async function verifyEpochInBrowser(args: {
     checked,
     verdict: blocking.length === 0 && !anyStepFailed ? 'verified' : 'failed',
   };
+}
+
+/**
+ * What the bundle claims, next to what the record claims, with only the parts that differ
+ * spelled out twice. Naming both sides of something that matches is noise in a log a reader
+ * scans for the one line that says FAIL.
+ */
+function claimDetail(
+  bundle: { epoch: number; prober: string },
+  record: { epoch: number; prober: string },
+): string {
+  const epochDiffers = bundle.epoch !== record.epoch;
+  const proberDiffers = bundle.prober.toLowerCase() !== record.prober.toLowerCase();
+
+  if (!epochDiffers && !proberDiffers) {
+    return `epoch ${bundle.epoch}, prober ${shortAddress(bundle.prober)}`;
+  }
+  const parts: string[] = [];
+  if (epochDiffers) parts.push(`the bundle says epoch ${bundle.epoch}, the record ${record.epoch}`);
+  if (proberDiffers) {
+    parts.push(
+      `the bundle was written by ${shortAddress(bundle.prober)}, the record by ${shortAddress(record.prober)}`,
+    );
+  }
+  return parts.join('; ');
 }
 
 function safeParse(s: string): any | null {

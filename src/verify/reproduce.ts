@@ -64,11 +64,19 @@ export interface Disagreement {
  * Latency is reported as a ratio and never as a disagreement. Two runs an hour apart
  * see different load; a p50 that doubled is information, not a fault, and this file
  * has no way to tell which run caught the network on a bad minute.
+ *
+ * **Null is not zero.** A ratio exists only where both runs published a figure to divide.
+ * Where one of them did not — a service that failed every call has no p50, and the ledger
+ * stores no zero-filled placeholder for it — there is no ratio, and this says so rather
+ * than reporting one. It used to return 0 in that case, which printed `0.00x` next to a
+ * named operator and read as a service that had become infinitely fast; twelve of the
+ * thirty-eight rows in the 496616/496620 comparison said it at once.
  */
 export interface LatencyRatio {
   service: string;
-  p50Ratio: number;
-  p95Ratio: number;
+  /** Null where at least one of the two runs published no figure to divide. */
+  p50Ratio: number | null;
+  p95Ratio: number | null;
 }
 
 export interface ReproduceReport {
@@ -163,9 +171,38 @@ export function compareRuns(published: Measured, independent: Measured): Reprodu
   return { compared, disagreements, latency, onlyPublished, onlyIndependent };
 }
 
-/** A published zero would make every ratio infinite, so it is reported as 0 instead. */
-function ratio(independentMs: number, publishedMs: number): number {
-  return publishedMs === 0 ? 0 : independentMs / publishedMs;
+/**
+ * The ratio between two runs' figures, or null where there is not one to take.
+ *
+ * Both sides are guarded, not just the divisor. A zero denominator would make the ratio
+ * infinite and a zero numerator makes it 0.0, and neither is a measurement: 0 in this
+ * ledger means "not published", so both cases are the same absence wearing two shapes.
+ */
+function ratio(independentMs: number, publishedMs: number): number | null {
+  if (publishedMs <= 0 || independentMs <= 0) return null;
+  return independentMs / publishedMs;
+}
+
+/**
+ * A bundle that does not record the rules its run was scored under cannot be recomputed.
+ *
+ * `recompute()` reads the rulebook out of the bundle on purpose — which probes count toward
+ * divergence, which comparator each uses, which pair measures the noise floor, what value
+ * stands for "not measurable". Bundles written before schema /2 carry no `rules` at all, and
+ * the only way to score one is to apply today's rulebook to somebody else's run. That would
+ * not be a reproduction; it would be a second, different experiment reported as the first.
+ *
+ * Refused rather than guessed, the same call `measureGroup.ts` makes about a bundle with no
+ * `sentParams`. The type says `rules` is always there, which is true of every bundle this
+ * codebase writes and not of the ones already on chain — so this is a runtime check.
+ */
+function requireRules(bundle: VerifiableBundle, which: 'earlier' | 'later'): void {
+  if (bundle.rules) return;
+  throw new Error(
+    `the ${which} run (epoch ${bundle.epoch}, ${bundle.schema}) records no rulebook, so its ` +
+      `numbers cannot be recomputed — scoring it under a later run's rules would compare two ` +
+      `different experiments and report them as one`,
+  );
 }
 
 /**
@@ -179,6 +216,8 @@ export function reproduce(
   published: VerifiableBundle,
   independent: VerifiableBundle,
 ): ReproduceReport {
+  requireRules(published, 'earlier');
+  requireRules(independent, 'later');
   return compareRuns(
     { services: recompute(published), unmeasured: published.rules.divergenceUnmeasured },
     { services: recompute(independent), unmeasured: independent.rules.divergenceUnmeasured },

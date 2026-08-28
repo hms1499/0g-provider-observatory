@@ -81,7 +81,8 @@ async function main() {
   if (independent.schema !== published.schema) {
     console.log(
       YEL(`      schemas differ: ${published.schema} vs ${independent.schema}`) +
-        DIM(' — rules are read from each bundle, so this is reported, not fatal'),
+        DIM(' — rules are read from each bundle, so a difference here is reported, not fatal.') +
+        DIM('\n      A bundle that records no rules at all is refused, and that is fatal.'),
     );
   }
 
@@ -111,9 +112,11 @@ async function main() {
   for (const l of report.latency) {
     const [address, ...rest] = l.service.split(' ');
     const label = `${address.slice(0, 10)}… ${rest.join(' ')}`;
-    console.log(
-      `  ${label.slice(0, 42).padEnd(44)}${l.p50Ratio.toFixed(2).padStart(5)}x ${l.p95Ratio.toFixed(2).padStart(5)}x`,
-    );
+    // A dash, never `0.00x`: one of the two runs published no figure for this service, and
+    // printing a number for an absence would put a reading against a named operator that
+    // nobody took. Same mark this project uses everywhere else for "no figure here".
+    const show = (r: number | null) => (r === null ? '—'.padStart(6) : `${r.toFixed(2).padStart(5)}x`);
+    console.log(`  ${label.slice(0, 42).padEnd(44)}${show(l.p50Ratio)} ${show(l.p95Ratio)}`);
   }
 
   // ── 05 what could not be compared ─────────────────────────────────────────
