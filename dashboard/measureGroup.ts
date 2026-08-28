@@ -125,6 +125,52 @@ interface BundleProbe {
   expect?: string;
 }
 
+/**
+ * Refuse to run at all if the relay is not answering.
+ *
+ * `callPinned` never throws: an HTTP failure comes back as a `CallResult` with a status and
+ * an `errorKind`, which is right for a prober that must record what happened rather than
+ * stop. But a page served without its relay 404s every call, `not_found` is attributed to
+ * the *provider* by the bundle's own rules, and the panel then reports two named operators
+ * at a 100% error rate against a published run that saw none. Reproduced against epoch
+ * 496620: two services, two disagreements, `0 -> 10000` on both.
+ *
+ * That is the one output this project must never produce. It is an instrument, and the
+ * operators it names are real; a deployment fault of ours rendered as their failure is worse
+ * than no measurement at all.
+ *
+ * So the endpoint is asked whether it exists before the reader's key is spent on it. The
+ * relay exports only `POST`, so the platform answers a `GET` with 405 without the handler
+ * running — verified against the live deployment on 2026-08-26. A 404 is the endpoint not
+ * being there (`vite preview`, a build with no functions); a 200 is a static host rewriting
+ * an unknown path to the page itself. Anything else — 405, and any error the relay or the
+ * platform raises on its own — means something is answering as the relay, and the run goes
+ * ahead and reports whatever it finds.
+ *
+ * One request, no key, no upstream call, nothing billed. It costs a round trip to not
+ * slander somebody.
+ */
+async function requireRelay(baseUrl: string, fetchImpl: typeof fetch): Promise<void> {
+  // An absolute base is the Router itself rather than our relay, and has no such contract.
+  if (!baseUrl.startsWith('/')) return;
+
+  let status: number;
+  try {
+    status = (await fetchImpl(`${baseUrl}/chat/completions`, { method: 'GET' })).status;
+  } catch {
+    // The probe itself could not be sent. That is a fact about this browser's connection,
+    // not evidence the relay is missing, so it is not grounds to refuse.
+    return;
+  }
+
+  if (status !== 404 && status !== 200) return;
+  throw new Error(
+    `the measurement relay at ${baseUrl} is not answering (a GET returned ${status}, and the ` +
+      `relay answers 405) — this page is being served without its functions, so every call ` +
+      `would fail in a way the rules charge to the provider. Nothing was sent`,
+  );
+}
+
 export async function measureGroup(args: {
   bundle: VerifiableBundle;
   canonicalId: string;
@@ -132,6 +178,8 @@ export async function measureGroup(args: {
   baseUrl?: string;
   onProgress?: (p: MeasureProgress) => void;
   call?: typeof callPinned;
+  /** Injected so the relay check can be tested without a network. */
+  fetchImpl?: typeof fetch;
 }): Promise<{ live: ComparableService[]; report: ReproduceReport }> {
   const call = args.call ?? callPinned;
   const baseUrl = args.baseUrl ?? '/api/router';
@@ -160,6 +208,10 @@ export async function measureGroup(args: {
         `bundle would be measuring a different experiment`,
     );
   }
+
+  // Last, after the refusals above: those are about the evidence and cost nothing to check,
+  // and a bundle this panel cannot replay should say so whether or not a relay is running.
+  await requireRelay(baseUrl, args.fetchImpl ?? fetch);
 
   const total = services.length * probes.length;
   let done = 0;

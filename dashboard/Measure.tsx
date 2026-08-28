@@ -9,6 +9,7 @@ import { measurableGroups, measureGroup } from './measureGroup.js';
 import { formatTokens, formatUsd, groupUsage, type PriceTable } from './estimate.js';
 import { Bar, MastheadSkeleton } from './Skeleton.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
+import { newestEpoch } from './selectEpoch.js';
 
 const GATEWAY_TIMEOUT_MS = 30_000;
 
@@ -27,7 +28,10 @@ function show(value: string | number): string {
  * says so above the input rather than burying it.
  */
 export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }) {
-  const newest = props.epochs.at(-1);
+  // The largest, not the last returned: `epochsOf` hands back the order the ledger was
+  // written in, which is a fact about how it filled rather than a promise about which
+  // number is newest.
+  const newest = newestEpoch(props.epochs) ?? undefined;
   const [bundle, setBundle] = useState<VerifiableBundle | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
@@ -143,6 +147,19 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
     if (!bundle || !selected) return null;
     return groupUsage(bundle.results as any, bundle.roster as any, selected.canonicalId, prices);
   }, [bundle, selected, prices]);
+
+  /*
+   * A report belongs to one group of one epoch. Clear it the moment either changes.
+   *
+   * Without this a reader who ran `glm-5.2`, then moved the picker to another model, kept
+   * the first group's table on screen underneath a masthead that had already switched to the
+   * second — a measurement of one set of services presented under the name of another. The
+   * same held when a new epoch was published while the tab sat open.
+   */
+  useEffect(() => {
+    setReport(null);
+    setRunError(null);
+  }, [selected?.canonicalId, newest]);
 
   async function run() {
     if (!bundle || !selected) return;
@@ -283,12 +300,15 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
         </>
       )}
 
+      {/* Every message that reaches here says what happened and why on its own — the relay
+          check, the two refusals in `measureGroup`. This used to sniff the text for `404` to
+          decide which explanation to append, which could not fire: `callPinned` returns an
+          HTTP failure as a result rather than throwing, so no status ever reached this
+          string. The relay is checked before the run now, and says so in its own words. */}
       {runError && (
         <p>
-          The run stopped: {runError}.{' '}
-          {runError.includes('404')
-            ? 'A 404 here means the page is being served without its relay — that endpoint only exists on a real deployment or under `vercel dev`.'
-            : 'This is a run failure, not a disagreement between the measurements.'}
+          The run stopped: {runError}. This is a run failure, not a disagreement between the
+          measurements.
         </p>
       )}
 

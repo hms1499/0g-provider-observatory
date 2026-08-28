@@ -135,6 +135,84 @@ describe('measureGroup', () => {
   });
 });
 
+/**
+ * A page served without its relay 404s every call. `not_found` is charged to the provider by
+ * the bundle's own rules, so the panel would report every named operator in the group at a
+ * 100% error rate against a published run that saw none — an indictment manufactured out of
+ * our own deployment fault. Reproduced against epoch 496620 before this check existed.
+ */
+describe('measureGroup · the relay has to be there first', () => {
+  const respond = (status: number) => async () => new Response(null, { status });
+
+  it('refuses when the endpoint is not there, and sends nothing', async () => {
+    let calls = 0;
+    await assert.rejects(
+      measureGroup({
+        bundle,
+        canonicalId: 'qwen3-vl-30b',
+        apiKey: 'sk-test',
+        call: async (opts: any) => {
+          calls += 1;
+          return perfectCall(opts);
+        },
+        fetchImpl: respond(404) as unknown as typeof fetch,
+      }),
+      /is not answering .a GET returned 404/,
+    );
+    assert.equal(calls, 0, 'not one probe may be sent');
+  });
+
+  it('refuses a static host that rewrites the unknown path to the page itself', async () => {
+    await assert.rejects(
+      measureGroup({
+        bundle,
+        canonicalId: 'qwen3-vl-30b',
+        apiKey: 'sk-test',
+        call: perfectCall,
+        fetchImpl: respond(200) as unknown as typeof fetch,
+      }),
+      /is not answering/,
+    );
+  });
+
+  it('runs when the relay answers a GET the way it is built to — 405', async () => {
+    const { report } = await measureGroup({
+      bundle,
+      canonicalId: 'qwen3-vl-30b',
+      apiKey: 'sk-test',
+      call: perfectCall,
+      fetchImpl: respond(405) as unknown as typeof fetch,
+    });
+    assert.ok(report.compared > 0);
+  });
+
+  it('runs when the check itself could not be sent — that says nothing about the relay', async () => {
+    const { report } = await measureGroup({
+      bundle,
+      canonicalId: 'qwen3-vl-30b',
+      apiKey: 'sk-test',
+      call: perfectCall,
+      fetchImpl: (async () => {
+        throw new TypeError('network error');
+      }) as unknown as typeof fetch,
+    });
+    assert.ok(report.compared > 0);
+  });
+
+  it('checks the evidence before the relay, so an unreplayable bundle says so either way', async () => {
+    await assert.rejects(
+      measureGroup({
+        bundle,
+        canonicalId: 'no-such-model',
+        apiKey: 'sk-test',
+        call: perfectCall,
+        fetchImpl: respond(404) as unknown as typeof fetch,
+      }),
+      /no services in this epoch serve/,
+    );
+  });
+});
+
 describe('measurableGroups', () => {
   it('marks a group replayable when the published run measured every provider of it', () => {
     const choices = measurableGroups(bundle);
