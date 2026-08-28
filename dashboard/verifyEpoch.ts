@@ -6,9 +6,25 @@ import { bundleUrl, type NetworkConfig } from './networks.js';
 import { shortAddress } from './rows.js';
 
 export interface VerifyStep {
+  /** What this stage did, in one short phrase. Reads down a column, so it stays short. */
   label: string;
   status: 'pending' | 'ok' | 'fail';
+  /** The artifact this stage produced or the reason it could not. */
   detail?: string;
+}
+
+/**
+ * The two roots the whole check turns on: what the record committed to, and what the bytes
+ * that came back actually hash to.
+ *
+ * Structured rather than left inside a step's `detail` string, because the panel sets them
+ * against each other character by character and cannot do that with a sentence. `computed`
+ * is null when the bytes never arrived or could not be hashed — a missing comparison, not a
+ * failed one, and the two read differently on the page.
+ */
+export interface EvidenceRoots {
+  committed: string;
+  computed: string | null;
 }
 
 export interface VerifyOutcome {
@@ -16,6 +32,7 @@ export interface VerifyOutcome {
   findings: Finding[];
   checked: number;
   verdict: 'verified' | 'failed';
+  evidence?: EvidenceRoots;
 }
 
 /**
@@ -33,9 +50,10 @@ export async function verifyEpochInBrowser(args: {
   fetchBytes: (url: string) => Promise<string>;
 }): Promise<VerifyOutcome> {
   const steps: VerifyStep[] = [];
+  const evidence: EvidenceRoots = { committed: args.epoch.storageRoot, computed: null };
   const fail = (label: string, detail: string): VerifyOutcome => {
     steps.push({ label, status: 'fail', detail });
-    return { steps, findings: [], checked: 0, verdict: 'failed' };
+    return { steps, findings: [], checked: 0, verdict: 'failed', evidence };
   };
 
   let bytes: string;
@@ -44,13 +62,13 @@ export async function verifyEpochInBrowser(args: {
     // The indexer answers a missing file with HTTP 200 and an error envelope.
     const maybe = bytes.startsWith('{') ? safeParse(bytes) : null;
     if (maybe && typeof maybe.code === 'number' && maybe.code !== 0) {
-      return fail('the evidence is fetchable', String(maybe.message ?? 'not found'));
+      return fail('fetched from 0G Storage', String(maybe.message ?? 'not found'));
     }
   } catch (e: any) {
-    return fail('the evidence is fetchable', String(e?.message ?? e));
+    return fail('fetched from 0G Storage', String(e?.message ?? e));
   }
   steps.push({
-    label: 'the evidence is fetchable',
+    label: 'fetched from 0G Storage',
     status: 'ok',
     detail: `${(bytes.length / 1024).toFixed(0)} KB through the public gateway, no wallet`,
   });
@@ -62,17 +80,24 @@ export async function verifyEpochInBrowser(args: {
     // A throw here means the bytes could not be hashed at all, not that reading the epoch
     // failed — that distinction matters, so it must not fall through to the caller's
     // generic "read the epoch from chain" handler.
-    return fail('the merkle root of the bytes matches the record', String(e?.message ?? e));
+    return fail('hashed to the root the record committed to', String(e?.message ?? e));
   }
+  // Recorded before it is judged, so the panel can set the two roots against each other
+  // whether they agree or not — a mismatch is the case the comparison exists for.
+  evidence.computed = root;
   if (root.toLowerCase() !== args.epoch.storageRoot.toLowerCase()) {
-    return fail('the merkle root of the bytes matches the record', root);
+    return fail('hashed to the root the record committed to', 'the two roots differ');
   }
-  steps.push({ label: 'the merkle root of the bytes matches the record', status: 'ok', detail: root });
+  steps.push({
+    label: 'hashed to the root the record committed to',
+    status: 'ok',
+    detail: 'shown above, character for character',
+  });
 
   const bundle = safeParse(bytes) as VerifiableBundle | null;
-  if (!bundle) return fail('the evidence is readable', 'not valid JSON');
+  if (!bundle) return fail('parsed as an evidence bundle', 'not valid JSON');
   steps.push({
-    label: 'the evidence is readable',
+    label: 'parsed as an evidence bundle',
     status: 'ok',
     detail: `${bundle.schema}, ${bundle.results.length} calls`,
   });
@@ -89,7 +114,7 @@ export async function verifyEpochInBrowser(args: {
   const sameEpoch = bundle.epoch === args.epoch.epoch;
   const sameProber = bundle.prober.toLowerCase() === args.epoch.prober.toLowerCase();
   steps.push({
-    label: 'the evidence claims this epoch and prober',
+    label: 'claims this epoch and this prober',
     status: sameEpoch && sameProber ? 'ok' : 'fail',
     detail: claimDetail(
       { epoch: bundle.epoch, prober: bundle.prober },
@@ -109,6 +134,7 @@ export async function verifyEpochInBrowser(args: {
     findings,
     checked,
     verdict: blocking.length === 0 && !anyStepFailed ? 'verified' : 'failed',
+    evidence,
   };
 }
 

@@ -39,7 +39,11 @@ describe('verifyEpochInBrowser', () => {
       fetchBytes: async () => '{"code":101,"message":"File not found","data":null}',
     });
     assert.equal(out.verdict, 'failed');
-    assert.equal(out.steps.find((s) => s.status === 'fail')?.label.includes('evidence'), true);
+    assert.match(out.steps.find((s) => s.status === 'fail')?.label ?? '', /fetched/);
+    // The bytes never arrived, so there is nothing to set against the committed root. That
+    // is a comparison the panel cannot make, not one it made and lost.
+    assert.equal(out.evidence?.computed, null);
+    assert.equal(out.evidence?.committed, '0xdead');
   });
 
   it('fails when the bytes returned do not hash to the committed root', async () => {
@@ -50,7 +54,11 @@ describe('verifyEpochInBrowser', () => {
       fetchBytes: async () => `${BUNDLE} tampered`,
     });
     assert.equal(out.verdict, 'failed');
-    assert.ok(out.steps.some((s) => s.status === 'fail' && /merkle/i.test(s.label)));
+    assert.ok(out.steps.some((s) => s.status === 'fail' && /hashed to the root/i.test(s.label)));
+    // Both roots are carried out, because the panel sets them against each other character by
+    // character and a mismatch is the case that comparison exists for.
+    assert.equal(out.evidence?.committed, ROOT);
+    assert.ok(out.evidence?.computed && out.evidence.computed !== ROOT);
   });
 
   it('recomputes a real epoch and reaches a verdict without a wallet', async () => {
@@ -111,5 +119,16 @@ describe('verifyEpochInBrowser', () => {
     const step = out.steps.find((s) => /claims this epoch/i.test(s.label));
     assert.equal(step?.status, 'ok');
     assert.equal(step?.detail, 'epoch 496516, prober 0xaBaCa14B…34DB');
+  });
+
+  it('carries both roots out on a clean run, identical', async () => {
+    const out = await verifyEpochInBrowser({
+      epoch: epochRecord(),
+      providers: providersFromBundle(),
+      net: { ...NETWORKS.testnet, indexerUrl: 'https://indexer.example' },
+      fetchBytes: async () => BUNDLE,
+    });
+    assert.equal(out.evidence?.committed, ROOT);
+    assert.equal(out.evidence?.computed, ROOT);
   });
 });

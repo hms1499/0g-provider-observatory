@@ -1108,45 +1108,23 @@ ul:has(> li > button) button:disabled {
   cursor: default;
 }
 
-/* The verification trace. */
-ol {
-  list-style: none;
-  padding: 0;
-  margin: 1.25rem 0;
-  border-left: 1px solid var(--rule);
-}
-
-ol li {
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  padding: 0.3rem 0 0.3rem 1rem;
-  color: var(--muted);
-}
-
-ol li span {
-  color: var(--faint);
-  word-break: break-all;
-}
-
 /*
- * The one place colour means something. It reports the outcome of a check, not a
- * quality of whoever was measured.
+ * Deleted here, and worth saying why rather than leaving a gap.
+ *
+ * A bare `ol`, `ol li`, `ol li span` and `[data-status]` used to live at this point in the
+ * file. They dressed the verification trace, which was the only `<ol>` on the site and the
+ * only carrier of that attribute — so element and attribute selectors read as harmless
+ * shorthand for "the log".
+ *
+ * They were not. When the trace became `.custody` and `data-status` moved from a badge onto
+ * the list item, `[data-status]` made every stage `display: inline-block`, uppercase and
+ * 3.2rem wide: the four stages ran onto one line with their details concatenated
+ * ("…NO WALLETTHE TWO ROOTS DIFFER"). Nothing had changed in the rules; the markup walked
+ * into them.
+ *
+ * Both are scoped to `.custody` below. Style what a thing *is*, not what tag it happens to
+ * use — an unscoped element selector is a rule waiting for the next element of that type.
  */
-[data-status] {
-  display: inline-block;
-  min-width: 3.2rem;
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-[data-status='ok'] {
-  color: var(--ok);
-}
-
-[data-status='fail'] {
-  color: var(--fail);
-}
 
 /* ── caveats ────────────────────────────────────────────────────────────── */
 
@@ -1293,77 +1271,174 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* ── the verification log ───────────────────────────────────────────────────
+/* ── the two roots, and the chain that produced them ────────────────────────
  *
- * A checklist rendered as a log: status in a fixed column on the left so the eye runs down
- * one edge, the step in ink, its detail in slate underneath. This is the one panel where
- * colour is legitimate — it reports whether a check passed, which is a state, not a
- * judgement about whoever was measured.
+ * Verifying an epoch is one comparison: the ledger committed to a hash of its evidence, and
+ * either the bytes a public gateway just handed over hash to that same value or they do not.
+ * That comparison used to appear as an eleven-pixel detail line under the second item of a
+ * checklist, and the verdict sat in a box at the foot of the panel below a log the reader
+ * had already scrolled past. The answer is the opening now.
+ *
+ * Boldness is still spent exactly once — the project refuses to rank providers by emphasis,
+ * so the one loud thing on the site has to be the one claim it rests on. It is the hash pair
+ * rather than a stamp, because a stamp asserts and the pair shows.
  */
 
-.log ol {
-  border-left: 1px solid var(--rule);
-  margin: 1.5rem 0;
+.roots {
+  margin: 2rem 0 2.5rem;
+  padding: 1.5rem 1.75rem 1.25rem;
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--accent);
+  border-radius: 3px;
+  background: var(--panel);
 }
 
-.log ol li {
-  display: grid;
-  grid-template-columns: 3.5rem 1fr;
-  gap: 0.15rem 0.6rem;
-  padding: 0.4rem 0 0.4rem 1rem;
-  color: var(--ink);
-}
-
-.log ol li .what {
-  min-width: 0;
-}
-
-.log ol li .detail {
-  grid-column: 2;
+.roots .where {
+  margin: 0 0 1.25rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--faint);
-  word-break: break-all;
+}
+
+.roots .root + .root {
+  margin-top: 1.1rem;
+}
+
+.roots .caption {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 /*
- * The verdict, as a stamp.
+ * The hash itself. Groups of eight in a wrapping flex row, so both hashes break at the same
+ * points and a character always sits above its counterpart — which is what makes a single
+ * differing digit findable rather than a needle in sixty-four.
  *
- * Every other element on this page is deliberately quiet, because ranking providers by
- * emphasis is the thing the project refuses to do. Boldness is spent once, here, on the
- * moment an outsider's recomputation agrees with what was published — which is the argument
- * the project rests on rather than a number about anyone.
+ * `clamp` rather than a fixed size: this is the largest type on the site and it still has to
+ * fit two groups across a phone without the row scrolling.
  */
-.stamp {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  margin: 1.75rem 0;
-  padding: 0.9rem 1.4rem;
-  border: 2px solid currentColor;
-  border-radius: 3px;
-  max-width: none;
-}
-
-.stamp[data-verdict='verified'] {
-  color: var(--ok);
-}
-
-.stamp[data-verdict='failed'] {
-  color: var(--fail);
-}
-
-.stamp .verdict {
+.roots .hash {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1ch;
   font-family: var(--mono);
-  font-size: 1.15rem;
+  font-size: clamp(0.95rem, 3.4vw, 1.3rem);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.roots .hash.absent {
+  color: var(--faint);
+}
+
+/* The one place on this site where a colour marks a value rather than a state — and it is
+   still a state: these characters are the ones that did not match. */
+.roots .hash .differs {
+  color: var(--fail);
   font-weight: 600;
-  letter-spacing: 0.18em;
+}
+
+.roots .reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 1rem;
+  margin: 1.4rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.roots .verdict {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.stamp .census {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+.roots[data-verdict='verified'] .verdict {
+  color: var(--ok);
+}
+
+.roots[data-verdict='failed'] .verdict {
+  color: var(--fail);
+}
+
+.roots .census {
+  font-size: 0.85rem;
   color: var(--muted);
+}
+
+/*
+ * The chain of custody.
+ *
+ * Each stage consumes what the one above produced, so it is drawn as a chain: a spine with a
+ * node per stage. The `ok` column is gone. Four ticks and a verdict said the same thing five
+ * times, and a stage that failed is legible without one — it is the only coloured node, and
+ * its detail says what went wrong.
+ */
+.custody {
+  list-style: none;
+  margin: 0 0 2rem;
+  padding: 0 0 0 1.4rem;
+  border-left: 1px solid var(--rule);
+}
+
+.custody li {
+  position: relative;
+  padding: 0 0 1rem;
+}
+
+.custody li:last-child {
+  padding-bottom: 0;
+}
+
+/* The node. Sits on the spine, drawn in the ground colour so the line does not run through
+   it — a join, not a bullet. */
+.custody li::before {
+  content: '';
+  position: absolute;
+  left: calc(-1.4rem - 3px);
+  top: 0.42rem;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+
+.custody li[data-status='fail']::before {
+  background: var(--fail);
+}
+
+.custody .what {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.custody li[data-status='fail'] .what {
+  color: var(--fail);
+}
+
+.custody .detail {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--faint);
+  word-break: break-word;
+}
+
+/* The status is on the item, and it changes the item's ink and its node on the spine — never
+   its layout. It replaced a badge that occupied a column of its own and said `ok` four times
+   in a row beside four lines that had already said so. */
+.custody li[data-status='ok'] .what {
+  color: var(--ink);
 }
 
 /* Advisories: named against the service they concern, never dressed as a verdict. */
