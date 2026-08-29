@@ -10,6 +10,7 @@ import { SiteFooter } from './SiteFooter.js';
 import { SiteHeader, type Panel } from './SiteHeader.js';
 import { ProvidersSkeleton } from './Skeleton.js';
 import { useEpochTxHash, useObservatory } from './useObservatory.js';
+import { apply, readTheme, writeTheme, type Theme } from './theme.js';
 import { formatHash, parseHash } from './urlState.js';
 import { Verify } from './Verify.js';
 
@@ -25,6 +26,23 @@ export default function App() {
    * it, which is a flash of the wrong epoch on exactly the link that names one.
    */
   const [initial] = useState(() => parseHash(window.location.hash));
+
+  /*
+   * Which ground the page is drawn on.
+   *
+   * Read at the first render for the same reason the view is: `index.html` has already put the
+   * attribute on the document before the first paint, and starting from the default here would
+   * mean the switch showed `system` for a moment on a page the reader had set to dark.
+   *
+   * It is not in the address bar. The hash carries what a reader might send someone — a chain,
+   * a section, an epoch — and none of them is a preference about the light in the room the
+   * link is opened in.
+   */
+  const [theme, setTheme] = useState<Theme>(() => readTheme(window.localStorage));
+  useEffect(() => {
+    apply(document.documentElement, theme);
+    writeTheme(window.localStorage, theme);
+  }, [theme]);
   const [key, setKey] = useState<NetworkKey>(initial.network);
   const [panel, setPanel] = useState<Panel>(initial.panel);
   const net = NETWORKS[key];
@@ -129,7 +147,14 @@ export default function App() {
 
   return (
     <>
-      <SiteHeader network={key} onNetwork={setKey} panel={panel} onPanel={setPanel} />
+      <SiteHeader
+        network={key}
+        onNetwork={setKey}
+        panel={panel}
+        onPanel={setPanel}
+        theme={theme}
+        onTheme={setTheme}
+      />
 
       <main>
         {net.seeded && (

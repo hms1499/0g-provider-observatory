@@ -3,6 +3,31 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      The reader's chosen ground, on the document before anything is painted.
+
+      First in the head, above every stylesheet, and that position is the whole point. A classic
+      script blocks on any stylesheet declared before it, because it might ask for a computed
+      style — so placed after the font link this would have waited on fonts.googleapis.com to
+      answer before it could set an attribute that needs nothing from the network. This page's
+      claim is that it does not depend on us; it should not depend on Google's CDN to come up on
+      the ground its reader asked for either.
+
+      React applies the same choice in an effect, and an effect runs after the first paint: a
+      reader who has asked for the dark ground would get one frame of white page on every load.
+
+      Deliberately duplicated rather than imported. A module — even inline — is deferred, which
+      is exactly the frame this exists to remove. The key and the three values it accepts are
+      `dashboard/theme.ts`; if either changes, this changes with it. Anything unrecognised, and
+      any browser that throws on storage rather than returning null, leaves no attribute at all,
+      which is `system` and is the honest default.
+    -->
+    <script>
+      try {
+        var t = localStorage.getItem('observatory:theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!--
       IBM Plex is the design doc's face, so the page and the doc read as one instrument.

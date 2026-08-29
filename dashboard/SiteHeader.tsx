@@ -1,4 +1,5 @@
 import { NETWORKS, type NetworkKey } from './networks.js';
+import { THEMES, type Theme } from './theme.js';
 
 /**
  * The tab icon's glyph, inline. The mark on the page and the mark in the browser tab being the
@@ -49,6 +50,8 @@ export function SiteHeader(props: {
   onNetwork: (key: NetworkKey) => void;
   panel: Panel;
   onPanel: (panel: Panel) => void;
+  theme: Theme;
+  onTheme: (theme: Theme) => void;
 }) {
   const tabs: Array<{ id: Panel; label: string }> = [
     { id: 'providers', label: 'Providers' },
@@ -68,21 +71,57 @@ export function SiteHeader(props: {
           </div>
         </div>
 
-        <div className="chain">
-          <span className="label" id="chain-label">
-            reading
-          </span>
-          <div className="switch" role="group" aria-labelledby="chain-label">
-            {(['mainnet', 'testnet'] as NetworkKey[]).map((k) => (
-              <button
-                key={k}
-                onClick={() => props.onNetwork(k)}
-                aria-pressed={k === props.network}
-                title={`${NETWORKS[k].name} · chain ${NETWORKS[k].chainId}`}
-              >
-                {k}
-              </button>
-            ))}
+        <div className="settings">
+          <div className="chain">
+            <span className="label" id="chain-label">
+              reading
+            </span>
+            <div className="switch" role="group" aria-labelledby="chain-label">
+              {(['mainnet', 'testnet'] as NetworkKey[]).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => props.onNetwork(k)}
+                  aria-pressed={k === props.network}
+                  title={`${NETWORKS[k].name} · chain ${NETWORKS[k].chainId}`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/*
+            Which ground the page is drawn on.
+
+            Three states rather than a toggle, and `system` is one of them. A two-way switch
+            decides for the reader the first time they load the page — whatever it happens to
+            be showing becomes a choice they did not make, with no way back to "whatever my
+            system says", which is the state most readers want.
+
+            It sits under the chain switch and reads as the lesser of the two, because it is:
+            the chain changes what every figure below means, and this changes nothing but the
+            light it is read in.
+          */}
+          <div className="ground">
+            <span className="label" id="ground-label">
+              ground
+            </span>
+            <div className="switch" role="group" aria-labelledby="ground-label">
+              {THEMES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => props.onTheme(t)}
+                  aria-pressed={t === props.theme}
+                  title={
+                    t === 'system'
+                      ? 'Follow the system setting, and keep following it'
+                      : `Always draw this page on ${t === 'dark' ? 'the night' : 'the paper'} ground`
+                  }
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -46,24 +46,77 @@
 
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, sans-serif;
+
+  /*
+   * The night ground, held as values rather than applied.
+   *
+   * The same hues under a dark page: verdigris lifted enough to stay readable, the paper
+   * inverted to the ink's own family rather than to a neutral black. The same three tiers of
+   * ink and the same rule, measured against --panel #171d25 which is the LIGHTER ground here
+   * and therefore the harder one: ink 13.8:1, muted 8.1:1, faint 5.1:1.
+   *
+   * They are declared here, once, because two selectors have to apply them — the reader's
+   * system preference, and the reader's own choice — and one of those lives inside a media
+   * query, so the two cannot be written as one rule. Only the assignments are repeated below.
+   * Writing the hex twice is how a palette drifts into two palettes that disagree by a digit.
+   */
+  --night-bg: #10141a;
+  --night-panel: #171d25;
+  --night-ink: #e6e8e5;
+  --night-muted: #aab5c0;
+  --night-faint: #828e9b;
+  --night-rule: #2a333d;
+  --night-accent: #5fb3bd;
+  --night-ok: #6cbf95;
+  --night-fail: #e08a7d;
+
+  /*
+   * Which grounds this page is drawn for.
+   *
+   * Not decoration: it is what makes the browser draw a `<select>`, a scrollbar and a focus
+   * ring for the ground they sit on. Without it the epoch pickers on all four panels rendered
+   * as light controls on a dark page — the one part of the interface that was still on paper.
+   * Overridden below wherever the reader has chosen one ground rather than both.
+   */
+  color-scheme: light dark;
 }
 
+/*
+ * The dark ground, applied two ways.
+ *
+ * `system` is the default and has no attribute, so the media query is the rule for it — but it
+ * must not fire when a reader has explicitly asked for light, which is what the `:not` is for.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* The same hues under a night ground: verdigris lifted enough to stay readable, the
-     * paper inverted to the ink's own family rather than to a neutral black. */
-    --bg: #10141a;
-    --panel: #171d25;
-    --ink: #e6e8e5;
-    /* The same three tiers, same rule, measured against --panel #171d25 which is the LIGHTER
-       ground here and therefore the harder one: ink 13.8:1, muted 8.1:1, faint 5.1:1. */
-    --muted: #aab5c0;
-    --faint: #828e9b;
-    --rule: #2a333d;
-    --accent: #5fb3bd;
-    --ok: #6cbf95;
-    --fail: #e08a7d;
+  :root:not([data-theme='light']) {
+    --bg: var(--night-bg);
+    --panel: var(--night-panel);
+    --ink: var(--night-ink);
+    --muted: var(--night-muted);
+    --faint: var(--night-faint);
+    --rule: var(--night-rule);
+    --accent: var(--night-accent);
+    --ok: var(--night-ok);
+    --fail: var(--night-fail);
   }
+}
+
+/* And the reader's own choice, which wins in both directions whatever the system says. */
+:root[data-theme='dark'] {
+  --bg: var(--night-bg);
+  --panel: var(--night-panel);
+  --ink: var(--night-ink);
+  --muted: var(--night-muted);
+  --faint: var(--night-faint);
+  --rule: var(--night-rule);
+  --accent: var(--night-accent);
+  --ok: var(--night-ok);
+  --fail: var(--night-fail);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 * {
@@ -183,13 +236,37 @@ header.site .identity p {
   max-width: 34rem;
 }
 
-header.site .chain {
+/* The two things a reader can set, stacked and ordered by reach.
+ *
+ * The chain changes what every figure on the page means. The ground changes the light it is
+ * read in and nothing else, so it sits under, and both align right against the wordmark. */
+header.site .settings {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+header.site .chain,
+header.site .ground {
   display: flex;
   align-items: center;
   gap: 0.6rem;
 }
 
-header.site .chain .label {
+/* Quieter than the chain switch above it, at the same size. The choice of ground is a comfort
+   setting beside a control that decides which network's figures are on screen, and the header
+   should not present the two as equals. */
+header.site .ground .switch button {
+  font-size: 0.64rem;
+  padding: 0.22rem 0.55rem;
+}
+
+/* Both switch labels, not just the chain's. Scoped to `.chain` alone, "ground" came out in the
+   body face at reading size beside "READING" in small mono caps — two labels doing the same job
+   in two voices. */
+header.site .chain .label,
+header.site .ground .label {
   font-family: var(--mono);
   font-size: 0.62rem;
   letter-spacing: 0.14em;
@@ -275,7 +352,10 @@ header.site .tabs button[aria-pressed='true'] {
     display: none;
   }
 
-  header.site .chain .label {
+  /* Neither switch keeps its label at this width. `mainnet | testnet` and
+     `system | light | dark` both say what they are without one. */
+  header.site .chain .label,
+  header.site .ground .label {
     display: none;
   }
 
