@@ -48,6 +48,54 @@
   --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, sans-serif;
 
   /*
+   * The type scale.
+   *
+   * There were twenty-five distinct font sizes in this file. Seven of them sat between 0.62rem
+   * and 0.72rem and eleven between 0.75rem and 0.92rem — bands narrow enough that no reader
+   * could tell two neighbours apart, and every one of them was a separate decision somebody
+   * had to make again the next time they added a rule. That is not a scale, it is a pile.
+   *
+   * Six steps, each about a ninth larger than the last, named for the job rather than the
+   * size. Nothing here changes a size by more than about six percent, so the page reads as it
+   * did; what changes is that the next rule has six sizes to choose from instead of an open
+   * field, and the choice is a question about the content rather than about a number.
+   *
+   * The steps are `rem`, so they resolve against the root and grow with the reader's browser
+   * setting. `body` is 15px and does not move them — it is running text, not the anchor.
+   *
+   *   micro   annotations inside a drawing, tags, the smallest caps labels
+   *   label   caps that name a field: table headers, axis labels, section eyebrows, modes
+   *   meta    metadata beside a reading, definitions, and native controls
+   *   aside   secondary prose: notes, captions, the footer, table bodies
+   *   body    prose inside a panel
+   *   lead    the wordmark, and the sentences a panel opens with
+   *
+   * Three things stay off the scale, and each is off it for a reason. `body` is 15px because
+   * it is the base every step above is a fraction of. `code` is set in `em`, not `rem`, so
+   * inline code tracks whatever it is set inside rather than jumping to a fixed size in a
+   * caption. And the hash on the Verify panel is a clamp: two 64-character strings have to
+   * stay aligned character-under-character down to the narrowest screen, which is a fit
+   * problem rather than a reading-size one.
+   */
+  --t-micro: 0.62rem;
+  --t-label: 0.7rem;
+  --t-meta: 0.78rem;
+  --t-aside: 0.85rem;
+  --t-body: 0.95rem;
+  --t-lead: 1.05rem;
+
+  /*
+   * Tracking, which here is optical correction rather than style: uppercase mono at label
+   * sizes closes up, and these open it back out. Seven values became four, and what decides
+   * the step is how much of a label the text is, not how small it is — the wordmark is set at
+   * a reading size and still wants the caps treatment.
+   */
+  --track-label: 0.14em;
+  --track-caps: 0.1em;
+  --track-mono: 0.08em;
+  --track-tight: 0.04em;
+
+  /*
    * The night ground, held as values rather than applied.
    *
    * The same hues under a dark page: verdigris lifted enough to stay readable, the paper
@@ -138,6 +186,10 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
+  /* Running text, and the one size in this file written as a length rather than a step.
+     `html` is left alone deliberately: `rem` resolves against the root, so every step of the
+     scale above is a fraction of whatever the reader has set their browser to, and the whole
+     page grows with it. Overriding `html` would pin the scale and take that away. */
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -161,6 +213,8 @@ main {
  */
 code {
   font-family: var(--mono);
+  /* `em`, deliberately off the scale: inline code sits in prose of several sizes and should
+     track whatever it is set inside rather than jump to a fixed size in a caption. */
   font-size: 0.92em;
   white-space: nowrap;
 }
@@ -222,16 +276,16 @@ header.site .mark {
 
 header.site h1 {
   font-family: var(--mono);
-  font-size: 1rem;
+  font-size: var(--t-lead);
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   margin: 0;
 }
 
 header.site .identity p {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
   margin: 0.15rem 0 0;
   max-width: 34rem;
 }
@@ -258,7 +312,7 @@ header.site .ground {
    setting beside a control that decides which network's figures are on screen, and the header
    should not present the two as equals. */
 header.site .ground .switch button {
-  font-size: 0.64rem;
+  font-size: var(--t-micro);
   padding: 0.22rem 0.55rem;
 }
 
@@ -268,8 +322,8 @@ header.site .ground .switch button {
 header.site .chain .label,
 header.site .ground .label {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -284,8 +338,8 @@ header.site .switch {
 
 header.site .switch button {
   font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-tight);
   color: var(--muted);
   background: transparent;
   border: none;
@@ -314,8 +368,8 @@ header.site .tabs {
 
 header.site .tabs button {
   font-family: var(--mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  font-size: var(--t-meta);
+  letter-spacing: var(--track-tight);
   color: var(--muted);
   background: none;
   border: none;
@@ -360,7 +414,7 @@ header.site .tabs button[aria-pressed='true'] {
   }
 
   header.site h1 {
-    font-size: 0.82rem;
+    font-size: var(--t-aside);
   }
 
   header.site .tabs {
@@ -443,9 +497,9 @@ footer.site .cols {
 
 footer.site h2 {
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--ink);
   margin: 0 0 0.6rem;
@@ -453,9 +507,9 @@ footer.site h2 {
 
 footer.site h3 {
   font-family: var(--mono);
-  font-size: 0.66rem;
+  font-size: var(--t-micro);
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--faint);
   margin: 0 0 0.7rem;
@@ -463,7 +517,7 @@ footer.site h3 {
 
 footer.site p {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
   margin: 0 0 0.7rem;
   max-width: 34rem;
 }
@@ -475,7 +529,7 @@ footer.site .stance {
 footer.site dl {
   margin: 0;
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: var(--t-label);
 }
 
 /*
@@ -496,7 +550,7 @@ footer.site dl > div:last-child {
 
 footer.site dt {
   color: var(--faint);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-tight);
 }
 
 footer.site dd {
@@ -519,9 +573,9 @@ footer.site dd a:hover {
 
 h2 {
   font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: var(--t-meta);
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--muted);
   margin: 0 0 0.75rem;
@@ -589,27 +643,27 @@ a {
 
 .masthead .label {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--faint);
 }
 
 .masthead .value {
   font-family: var(--mono);
-  font-size: 0.92rem;
+  font-size: var(--t-body);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
 .masthead .provenance .value {
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
   color: var(--muted);
 }
 
 .masthead .of {
   color: var(--faint);
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
 }
 
 /* ── consistency groups ─────────────────────────────────────────────────── */
@@ -625,7 +679,7 @@ article h3 {
   justify-content: space-between;
   gap: 0.5rem;
   font-family: var(--mono);
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
   font-weight: 500;
   border-bottom: 1px solid var(--rule);
   padding-bottom: 0.4rem;
@@ -643,15 +697,15 @@ article h3 a:hover {
 
 /* The census line: how many providers, and which guarantee modes are in the group. */
 article h3 span {
-  font-size: 0.75rem;
+  font-size: var(--t-meta);
   color: var(--faint);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-tight);
   white-space: nowrap;
 }
 
 /* The model is the heading here, so it gets the ink the address used to have. */
 article h3 .model {
-  font-size: 0.95rem;
+  font-size: var(--t-body);
   letter-spacing: 0;
   color: var(--ink);
   white-space: normal;
@@ -665,8 +719,8 @@ article h3 .model {
  */
 .reference {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--faint);
   border: 1px solid var(--rule);
@@ -678,7 +732,7 @@ article h3 .model {
 
 /* The measurement gap. Visibly present, clearly not data. */
 article > p {
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   font-style: italic;
   color: var(--faint);
   max-width: 52rem;
@@ -691,7 +745,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--mono);
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   font-variant-numeric: tabular-nums;
   display: block;
   overflow-x: auto;
@@ -701,8 +755,8 @@ table {
 th {
   text-align: right;
   font-weight: 500;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-mono);
   text-transform: uppercase;
   color: var(--faint);
   padding: 0.4rem 0.9rem 0.4rem 0;
@@ -850,7 +904,7 @@ td.dur .tick {
   align-items: center;
   gap: 1.2rem;
   padding: 0.35rem 0;
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -906,7 +960,7 @@ td.spark .at {
 
 td.spark .none {
   color: var(--faint);
-  font-size: 0.72rem;
+  font-size: var(--t-label);
 }
 
 /* A figure that is not there yet, or deliberately withheld. Muted rather than coloured:
@@ -931,7 +985,7 @@ td.spark .none {
 
 .epoch-picker select {
   font-family: var(--mono);
-  font-size: 0.95rem;
+  font-size: var(--t-body);
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--rule);
@@ -947,7 +1001,7 @@ td.spark .none {
 
 .epoch-picker .of {
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: var(--t-label);
   color: var(--faint);
 }
 
@@ -1013,8 +1067,8 @@ td.spark .none {
 
   table.readings tbody td::before {
     content: attr(data-label);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
+    font-size: var(--t-label);
+    letter-spacing: var(--track-mono);
     text-transform: uppercase;
     color: var(--faint);
     text-align: left;
@@ -1025,7 +1079,7 @@ td.spark .none {
     display: block;
     padding: 0 0 0.45rem;
     text-align: left;
-    font-size: 0.86rem;
+    font-size: var(--t-aside);
   }
 
   /* A duration keeps its track, which now spans the card under the label and figure. */
@@ -1066,16 +1120,16 @@ td.spark .none {
 
 .gaps h3 {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-mono);
   text-transform: uppercase;
   color: var(--faint);
   margin: 0 0 0.5rem;
 }
 
 .gaps > p {
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   color: var(--muted);
   max-width: 52rem;
   margin: 0 0 1rem;
@@ -1084,7 +1138,7 @@ td.spark .none {
 .gaps dl {
   margin: 0;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
 }
 
 .gaps dl > div {
@@ -1121,7 +1175,7 @@ td.spark .none {
 
 /* A note about what a block cannot show, not a measurement it is withholding. */
 .aside {
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   font-style: italic;
   color: var(--faint);
   max-width: 52rem;
@@ -1137,8 +1191,8 @@ td.spark .none {
 [data-mode] {
   display: inline-block;
   font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-tight);
   padding: 0.08rem 0.4rem;
   border-radius: 2px;
   color: var(--muted);
@@ -1180,7 +1234,7 @@ ul:has(> li > button) li {
 
 ul:has(> li > button) button {
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--rule);
@@ -1258,8 +1312,8 @@ ul:has(> li > button) button:disabled {
   gap: 0.5rem;
   margin: 0 0 1.25rem;
   font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-mono);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -1273,14 +1327,14 @@ ul:has(> li > button) button:disabled {
 .lede .where .epoch-picker select {
   min-width: 0;
   padding: 0.1rem 0.3rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-tight);
 }
 
 .lede .reach,
 .lede .compare {
   margin: 0 0 0.6rem;
-  font-size: 1.05rem;
+  font-size: var(--t-lead);
   line-height: 1.5;
   color: var(--ink);
 }
@@ -1320,9 +1374,9 @@ ul:has(> li > button) button:disabled {
 .lede .found h2 {
   margin: 0 0 0.6rem;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -1339,14 +1393,14 @@ ul:has(> li > button) button:disabled {
 
 .lede .found .note {
   margin: 0.75rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
   color: var(--muted);
 }
 
 .lede .provenance {
   margin: 0;
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--t-meta);
   line-height: 1.7;
   color: var(--faint);
 }
@@ -1360,9 +1414,11 @@ ul:has(> li > button) button:disabled {
     padding-left: 1rem;
   }
 
+  /* One step down, not the hair the raw values used to differ by. These two sentences are the
+     largest text on a 390px screen and at the lead size they take five lines each. */
   .lede .reach,
   .lede .compare {
-    font-size: 1rem;
+    font-size: var(--t-body);
   }
 }
 
@@ -1447,8 +1503,8 @@ ul:has(> li > button) button:disabled {
 
 .ruler .mark-label {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-mono);
   color: var(--faint);
   white-space: nowrap;
   pointer-events: none;
@@ -1478,8 +1534,8 @@ ul:has(> li > button) button:disabled {
   padding: 0 0.4rem;
   background: var(--bg);
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-mono);
   color: var(--faint);
   white-space: nowrap;
   pointer-events: none;
@@ -1525,14 +1581,14 @@ ul:has(> li > button) button:disabled {
   gap: 1rem;
   margin: 0.4rem 0 0;
   font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-tight);
   color: var(--faint);
 }
 
 .ruler .axis-labels .span {
   text-align: center;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--track-tight);
 }
 
 /* One reading is not a series, so it is set as the number it is rather than as a chart. */
@@ -1595,9 +1651,9 @@ ul:has(> li > button) button:disabled {
 }
 
 h3 {
-  font-size: 0.8rem;
+  font-size: var(--t-meta);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--track-tight);
   color: var(--muted);
   margin: 1.75rem 0 0.5rem;
 }
@@ -1616,13 +1672,13 @@ dl div {
 
 dt {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--t-meta);
   color: var(--ink);
 }
 
 dd {
   margin: 0;
-  font-size: 0.87rem;
+  font-size: var(--t-aside);
   color: var(--muted);
   max-width: 44rem;
 }
@@ -1633,7 +1689,7 @@ dd {
 }
 
 .caveats li {
-  font-size: 0.87rem;
+  font-size: var(--t-aside);
   color: var(--muted);
   margin: 0.5rem 0;
 }
@@ -1683,7 +1739,7 @@ details p {
 
 pre {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--t-meta);
   line-height: 1.7;
   color: var(--ink);
   background: var(--bg);
@@ -1707,10 +1763,27 @@ label {
   color: var(--muted);
 }
 
+/*
+ * Buttons take the page's type, and nothing else.
+ *
+ * A bare button falls to the user agent's own default — 13.33px in the system sans on Chrome —
+ * which is a size on no scale and a face used nowhere else here. It was reaching the primary
+ * action on the Measure panel and every hit area on the series strip.
+ *
+ * Type only, deliberately: the rule below carries a border, a background and an 18rem
+ * min-width, which belong to a text field and a dropdown and would be absurd on a tab or on a
+ * 6px hit area. Rules that name a button by class still win on specificity, so the switches
+ * and the tabs keep the sizes they were given.
+ */
+button {
+  font-family: var(--mono);
+  font-size: var(--t-meta);
+}
+
 input[type='password'],
 select {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--t-meta);
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--rule);
@@ -1753,8 +1826,8 @@ button:disabled {
 .roots .where {
   margin: 0 0 1.25rem;
   font-family: var(--mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-mono);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -1766,7 +1839,7 @@ button:disabled {
 .roots .caption {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: 0.8rem;
+  font-size: var(--t-meta);
   color: var(--muted);
 }
 
@@ -1783,7 +1856,7 @@ button:disabled {
   flex-wrap: wrap;
   gap: 0.15rem 1ch;
   font-family: var(--mono);
-  font-size: clamp(0.95rem, 3.4vw, 1.3rem);
+  font-size: clamp(var(--t-body), 3.4vw, 1.3rem);
   line-height: 1.45;
   color: var(--ink);
 }
@@ -1811,9 +1884,9 @@ button:disabled {
 
 .roots .verdict {
   font-family: var(--mono);
-  font-size: 0.95rem;
+  font-size: var(--t-body);
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
@@ -1826,7 +1899,7 @@ button:disabled {
 }
 
 .roots .census {
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
   color: var(--muted);
 }
 
@@ -1874,7 +1947,7 @@ button:disabled {
 
 .custody .what {
   display: block;
-  font-size: 0.9rem;
+  font-size: var(--t-aside);
   color: var(--ink);
 }
 
@@ -1886,7 +1959,7 @@ button:disabled {
   display: block;
   margin-top: 0.1rem;
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--t-meta);
   color: var(--faint);
   word-break: break-word;
 }
@@ -1901,9 +1974,9 @@ button:disabled {
 /* Advisories: named against the service they concern, never dressed as a verdict. */
 .findings h3 {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: var(--t-label);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--track-mono);
   text-transform: uppercase;
   color: var(--faint);
   margin: 0 0 0.5rem;
@@ -1911,7 +1984,7 @@ button:disabled {
 
 .findings dl {
   margin: 0.75rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
 }
 
 .findings dl > div {
@@ -1926,7 +1999,7 @@ button:disabled {
 
 .findings dt {
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
   color: var(--ink);
 }
 
@@ -1937,8 +2010,8 @@ button:disabled {
 
 .findings .severity {
   font-family: var(--mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--faint);
   margin-right: 0.4rem;
@@ -2032,9 +2105,9 @@ td.dur .track.parity::before {
 
 .primer > summary {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--t-label);
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--muted);
   cursor: pointer;
@@ -2076,12 +2149,12 @@ td.dur .track.parity::before {
 
 /* The one line the grouping note needs now the primer states the method. */
 .grouping {
-  font-size: 0.88rem;
+  font-size: var(--t-aside);
 }
 
 .primer > p {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: var(--t-aside);
   margin: 0;
 }
 
@@ -2104,18 +2177,18 @@ td.dur .track.parity::before {
 
 .primer .ladder dt {
   font-family: var(--mono);
-  font-size: 0.76rem;
+  font-size: var(--t-meta);
   color: var(--ink);
 }
 
 .primer .ladder dd {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--t-aside);
   color: var(--muted);
 }
 
 .primer .ladder-note {
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   color: var(--faint);
   margin: 0.9rem 0 0;
 }
@@ -2143,7 +2216,7 @@ abbr[title] {
 
 /* The instruction that was missing: two bare chips did not say they were actions. */
 .pick {
-  font-size: 0.88rem;
+  font-size: var(--t-aside);
 }
 
 /* The series and the exact control, as one choice.
@@ -2167,8 +2240,8 @@ abbr[title] {
 .choose .exact label {
   margin: 0;
   font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
+  font-size: var(--t-label);
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -2177,13 +2250,13 @@ abbr[title] {
   width: auto;
   min-width: 0;
   padding: 0.15rem 0.4rem;
-  font-size: 0.78rem;
+  font-size: var(--t-meta);
 }
 
 .choose .exact .tag {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -2191,8 +2264,8 @@ abbr[title] {
 /* "newest", and "checking…" — a note about a chip, never a second control beside it. */
 ul:has(> li > button) .tag {
   font-family: var(--mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
   color: var(--faint);
 }
@@ -2207,7 +2280,7 @@ ul:has(> li > button) button[aria-pressed='true'] {
 /* The panel's result, in one sentence. It carries what a four-cell masthead used to carry
    above it, so it is set a step up from body copy rather than left as an aside. */
 .verdict-line {
-  font-size: 1.05rem;
+  font-size: var(--t-lead);
   margin: 1.5rem 0 2rem;
 }
 
@@ -2230,12 +2303,12 @@ ul:has(> li > button) button[aria-pressed='true'] {
 
 .pair .of {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: var(--t-label);
   color: var(--faint);
 }
 
 /* The source link, set as prose rather than as another key/value row. */
 footer.site .source {
-  font-size: 0.82rem;
+  font-size: var(--t-aside);
   margin-bottom: 0.9rem;
 }
