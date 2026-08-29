@@ -11,8 +11,10 @@ import {
 } from './rows.js';
 import { censusOf } from './census.js';
 import { EpochLede } from './EpochLede.js';
+import { EpochRuler } from './EpochRuler.js';
 import { seriesFor, seriesScale, type SeriesPoint } from './history.js';
-import type { HistoryState } from './selectEpoch.js';
+import { ticksOf } from './ruler.js';
+import { newestEpoch, type HistoryState } from './selectEpoch.js';
 import { Bar } from './Skeleton.js';
 import { Sparkline } from './Sparkline.js';
 import { Primer } from './Primer.js';
@@ -75,10 +77,19 @@ export function Providers(props: {
         observations={observations}
         observedAt={utc(props.epoch.writtenAt)}
         network={props.net.name}
-        picker={
-          <EpochPicker
+        epoch={
+          <EpochSelect
             epochs={props.epochs}
             selected={props.epoch.epoch}
+            pending={props.history === 'loading'}
+            onEpoch={props.onEpoch}
+          />
+        }
+        picker={
+          <EpochRuler
+            ticks={ticksOf(props.epochs, props.records)}
+            marks={[{ epoch: props.epoch.epoch }]}
+            label="Which published epoch to read"
             pending={props.history === 'loading'}
             onEpoch={props.onEpoch}
           />
@@ -392,26 +403,26 @@ function Duration(props: { label: string; ms: number; lo: number; hi: number }) 
 }
 
 /**
- * Which epoch the table is reading.
+ * Which epoch the table is reading, as an exact control.
  *
- * A plain `<select>` on purpose. The list is the prober's whole history — the same list
- * `epochsOf` returns on chain, in the same order — and a native control gets keyboard
- * handling, a scrollable list on a phone and screen-reader support without any of it being
- * written here.
+ * The ruler beside it is the better picture and the worse target. Two of these epochs are an
+ * hour apart on an axis spanning four days — about ten pixels — and a hit area cannot be both
+ * 24px wide, which is the smallest a pointer target may be, and narrow enough to belong to one
+ * of them. Overlapping them would let a click land on the epoch next to the one aimed at, and
+ * a page showing figures the address bar does not name is the defect `selectEpoch.ts` exists
+ * to remove.
  *
- * The newest is marked rather than assumed. A reader arriving on an epoch two days old
- * because they followed a link should be able to see that it is not the current one.
+ * So the strip keeps the series and the arrow keys, and this keeps the guarantee: a native
+ * control, full size, works on a phone, and lists every epoch by number.
  */
-function EpochPicker(props: {
+function EpochSelect(props: {
   epochs: readonly number[];
   selected: number;
-  /** The older records have not arrived yet, so choosing one would show an empty table. */
   pending: boolean;
   onEpoch: (epoch: number) => void;
 }) {
-  const newest = props.epochs.at(-1);
-
   if (props.epochs.length <= 1) return <>{props.selected}</>;
+  const newest = newestEpoch(props.epochs);
 
   return (
     <span className="epoch-picker">
@@ -430,9 +441,6 @@ function EpochPicker(props: {
             </option>
           ))}
       </select>
-      <span className="of">
-        {props.pending ? 'reading the series…' : `of ${props.epochs.length} published`}
-      </span>
     </span>
   );
 }

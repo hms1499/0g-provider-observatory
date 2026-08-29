@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ObservatoryReader } from '../src/chain/registry.js';
+import { ObservatoryReader, type EpochRecord } from '../src/chain/registry.js';
 import { LiveStatus } from './LiveStatus.js';
-import { Masthead } from './Masthead.js';
-import { MastheadSkeleton, RowsSkeleton } from './Skeleton.js';
+import { RowsSkeleton } from './Skeleton.js';
 import { RatioCell } from './RatioCell.js';
 import { newestPair, orderedPair, serviceLabel } from './rows.js';
 import type { NetworkConfig } from './networks.js';
+import { EpochRuler } from './EpochRuler.js';
+import { ticksOf } from './ruler.js';
 import { reproduceInBrowser, type ReproduceOutcome } from './reproduceEpochs.js';
 
 const GATEWAY_TIMEOUT_MS = 30_000;
@@ -37,7 +38,12 @@ function show(value: string | number): string {
  * Nothing here costs the reader anything. Both runs are already published, both bundles
  * are already on 0G Storage, and the comparison happens in this page.
  */
-export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[] }) {
+export function Reproduce(props: {
+  net: NetworkConfig;
+  epochs: readonly number[];
+  /** Every epoch read so far, for the strip's tick heights. Positions need only the numbers. */
+  records: readonly EpochRecord[];
+}) {
   // Which two, chosen rather than assumed. It opened on the last two and offered no way to
   // reach the rest, which was invisible at two epochs and drops twelve at fourteen.
   const [picked, setPicked] = useState<[number, number] | null>(null);
@@ -134,6 +140,27 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
         compare is the conclusion. <strong>Neither run is treated as correct.</strong>
       </p>
 
+      {/*
+        Both epochs on one axis, before the controls that set them.
+
+        This panel's whole question is whether a pair can be compared, and two dropdowns cannot
+        show that. `docs/HANDOFF.md` is explicit: pairing a narrow epoch with a wide one is a
+        legitimate comparison of the services both measured, but nothing may call two arbitrary
+        epochs "two runs of the same roster", because for most pairs on this chain that is
+        false. The tick heights are what a reader needs to see it — two marks at the same
+        height are two runs of the same width, and 496616 against 496539 visibly is not that.
+        It also shows how far apart in time the pair sits, which is the other thing a reader
+        should weigh before reading a latency ratio.
+
+        A drawing, not a control: the two selects below set the marks, and a strip where a
+        click had to guess which of the two handles it was moving would be worse at both jobs.
+      */}
+      <EpochRuler
+        ticks={ticksOf(props.epochs, props.records)}
+        marks={[{ epoch: later, label: 'later' }, { epoch: earlier, label: 'earlier' }]}
+        label={`The published series, with epochs ${earlier} and ${later} marked`}
+      />
+
       {props.epochs.length > 2 && (
         <div className="pair">
           {/* Newest first in both lists, as the epoch picker and the Verify panel have it.
@@ -191,7 +218,9 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
           seeing the shape of what is coming, which needs no metric to defend. */}
       {busy && (
         <div aria-busy="true">
-          <MastheadSkeleton labels={['earlier', 'later', 'compared', 'disagreements']} />
+          {/* The masthead this stood in for is gone, and a placeholder for something that no
+              longer arrives is a promise the panel does not keep. The strip above is already
+              drawn and already says which pair is being fetched. */}
           <p className="grouping">Fetching both bundles through the public gateway…</p>
           <RowsSkeleton rows={2} heading />
           <RowsSkeleton rows={10} heading />
@@ -219,18 +248,15 @@ export function Reproduce(props: { net: NetworkConfig; epochs: readonly number[]
 
       {report && (
         <>
-          <Masthead
-            readings={[
-              { label: 'earlier', value: earlier },
-              { label: 'later', value: later },
-              { label: 'compared', value: report.compared },
-              {
-                label: 'disagreements',
-                value: report.disagreements.length === 0 ? 'none' : report.disagreements.length,
-              },
-            ]}
-          />
-          <p>
+          {/*
+            A four-reading masthead stood here and every one of the four was already on screen.
+            `earlier` and `later` were the two selects directly above it and the two marks on
+            the strip above those; `compared` and `disagreements` were the sentence directly
+            below it, in words. It is the same mistake `census.ts` records the Providers panel
+            making — four scalars about the run, none of them a finding — so it goes for the
+            same reason, and the sentence stays.
+          */}
+          <p className="verdict-line">
             {report.compared} service{report.compared === 1 ? '' : 's'} measured by both runs
             {report.disagreements.length === 0
               ? ', and every conclusion matched.'

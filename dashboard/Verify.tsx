@@ -1,7 +1,13 @@
 import { useState } from 'react';
-import { ObservatoryReader, type ProviderRecord } from '../src/chain/registry.js';
+import {
+  ObservatoryReader,
+  type EpochRecord,
+  type ProviderRecord,
+} from '../src/chain/registry.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
 import { LiveStatus } from './LiveStatus.js';
+import { EpochRuler } from './EpochRuler.js';
+import { ticksOf } from './ruler.js';
 import { newestEpoch } from './selectEpoch.js';
 import { Bar, RowsSkeleton } from './Skeleton.js';
 import { verifyEpochInBrowser, type EvidenceRoots, type VerifyOutcome } from './verifyEpoch.js';
@@ -127,6 +133,15 @@ const GATEWAY_TIMEOUT_MS = 30_000;
 export function Verify(props: {
   net: NetworkConfig;
   epochs: readonly number[];
+  /**
+   * Every epoch read so far, for the strip's tick heights.
+   *
+   * Only the heights depend on it: the positions come from the epoch numbers alone, so the
+   * series is complete and correctly spaced from the first paint whether or not any record
+   * has arrived. A run that has not been read yet is drawn at the floor height and lighter,
+   * which is the honest drawing of "published, not read".
+   */
+  records: readonly EpochRecord[];
   providers: readonly ProviderRecord[];
 }) {
   const [selected, setSelected] = useState<number | null>(null);
@@ -202,29 +217,53 @@ export function Verify(props: {
             Pick an epoch to check. It fetches that epoch&rsquo;s evidence from 0G Storage and
             recomputes every figure in it — a couple of seconds, and nothing is sent anywhere.
           </p>
-          {/*
-            Newest first. The chain hands these back oldest-first, which was fine at two and
-            unreadable at the fourteen this series is heading for: the epoch a reader almost
-            always wants would have been the last chip in a wall of identical ones.
 
-            Sorted and tagged by value rather than by position. `epochsOf` returns the order
-            the records were written in, which is a fact about how the ledger was filled and
-            not a promise about which number is largest — and the `newest` tag is a claim
-            about the number.
+          {/*
+            The series, drawn the way the Providers panel draws it.
+
+            This was a grid of ten identical chips reading "epoch 496636", "epoch 496620", and
+            so on — the word "epoch" ten times, carrying nothing, and the numbers the only
+            thing that differed. It said less than the same ten epochs say on the panel next
+            door, and it said it in a different shape, so one document showed one series two
+            ways. Worse for this panel in particular: what a check costs in time is roughly
+            how many services the run measured, and the chips could not show that. The tick
+            heights can.
+
+            The select beside it is the exact control, for the reason `EpochSelect` gives on
+            the Providers panel: two of these epochs are an hour apart on an axis spanning four
+            days, and a target that narrow cannot also be the 24px a pointer target must be.
           */}
-          <ul>
-            {[...props.epochs]
-              .sort((a, b) => b - a)
-              .map((e) => (
-                <li key={e}>
-                  <button onClick={() => run(e)} disabled={busy} aria-pressed={selected === e}>
-                    epoch {e}
-                  </button>
-                  {e === newest && <span className="tag">newest</span>}
-                  {selected === e && busy && <span className="tag">checking…</span>}
-                </li>
-              ))}
-          </ul>
+          <div className="choose">
+            <EpochRuler
+              ticks={ticksOf(props.epochs, props.records)}
+              marks={selected === null ? [] : [{ epoch: selected }]}
+              label="Which epoch to check"
+              busy={busy}
+              onEpoch={run}
+            />
+            <p className="exact">
+              <label htmlFor="verify-epoch">epoch</label>
+              <select
+                id="verify-epoch"
+                value={selected ?? ''}
+                disabled={busy}
+                onChange={(e) => run(Number(e.target.value))}
+              >
+                <option value="" disabled>
+                  choose one
+                </option>
+                {[...props.epochs]
+                  .sort((a, b) => b - a)
+                  .map((e) => (
+                    <option key={e} value={e}>
+                      {e}
+                      {e === newest ? ' · newest' : ''}
+                    </option>
+                  ))}
+              </select>
+              {busy && <span className="tag">checking…</span>}
+            </p>
+          </div>
         </>
       )}
 

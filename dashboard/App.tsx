@@ -181,10 +181,15 @@ export default function App() {
           />
         )}
         {data.state === 'ready' && panel === 'verify' && (
-          <Verify net={net} epochs={data.epochs} providers={data.providers} />
+          <Verify
+            net={net}
+            epochs={data.epochs}
+            records={data.records}
+            providers={data.providers}
+          />
         )}
         {data.state === 'ready' && panel === 'reproduce' && (
-          <Reproduce net={net} epochs={data.epochs} />
+          <Reproduce net={net} epochs={data.epochs} records={data.records} />
         )}
         {data.state === 'ready' && panel === 'measure' && (
           <Measure net={net} epochs={data.epochs} />

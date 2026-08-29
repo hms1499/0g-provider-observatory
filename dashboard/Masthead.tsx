@@ -1,12 +1,23 @@
 import type { ReactNode } from 'react';
 
 /**
- * The instrument's own header: what was read, and under what conditions.
+ * A reading, and the conditions it was taken under.
  *
- * Every panel opens with one. An observatory publishes a reading taken at a moment, and the
- * conditions belong above the figures rather than inside them — but the stronger reason is
- * that the four panels are four instruments on one bench, not four pages. The same frame at
- * the top of each is what says so.
+ * This opened all four panels once, on the argument that they are four instruments on one
+ * bench rather than four pages and the same frame at the top of each is what says so. The
+ * argument was right about the four panels and wrong about the frame: what each masthead
+ * actually held was a row of scalars a reader had just read somewhere else on the same screen.
+ *
+ * Providers dropped its four when the lede replaced them — `census.ts` records why, and the
+ * short version is that `420 calls` was the most prominent number on the project's front page.
+ * Reproducibility's four were the two selects above it and the sentence below it. Measure's
+ * five were the epoch named in bold two paragraphs up and the text of the option showing in
+ * its own select. A frame around figures already on screen is not a summary; it is the same
+ * figures at a second size.
+ *
+ * One use is left, and it is the shape this was always right for: Measure's price, which is
+ * computed rather than repeated, with the sentence about who pays for it underneath. What
+ * says the panels are one bench is the series strip they now share — see `EpochRuler.tsx`.
  *
  * A reading is a label and a value, nothing else. Anything that needs a sentence goes in the
  * `note` row underneath, which spans the full width so prose never competes with figures for

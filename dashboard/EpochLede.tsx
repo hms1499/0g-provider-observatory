@@ -25,11 +25,30 @@ import type { Observation } from './findings.js';
  * the instrument's own repeatability is a real result, and epoch 496620 is one. Rendering an
  * empty space there would read as a page that failed to load rather than a network that
  * behaved.
+ *
+ * **The two proportions are drawn, not restated.** Each of those sentences ends in a ratio a
+ * reader skims — "29 of 38", "only 6 of those 21" — and a ratio is a shape before it is a
+ * pair of numbers. The tracks under them carry no words of their own and add no figure that
+ * is not already in the sentence above; the sentence makes the claim and the track gives it
+ * a size. A row of headline statistics was the alternative, and it would have said all of
+ * this twice.
  */
 export function EpochLede(props: {
   census: EpochCensus;
   observations: readonly Observation[];
-  /** The epoch picker, built by the panel that owns the epoch state. */
+  /**
+   * Which epoch these figures are — the exact control, in the line above the series.
+   *
+   * A node rather than a number because the two controls do different halves of one job: this
+   * one names an epoch precisely, and the strip below it shows where that epoch sits among the
+   * rest. See `EpochSelect` in `Providers.tsx` for why both exist.
+   */
+  epoch: ReactNode;
+  /**
+   * The series and the control that moves along it, built by the panel that owns the epoch
+   * state. It stands on its own line at the full width of the lede rather than inline in the
+   * caps above, which is where the `<select>` it replaced used to sit.
+   */
   picker: ReactNode;
   observedAt: string;
   network: string;
@@ -42,7 +61,7 @@ export function EpochLede(props: {
   return (
     <div className="lede">
       <p className="where">
-        <span className="epoch">epoch {props.picker}</span>
+        <span className="epoch">epoch {props.epoch}</span>
         <span className="sep" aria-hidden="true">
           ·
         </span>
@@ -52,6 +71,8 @@ export function EpochLede(props: {
         </span>
         {props.network}
       </p>
+
+      {props.picker}
 
       {/* Two sentences, not one with a clause wedged into it. Written as
           "…answered, N could not be reached, serving M models between them" the last phrase
@@ -67,36 +88,61 @@ export function EpochLede(props: {
           </>
         )}
       </p>
+      <Gauge part={c.measured} whole={c.registered} />
 
       <p className="compare">{comparability(c)}</p>
+      <Gauge part={c.comparable} whole={c.models} />
 
       <div className="found">
-        <h2>{props.observations.length > 0 ? 'What stood out' : 'Nothing stood out'}</h2>
-        {props.observations.length > 0 ? (
-          <>
-            <ul>
-              {props.observations.map((o) => (
-                <li key={o.text}>{o.text}</li>
-              ))}
-            </ul>
+        <div className="stood">
+          <h2>{props.observations.length > 0 ? 'What stood out' : 'Nothing stood out'}</h2>
+          {props.observations.length > 0 ? (
+            <>
+              <ul>
+                {props.observations.map((o) => (
+                  <li key={o.text}>{o.text}</li>
+                ))}
+              </ul>
+              <p className="note">
+                Observations, not verdicts. Each names a service and a number and stops there —
+                why two providers of one model differ is not a question this instrument can
+                answer.
+              </p>
+            </>
+          ) : (
             <p className="note">
-              Observations, not verdicts. Each names a service and a number and stops there —
-              why two providers of one model differ is not a question this instrument can
-              answer.
+              {c.comparable === 0
+                ? 'No model in this epoch had a second provider, so there was nothing for a difference to show up between.'
+                : 'No two providers of the same model differed by more than this instrument repeats to on its own.'}
             </p>
-          </>
-        ) : (
-          <p className="note">
-            {c.comparable === 0
-              ? 'No model in this epoch had a second provider, so there was nothing for a difference to show up between.'
-              : 'No two providers of the same model differed by more than this instrument repeats to on its own.'}
-          </p>
-        )}
-      </div>
+          )}
+        </div>
 
-      <p className="provenance">
-        {c.calls} call{c.calls === 1 ? '' : 's'} · {props.provenance}
-      </p>
+        <p className="provenance">
+          {c.calls} call{c.calls === 1 ? '' : 's'} · {props.provenance}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One ratio from the sentence above it, at the width it actually is.
+ *
+ * Same ink as everything else, and deliberately so: the filled part is not "good" and the
+ * empty part is not "bad". A network where every model had a second provider would fill the
+ * second track, and a network where none did would empty it, and neither is a verdict on any
+ * operator — it is a fact about how the roster is shaped.
+ *
+ * Hidden from the accessibility tree. It restates the sentence immediately before it and adds
+ * no figure of its own, so announcing it would read the same ratio twice.
+ */
+function Gauge(props: { part: number; whole: number }) {
+  if (props.whole <= 0) return null;
+  const share = Math.max(0, Math.min(1, props.part / props.whole));
+  return (
+    <div className="gauge" aria-hidden="true">
+      <span className="fill" style={{ width: `${share * 100}%` }} />
     </div>
   );
 }

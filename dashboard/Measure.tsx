@@ -5,7 +5,7 @@ import type { ReproduceReport } from '../src/verify/reproduce.js';
 import { LiveStatus } from './LiveStatus.js';
 import { Masthead } from './Masthead.js';
 import { RatioCell } from './RatioCell.js';
-import { serviceLabel } from './rows.js';
+import { serviceLabel, shortAddress } from './rows.js';
 import { loneServices, measurableGroups, measureGroup } from './measureGroup.js';
 import { formatTokens, formatUsd, groupUsage, type PriceTable } from './estimate.js';
 import { Bar, MastheadSkeleton } from './Skeleton.js';
@@ -241,10 +241,7 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
           something they did not ask for, and a single line of text was all this said. */}
       {!bundle && !loadError && (
         <div aria-busy="true">
-          <MastheadSkeleton
-            labels={['replaying', 'group', 'providers', 'calls', 'cost']}
-            note="billed to"
-          />
+          <MastheadSkeleton labels={['cost']} note="billed to" />
           <p className="grouping">
             Fetching epoch {newest}&rsquo;s evidence through the public gateway…
           </p>
@@ -260,25 +257,6 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
 
       {bundle && selected && (
         <>
-          <Masthead
-            readings={[
-              { label: 'replaying', value: `epoch ${newest}` },
-              { label: 'group', value: selected.canonicalId },
-              { label: 'providers', value: selected.services },
-              { label: 'calls', value: selected.calls },
-              {
-                label: 'cost',
-                hint: 'What this group cost the published run, priced at the rates advertised now. The tokens are read from the evidence; only the price applied to them is current. Yours will differ — a reasoning model that thinks for longer bills more.',
-                value: <Cost usage={usage} hasKey={apiKey.length >= 8} error={priceError} />,
-              },
-            ]}
-            note={{
-              label: 'billed to',
-              value:
-                'your key, at whatever those providers charge — the relay caps each call at three times the advertised rate',
-            }}
-          />
-
           <label>
             group{' '}
             <select value={selected.canonicalId} onChange={(e) => setGroup(e.target.value)}>
@@ -309,6 +287,35 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
               autoComplete="off"
             />
           </label>
+
+          {/*
+            One reading, below the controls rather than above them.
+
+            `replaying` repeated the epoch named in bold two paragraphs above; `group`,
+            `providers` and `calls` are all in the text of the option currently showing in the
+            select directly below — it reads "glm-5.1 — 2 providers, 30 calls". A frame around
+            figures a reader has just read is not a summary, it is the same figures at a second
+            size, which is the mistake `census.ts` records the Providers panel making.
+
+            What is left is the one figure nothing else carries, and the sentence about who
+            pays for it. That is a price panel, so it stands where the question it answers gets
+            asked — under the group and the key, immediately above the button that spends the
+            money — rather than as a masthead over controls it was describing the output of.
+          */}
+          <Masthead
+            readings={[
+              {
+                label: 'cost',
+                hint: 'What this group cost the published run, priced at the rates advertised now. The tokens are read from the evidence; only the price applied to them is current. Yours will differ — a reasoning model that thinks for longer bills more.',
+                value: <Cost usage={usage} hasKey={apiKey.length >= 8} error={priceError} />,
+              },
+            ]}
+            note={{
+              label: 'billed to',
+              value:
+                'your key, at whatever those providers charge — the relay caps each call at three times the advertised rate',
+            }}
+          />
 
           <button onClick={run} disabled={!apiKey || progress !== null}>
             {progress ? `measuring ${progress.done}/${progress.total}…` : 'Measure'}
@@ -473,8 +480,16 @@ export function Measure(props: { net: NetworkConfig; epochs: readonly number[] }
             {lone.map((s) => (
               <div key={`${s.address}|${s.modelId}`}>
                 <dt>{s.canonicalId}</dt>
-                <dd>{serviceLabel(`${s.address} ${s.modelId}`)} — the only provider of it in
-                  epoch {newest}.</dd>
+                {/* The operator, and nothing else.
+                    
+                    Two things used to be appended here. The clause "— the only provider of it
+                    in epoch 496636" was the heading and the paragraph above, repeated once per
+                    row; at fifteen rows it was most of the ink in the block. And the model id
+                    beside the address was the `<dt>` again in the Router's own casing, so
+                    every row named its model twice — `0gm-1.0-35b-a3b` on the left,
+                    `0GM-1.0-35B-A3B` on the right. What the reader does not have is who runs
+                    it, so that is what the definition carries. */}
+                <dd>{shortAddress(s.address)}</dd>
               </div>
             ))}
           </dl>

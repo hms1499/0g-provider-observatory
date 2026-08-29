@@ -469,12 +469,22 @@ a {
  * Flex rather than grid: `auto-fit` tracks leave a trailing empty cell whenever the readings
  * do not fill the row, and an empty cell in a rule-coloured grid reads as a missing reading.
  */
+/* The frame the panels share for a reading and the conditions it was taken under.
+ *
+ * It is down to one user: the Measure panel's price. Providers dropped its four-scalar
+ * masthead when the lede replaced it (see `census.ts`), and Reproducibility dropped its four
+ * because the strip, the two selects and the sentence beneath already carried every one of
+ * them. A frame around figures a reader has just read is the same figures at a second size.
+ *
+ * Capped to the prose measure, because with a single reading in it a full 72rem box is one
+ * short line in a very wide rule. */
 .masthead {
   display: flex;
   flex-wrap: wrap;
   border: 1px solid var(--rule);
   border-bottom: none;
   margin: 1.5rem 0 1.75rem;
+  max-width: 46rem;
 }
 
 .masthead .reading {
@@ -1142,6 +1152,22 @@ ul:has(> li > button) button:disabled {
   margin: 0 0 2.5rem;
   padding: 0 0 0 1.5rem;
   border-left: 2px solid var(--accent);
+}
+
+/*
+ * The prose keeps a measure; the instruments do not.
+ *
+ * The whole lede used to be capped at 46rem, which is right for a sentence and wrong for
+ * everything else in it. On a 1440px screen the block ended around x=905 and the tables below
+ * it ran to the full 72rem, so the page opened with five hundred pixels of nothing beside its
+ * only reading and then widened out under it. The cap lives on the two sentences now, where a
+ * line length is a reading property, and the series, the tracks and the findings take the
+ * width they are drawn against.
+ */
+.lede .reach,
+.lede .compare,
+.lede .found .note,
+.lede .found li {
   max-width: 46rem;
 }
 
@@ -1162,18 +1188,13 @@ ul:has(> li > button) button:disabled {
   color: var(--rule);
 }
 
-/* The picker sits inside a line of small caps, so it drops its own chrome and takes the
-   size of the text around it. */
+/* The picker sits inside a line of small caps, so it drops its own chrome and takes the size
+   of the text around it. It is the exact control; the strip below it is the picture. */
 .lede .where .epoch-picker select {
   min-width: 0;
   padding: 0.1rem 0.3rem;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
-}
-
-.lede .where .epoch-picker .of {
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .lede .reach,
@@ -1191,10 +1212,29 @@ ul:has(> li > button) button:disabled {
   color: var(--muted);
 }
 
+/*
+ * What stood out, and where it came from — side by side once there is room for two columns.
+ *
+ * They were stacked, which put the provenance line at the very bottom of a tall block where a
+ * reader who had finished the findings had already stopped looking. The two belong together:
+ * one is the claim and the other is the path back to the evidence it was derived from, and F7
+ * is the argument this project rests on.
+ */
 .lede .found {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 2rem;
   margin: 1.5rem 0 1.25rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 60rem) {
+  .lede .found {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
 }
 
 .lede .found h2 {
@@ -1227,6 +1267,7 @@ ul:has(> li > button) button:disabled {
   margin: 0;
   font-family: var(--mono);
   font-size: 0.75rem;
+  line-height: 1.7;
   color: var(--faint);
 }
 
@@ -1243,6 +1284,219 @@ ul:has(> li > button) button:disabled {
   .lede .compare {
     font-size: 1rem;
   }
+}
+
+/* ── the series ruler ───────────────────────────────────────────────────────
+ *
+ * The epoch picker, drawn as the chart record it is a control for. `EpochRuler.tsx` carries
+ * the argument for why a `<select>` was the wrong instrument; this is how it is inked.
+ *
+ * One ink throughout, like every other drawing on this page. The selected reading is heavier
+ * and carries the accent, because "which one am I reading" is state — the same job the accent
+ * does on the chain switch and the tabs, and the only job colour is allowed to do here.
+ */
+.ruler {
+  margin: 0 0 1.75rem;
+}
+
+.ruler .strip {
+  position: relative;
+  height: 58px;
+}
+
+.ruler .strip svg {
+  display: block;
+  width: 100%;
+  height: 58px;
+  /* The buttons above are the control. Letting the drawing take the pointer would put a
+     dead zone between two ticks that swallows a click aimed at either. */
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* `preserveAspectRatio: none` stretches the viewBox to the element, so a stroke width in user
+   units would be stretched with it — a 0.5-unit vertical line becomes several pixels wide on a
+   wide screen while the horizontal axis stays hairline. Non-scaling-stroke keeps every stroke
+   at the width it is written at, whatever the box is stretched to. */
+.ruler line {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: butt;
+}
+
+/* The baseline every tick is measured from.
+ *
+ * It was `--rule`, which is the right weight for a divider between blocks of prose and too
+ * light to be a datum. Without a visible baseline the ticks read as scattered marks rather
+ * than as readings of different heights, and height is the whole reason they are drawn. */
+.ruler .axis {
+  stroke: var(--faint);
+  stroke-width: 1;
+}
+
+.ruler .tick {
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
+/* Published, not yet read. Drawn at the floor height and lighter, so the series is complete
+   from the first paint and a reader can still tell which readings are in hand. */
+.ruler .tick.unread {
+  stroke: var(--rule);
+}
+
+.ruler .tick.at {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+
+/* What a mark is for, under the tick it names. Only drawn where there is more than one. */
+.ruler .mark-label {
+  position: absolute;
+  top: 46px;
+  transform: translateX(-50%);
+}
+
+.ruler .mark-label[data-align='end'] {
+  transform: translateX(-100%);
+}
+
+.ruler .mark-label[data-align='start'] {
+  transform: translateX(0);
+}
+
+.ruler .mark-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* The break in the series, marked under the axis rather than across it. Dashed, because the
+   thing being drawn is the absence of readings and a solid rule would read as one. */
+.ruler .gap line {
+  stroke: var(--faint);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+/* The break, named in the space where the readings are not.
+ *
+ * Sits under the axis with the dashed mark, out of the way of the ticks either side of it, and
+ * quiet enough that it annotates the gap rather than competing with the series. */
+/* Above the axis, in the empty stretch it is describing.
+ *
+ * It sat below, at the dashed mark, where it ran into the axis labels and the two rows read as
+ * one confused line. The space a break leaves is the one place on this strip guaranteed to
+ * have nothing in it, so the label goes there. */
+.ruler .gap-label {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  padding: 0 0.4rem;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* The hit areas. Each is a full-height column centred on its tick, so the pointer target is
+   the width of the gap between readings rather than the two pixels of the stroke. */
+.ruler .hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.ruler .hit:disabled {
+  cursor: default;
+}
+
+/* Hover marks the tick under the pointer without moving it. A tick that grew on hover would
+   change a height that means how many services a run measured. */
+.ruler .hit:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* No override of the site's focus ring here. An inset outline was tried and, on a target this
+   narrow, a 2px ring drawn inside a 6px button fills it — the indicator became a solid accent
+   bar the height of the strip, heavier than the selected tick it sat on. The global rule draws
+   it outside, where a thin ring around a thin target still reads as a ring. */
+
+/* Reading the rest of the series. The ticks whose records have not arrived cannot be chosen
+   yet, and the strip says so by going quiet rather than by disappearing. */
+.ruler.pending .strip {
+  opacity: 0.6;
+}
+
+.ruler .axis-labels {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.4rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+
+.ruler .axis-labels .span {
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* One reading is not a series, so it is set as the number it is rather than as a chart. */
+.ruler-single {
+  font-family: var(--mono);
+}
+
+@media (max-width: 46rem) {
+  /* The middle label is the one that can be inferred from the two ends plus the ticks, so it
+     is the one that goes when there is no room for three. */
+  .ruler .axis-labels .span {
+    display: none;
+  }
+
+  /* And the mark labels go with it. `labelsFit` in `EpochRuler.tsx` keeps two marks apart on a
+     wide screen; at this width even a well-separated pair has no room for two words under a
+     strip 340px across. The controls naming both stand directly below. */
+  .ruler .mark-label {
+    display: none;
+  }
+}
+
+/* ── the proportion tracks ──────────────────────────────────────────────────
+ *
+ * The ratio in the sentence above, at the width it actually is. Same ink as the duration
+ * tracks and the sparklines, and for the same reason: the filled part is not "good". A full
+ * second track would mean every model has a peer to be checked against, which is a fact about
+ * how the network's roster is shaped and not a verdict on anyone in it.
+ */
+/* The same measure as the sentence it sizes. A track running the full width of the page under
+   a sentence that stops at 46rem reads as a separate object rather than as that sentence's
+   own ratio. */
+.gauge {
+  max-width: 46rem;
+  height: 3px;
+  margin: 0 0 1.1rem;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.gauge .fill {
+  display: block;
+  height: 100%;
+  background: var(--muted);
 }
 
 /* ── caveats ────────────────────────────────────────────────────────────── */
@@ -1812,6 +2066,48 @@ abbr[title] {
   font-size: 0.88rem;
 }
 
+/* The series and the exact control, as one choice.
+ *
+ * The strip is the picture and the coarse control; the select is the precise one, for the
+ * reason `EpochSelect` gives on the Providers panel — two of these epochs are an hour apart on
+ * an axis spanning four days, and a target that narrow cannot also be the 24px a pointer
+ * target must be. */
+.choose {
+  margin: 1.5rem 0 2rem;
+}
+
+.choose .exact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.choose .exact label {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.choose .exact select {
+  width: auto;
+  min-width: 0;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.78rem;
+}
+
+.choose .exact .tag {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
 /* "newest", and "checking…" — a note about a chip, never a second control beside it. */
 ul:has(> li > button) .tag {
   font-family: var(--mono);
@@ -1826,6 +2122,13 @@ ul:has(> li > button) button[aria-pressed='true'] {
   color: var(--bg);
   background: var(--accent);
   border-color: var(--accent);
+}
+
+/* The panel's result, in one sentence. It carries what a four-cell masthead used to carry
+   above it, so it is set a step up from body copy rather than left as an aside. */
+.verdict-line {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 2rem;
 }
 
 /* Which two runs are being compared. Only rendered once there is a third to choose from. */
