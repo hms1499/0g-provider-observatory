@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ObservatoryReader, type EpochRecord, type ProviderRecord } from '../src/chain/registry.js';
 import { mapWithConcurrency } from '../src/chain/concurrency.js';
 import { isDeployed, type NetworkConfig } from './networks.js';
-import type { HistoryState } from './selectEpoch.js';
+import { newestEpoch, type HistoryState } from './selectEpoch.js';
 
 export interface ObservatoryData {
   state: 'loading' | 'error' | 'ready' | 'not-deployed';
@@ -71,7 +71,9 @@ export function useObservatory(net: NetworkConfig): ObservatoryData {
           reader.epochsOf(net.prober),
           reader.loadProviders(),
         ]);
-        const newest = epochs.at(-1);
+        // The maximum, not the tail: `epochsOf` returns the contract's append order, which is
+        // a fact about how the ledger filled rather than a promise about which number is largest.
+        const newest = newestEpoch(epochs) ?? undefined;
         const [latest, latestTxHash] =
           newest === undefined
             ? [undefined, null]
