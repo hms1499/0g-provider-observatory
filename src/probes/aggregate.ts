@@ -8,10 +8,10 @@
  *    2026-08-21 the Router reported four differently-sized models at an identical
  *    9408 ms because the figure was aggregated at the address.
  *
- * 2. OUR FAULTS ARE NOT THEIR ERRORS. A 401 from an expired key or a 402 from an empty
- *    balance is a prober failure. Counting it against a provider's error rate would
- *    publish an accusation caused by our own billing. Prober-side failures are excluded
- *    from the rate and reported separately.
+ * 2. OUR FAULTS ARE NOT THEIR ERRORS. A 401 from an expired key, a 402 from an empty
+ *    balance, a 429 from our own rate-limit window are prober failures. Counting one
+ *    against a provider's error rate would publish an accusation caused by our own
+ *    billing. Prober-side failures are excluded from the rate and reported separately.
  *
  * 3. TOO FEW SAMPLES MEANS NO NUMBER. A p95 over two successful calls is not a p95.
  *    Services below the sample floor are marked insufficient and left out of the epoch
@@ -38,7 +38,6 @@ export function faultSide(kind: ErrorKind): FaultSide {
   switch (kind) {
     case 'upstream':
     case 'timeout':
-    case 'rate_limit':
     case 'malformed':
     case 'not_found':
       return 'provider';
@@ -48,6 +47,14 @@ export function faultSide(kind: ErrorKind): FaultSide {
     // Our probe's max_tokens ceiling cut the model off before it answered. Charging
     // that to the provider publishes an accusation we caused.
     case 'no_content':
+    // A 429 is the Router refusing OUR key, not a service failing. `classify()` reads it
+    // from the HTTP status alone, and the counter it exhausts is `x-ratelimit-remaining`
+    // on the prober's own credentials — nothing about it describes the provider. Epoch
+    // 496620 is the proof: 570 calls in 254 s took that header from 499 to 0 and collected
+    // 137 429s in the final 8 seconds, and nine services were published with those charged
+    // against them. Seven of the nine had no provider-side failure at all — `kimi-k3` at
+    // `0x1F444c8A…` went on chain at 6667 bps when its true rate was 0.
+    case 'rate_limit':
       return 'prober';
     case 'network':
       return 'unknown';

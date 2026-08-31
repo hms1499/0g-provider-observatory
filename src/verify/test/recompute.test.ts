@@ -42,6 +42,10 @@ describe('basisPoints', () => {
 });
 
 describe('attributeFault', () => {
+  // Deliberately the table epochs 496514 through 496636 were written under, in which
+  // `rate_limit` sits on the provider side. `faultSide()` moved it to the prober after
+  // 496636, and the ledger is write-once: those epochs can only ever verify against the
+  // rule they were computed with, which is why it travels in the bundle.
   const table = {
     provider: ['upstream', 'timeout', 'rate_limit', 'malformed', 'not_found'],
     prober: ['auth', 'payment', 'bad_request', 'no_content'],
@@ -52,6 +56,10 @@ describe('attributeFault', () => {
     assert.equal(attributeFault(table, 'upstream'), 'provider');
     assert.equal(attributeFault(table, 'no_content'), 'prober');
     assert.equal(attributeFault(table, 'network'), 'unknown');
+  });
+
+  it('follows a published bundle even where the current code now disagrees', () => {
+    assert.equal(attributeFault(table, 'rate_limit'), 'provider');
   });
 
   it('refuses to guess about a kind the bundle never listed', () => {

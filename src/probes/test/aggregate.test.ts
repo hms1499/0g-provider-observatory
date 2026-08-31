@@ -84,15 +84,22 @@ describe('toBasisPoints', () => {
 
 describe('fault attribution', () => {
   it('blames the provider only for failures that are theirs', () => {
-    for (const k of ['upstream', 'timeout', 'rate_limit', 'malformed', 'not_found'] as const) {
+    for (const k of ['upstream', 'timeout', 'malformed', 'not_found'] as const) {
       assert.equal(faultSide(k), 'provider', k);
     }
   });
 
   it('keeps our own billing and auth failures off their record', () => {
-    for (const k of ['auth', 'payment', 'bad_request'] as const) {
+    for (const k of ['auth', 'payment', 'bad_request', 'no_content'] as const) {
       assert.equal(faultSide(k), 'prober', k);
     }
+  });
+
+  // A 429 is our key's window closing, not a service failing. Epoch 496620 published nine
+  // measurements with 429s counted against the provider; seven of the nine had no
+  // provider-side failure at all.
+  it('charges a rate limit to the prober, because the exhausted key is ours', () => {
+    assert.equal(faultSide('rate_limit'), 'prober');
   });
 
   it('leaves an ambiguous network failure unattributed rather than guessing', () => {
@@ -134,6 +141,22 @@ describe('aggregate', () => {
     assert.equal(r.providerFailures, 0);
     assert.equal(r.calls, 5, 'our failures must not inflate the attempt count either');
     assert.equal(r.errorRateBps, 0, 'an expired key is not a provider outage');
+  });
+
+  // The exact shape epoch 496620 published for kimi-k3 at `0x1F444c8A…`: five answers and
+  // ten 429s from our own exhausted window, written on chain at 6667 bps. The service
+  // failed nothing.
+  it('does not publish our exhausted rate-limit window as their error rate', () => {
+    const rows = aggregate([
+      ...many(ADDR_A, 'kimi-k3', [100, 200, 300, 400, 500]),
+      ...Array.from({ length: 10 }, (_, i) => bad(ADDR_A, 'kimi-k3', 'rate_limit', 6 + i)),
+    ]);
+    const r = rows[0];
+    assert.equal(r.proberFaults, 10);
+    assert.equal(r.providerFailures, 0);
+    assert.equal(r.calls, 5, 'a call the Router refused was never an attempt against them');
+    assert.equal(r.errorRateBps, 0);
+    assert.equal(r.sufficient, true, 'five answers is still a measurement');
   });
 
   it('counts provider-side failures against the provider', () => {
