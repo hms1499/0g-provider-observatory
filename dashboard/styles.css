@@ -1187,7 +1187,33 @@ td.spark .none {
 /*
  * These differentiate the KIND of guarantee, never its quality. Each mode gets its own
  * outline weight so they are told apart at a glance without one reading as worse.
+ *
+ * A button now, not a span — it takes the reader to what its mode means, because a `title`
+ * tooltip does not exist on a phone. The reset below is the whole point: it must go on
+ * looking like the badge it was and nothing like a form control, so the button's own
+ * background, font and padding are cleared rather than overridden piecemeal.
  */
+button[data-mode] {
+  appearance: none;
+  background: none;
+  text-align: inherit;
+}
+
+/*
+ * On a touch screen the badge has to be big enough to hit. Measured at 390px it was 72×19,
+ * and WCAG 2.5.8 asks for 24×24 — which is exactly the reader this change was made for, since
+ * the sentence behind the badge is the one a `title` tooltip never showed them.
+ *
+ * Grown only where the pointer is coarse. The table is dense on purpose and a badge tall
+ * enough for a thumb would loosen every row of it on a desktop that never needed the space.
+ */
+@media (pointer: coarse) {
+  button[data-mode] {
+    min-height: 24px;
+    padding-block: 0.25rem;
+  }
+}
+
 [data-mode] {
   display: inline-block;
   font-family: var(--mono);
@@ -1668,6 +1694,29 @@ dl div {
   gap: 1rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--rule);
+}
+
+/*
+ * Where a mode badge just sent the reader.
+ *
+ * A rule in the margin and a hair more ground, held for a couple of seconds and then dropped.
+ * The caveats list is a wall of prose and an unmarked jump into the middle of it leaves a
+ * reader hunting for the entry they asked for. Colour is not available for this — ink on this
+ * page carries verification state and nothing else — so the mark is position and weight.
+ */
+dl div[data-revealed] {
+  box-shadow: inset 3px 0 0 var(--muted);
+  background: var(--panel);
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dl div {
+    transition:
+      box-shadow 180ms ease-out,
+      background 180ms ease-out;
+  }
 }
 
 dt {
@@ -2311,4 +2360,37 @@ ul:has(> li > button) button[aria-pressed='true'] {
 footer.site .source {
   font-size: var(--t-aside);
   margin-bottom: 0.9rem;
+}
+
+/* ── epoch notes ────────────────────────────────────────────────────────── */
+
+/*
+ * A correction standing beside the epoch it belongs to — see `epochNotes.ts` for why it
+ * exists at all, and `EpochNote.tsx` for why it is not styled as a warning.
+ *
+ * It borrows the lede's left rule rather than inventing a container of its own, so it reads
+ * as another thing said about this epoch and not as an interruption of the page. No colour:
+ * ink here carries verification state, and a caveat is not a failed check. What separates it
+ * from the readings is the indent and the label above it, which is enough.
+ */
+.epoch-note {
+  border-left: 2px solid var(--rule);
+  padding: 0.1rem 0 0.1rem 1.1rem;
+  margin: 1.25rem 0 1.5rem;
+  max-width: 46rem;
+}
+
+.epoch-note h3 {
+  margin: 0 0 0.35rem;
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: var(--track-tight);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.epoch-note p {
+  margin: 0;
+  font-size: var(--t-aside);
+  color: var(--muted);
 }

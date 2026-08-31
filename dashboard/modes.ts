@@ -36,3 +36,16 @@ export function modeNote(mode: string): { label: string; means: string } {
     }
   );
 }
+
+/**
+ * The id of a mode's entry in the caveats block, so a badge in the table can take a reader to
+ * the sentence that explains it.
+ *
+ * A DOM id and not a URL fragment: see the note on `Caveats`. Sanitised rather than
+ * interpolated raw, because a mode string comes off the chain and only the three known ones
+ * are guaranteed to be a legal id — an unrecognised mode still gets a badge, and it must not
+ * produce a selector that throws when `ModeBadge` looks it up.
+ */
+export function modeAnchorId(mode: string): string {
+  return `mode-${mode.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown'}`;
+}

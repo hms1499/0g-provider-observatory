@@ -1,18 +1,24 @@
-import { MODE_NOTES } from './modes.js';
+import { MODE_NOTES, modeAnchorId } from './modes.js';
 
 /**
  * The things a reader would otherwise have to guess. Principle 04: state plainly what we do
  * not know, on the dashboard, rather than glossing over it.
+ *
+ * Each guarantee mode carries an id so a badge in the table above can bring the reader to its
+ * entry. Ids only — never an `<a href="#…">`. This page keeps the reader's chain, section and
+ * epoch in the hash and canonicalises it on `hashchange`, so a fragment link would be parsed
+ * as a view, rewritten, and would take the reader's pinned epoch with it. `ModeBadge` scrolls
+ * instead, which reaches the same place and leaves the address alone.
  */
 export function Caveats() {
   return (
-    <section className="caveats">
+    <section className="caveats" id="caveats">
       <h2>What these numbers are, and what they are not</h2>
 
       <h3>Guarantee modes</h3>
       <dl>
         {Object.values(MODE_NOTES).map((m) => (
-          <div key={m.label}>
+          <div key={m.label} id={modeAnchorId(m.label)}>
             <dt>{m.label}</dt>
             <dd>{m.means}</dd>
           </div>

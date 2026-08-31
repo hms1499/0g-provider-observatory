@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ObservatoryReader,
   type EpochRecord,
   type ProviderRecord,
 } from '../src/chain/registry.js';
 import { bundleUrl, type NetworkConfig } from './networks.js';
+import { EpochNotes } from './EpochNote.js';
+import { epochNotesFor } from './epochNotes.js';
 import { LiveStatus } from './LiveStatus.js';
 import { EpochRuler } from './EpochRuler.js';
 import { ticksOf } from './ruler.js';
@@ -200,6 +202,32 @@ export function Verify(props: {
     }
   }
 
+  /*
+   * Check the newest epoch as soon as the panel opens, instead of showing an empty dropdown.
+   *
+   * This tab held the most convincing thing on the site behind one more decision: a reader who
+   * pressed Verify met a select reading "choose one" and no verification, on a page whose other
+   * three tabs all show a reading immediately. The argument for making them choose was that a
+   * check costs a Storage fetch — but the panel only mounts when the tab is opened, so the
+   * fetch happens exactly when a reader has asked to see a check and not before.
+   *
+   * Guarded by the epoch it last auto-ran, not by a "has run" flag. The chain toggle remounts
+   * nothing — `props.net` changes underneath this component — so a flag would leave the reader
+   * on mainnet's verification after switching to testnet. Comparing the number means a chain
+   * switch, or a newly published epoch, runs again, and a reader's own choice is never
+   * overwritten because `selected` is only null before the first run.
+   */
+  const auto = useRef<number | null>(null);
+  useEffect(() => {
+    if (newest === null || busy) return;
+    if (auto.current === newest && selected !== null) return;
+    auto.current = newest;
+    void run(newest);
+    // `run` is redefined every render and depends only on props; listing it would re-fire the
+    // check on every state change it makes. The guard above is what makes this run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newest, props.net.chainId]);
+
   return (
     <section>
       <h2>Verify</h2>
@@ -214,8 +242,9 @@ export function Verify(props: {
       ) : (
         <>
           <p className="pick">
-            Pick an epoch to check. It fetches that epoch&rsquo;s evidence from 0G Storage and
-            recomputes every figure in it — a couple of seconds, and nothing is sent anywhere.
+            This checks the newest epoch on opening; pick another to check that one instead. It
+            fetches that epoch&rsquo;s evidence from 0G Storage and recomputes every figure in
+            it — a couple of seconds, and nothing is sent anywhere.
           </p>
 
           {/*
@@ -249,9 +278,13 @@ export function Verify(props: {
                 disabled={busy}
                 onChange={(e) => run(Number(e.target.value))}
               >
-                <option value="" disabled>
-                  choose one
-                </option>
+                {/* Only reachable in the moment before the opening check names an epoch;
+                    kept so the control is never a select with no value at all. */}
+                {selected === null && (
+                  <option value="" disabled>
+                    choose one
+                  </option>
+                )}
                 {[...props.epochs]
                   .sort((a, b) => b - a)
                   .map((e) => (
@@ -264,6 +297,11 @@ export function Verify(props: {
               {busy && <span className="tag">checking…</span>}
             </p>
           </div>
+
+          {/* What this epoch's figures carry that its evidence cannot say for itself. The
+              check below still passes — the numbers do follow from the bundle; the note is
+              about the rule they were computed under, not about the arithmetic. */}
+          <EpochNotes notes={epochNotesFor(props.net.chainId, [selected])} />
         </>
       )}
 

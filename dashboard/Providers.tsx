@@ -11,6 +11,8 @@ import {
 } from './rows.js';
 import { censusOf } from './census.js';
 import { EpochLede } from './EpochLede.js';
+import { EpochNotes } from './EpochNote.js';
+import { epochNotesFor } from './epochNotes.js';
 import { EpochRuler } from './EpochRuler.js';
 import { seriesFor, seriesScale, type SeriesPoint } from './history.js';
 import { ticksOf } from './ruler.js';
@@ -111,6 +113,12 @@ export function Providers(props: {
           </>
         }
       />
+
+      {/*
+        Above the readings, not under them. A caveat a reader meets after they have drawn a
+        conclusion from the table has arrived too late to be a caveat.
+      */}
+      <EpochNotes notes={epochNotesFor(props.net.chainId, [props.epoch.epoch])} />
 
       <Primer />
 
@@ -248,7 +256,13 @@ function ModelBlock(props: {
           <tr role="row">
             <th role="columnheader">operator</th>
             <th role="columnheader">
-              <abbr title="What the operator's registry entry declares about how this model is run. A kind of guarantee, never a grade — see the notes at the foot of the page.">
+              {/*
+                This used to end "see the notes at the foot of the page", which was a direction
+                and not a route: the notes were two thousand pixels down with nothing pointing
+                at them. Each badge in the column below now takes the reader there, so the
+                header says which thing to press rather than where to go looking.
+              */}
+              <abbr title="What the operator's registry entry declares about how this model is run. A kind of guarantee, never a grade. Press any badge in this column for what its mode means.">
                 mode
               </abbr>
             </th>

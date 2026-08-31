@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ObservatoryReader, type EpochRecord } from '../src/chain/registry.js';
+import { EpochNotes } from './EpochNote.js';
+import { epochNotesFor } from './epochNotes.js';
 import { LiveStatus } from './LiveStatus.js';
 import { RowsSkeleton } from './Skeleton.js';
 import { RatioCell } from './RatioCell.js';
@@ -197,6 +199,18 @@ export function Reproduce(props: {
           </span>
         </div>
       )}
+
+      {/*
+        Ahead of the comparison, because on this chain the corrections explain part of it.
+
+        A disagreement between 496620 and any later epoch is partly the rate-limit window that
+        run exhausted: an error rate that fell from 20% to 0% between two runs reads as a
+        provider that stopped failing, and on those services it is a prober that stopped
+        counting its own refused requests against them. This panel exists to ask whether the
+        instrument gives the same answer twice, so where the answer moved for a reason that is
+        ours, that is the first thing the reader is owed.
+      */}
+      <EpochNotes notes={epochNotesFor(props.net.chainId, [earlier, later])} />
 
       <LiveStatus>
         {busy
