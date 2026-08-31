@@ -1,6 +1,7 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-28 (all four dashboard panels audited · 10 epochs on chain · demo video recorded)
+**Updated:** 2026-08-31 (`rate_limit` recharged to the prober · the "six services on mainnet"
+claim corrected to nine, measured · 10 epochs on chain · demo video recorded)
 
 ---
 
@@ -119,9 +120,55 @@ groups fail *instantly* — median 581 ms against 3303 ms for a real answer — 
 services burns fifteen probes in under a second, and eight of them together produce a burst
 of ~120 near-simultaneous calls. That burst is what drained the key: epoch 496620 ran 570
 calls in 254 s, took its `x-ratelimit-remaining` from 499 to **0**, and collected **137 HTTP
-429s in the final 8 seconds**. `faultSide` charges `rate_limit` to the **provider**
-(`src/probes/aggregate.ts:41`), so six named services are published on mainnet at a 100%
-error rate that is our key running out, not their failure.
+429s in the final 8 seconds**.
+
+**Correction, measured 2026-08-31 by running `aggregate()` over all twelve bundles.** An
+earlier version of this file said that "six named services are published on mainnet at a
+100% error rate". That is **false**, and the shape of the error is worth keeping.
+
+The six exist — three Claude models at `0x1F444c8A…`, two at `0xd3f02c1a…`, `kimi-k3` at
+`0xe4d97681…`, each 15 of 15 calls a 429. But all six had **zero** successful calls, so
+`sufficient` was false and `toMeasurements()` (`src/probes/aggregate.ts:254`) dropped them
+before the write. 496620 wrote 28 rows of the 38 services it aggregated. The sample floor
+caught the worst case exactly as designed.
+
+What the floor did **not** catch is a *partial* rate limit. A service with five answers and
+ten 429s is `sufficient`, and until 2026-08-31 `faultSide` charged `rate_limit` to the
+**provider**, so the 429s went into its published error rate. **Nine measurements on mainnet
+carry that**, all under prober `0x691Bb0Cc…`:
+
+    496591  deepseek-v4-flash-0731  0x61C00071…  3333 bps  ->  0 bps    (5 of 15 were 429)
+    496591  deepseek-v4-flash-0731  0xB01EBd79…  2000 bps  ->  0 bps    (3 of 15)
+    496620  kimi-k3                 0x1F444c8A…  6667 bps  ->  0 bps    (10 of 15)
+    496620  openai/gpt-5.5          0x1F444c8A…  2000 bps  ->  0 bps    (3 of 15)
+    496620  openai/gpt-5.6-sol      0x1F444c8A…  2000 bps  ->  0 bps    (3 of 15)
+    496620  qwen3.6-plus            0x992e6396…  2000 bps  ->  0 bps    (3 of 15)
+    496620  glm-5.1                 0xDB7B4653…  2000 bps  ->  0 bps    (3 of 15)
+    496620  glm-5                   0xB01EBd79…  5333 bps  ->  1250 bps (7 of 15)
+    496620  glm-5                   0xb1242816…  6000 bps  ->  1429 bps (8 of 15)
+
+Seven of the nine failed **nothing**. `kimi-k3` is on Aristotle mainnet at 66.67% against a
+true rate of 0. (496514 and 496516 have four more between them, but their prober is
+`0xaBaCa14B…` — the retired testnet key, not this ledger.)
+
+**Fixed 2026-08-31: `faultSide` charges `rate_limit` to the prober.** `classify()` reads it
+from the HTTP status alone and the counter it exhausts is `x-ratelimit-remaining` on our own
+key, so nothing about a 429 describes the provider — the same argument already written into
+the file for `no_content`. Epochs from here are clean; the nine above cannot be, because the
+ledger is write-once.
+
+**The nine still verify, and that is by design rather than luck.** `buildBundle` writes
+`rules.faultAttribution` out of `faultSide()` at write time and `recompute()` reads it back
+from the bundle, so a published epoch is always scored by the rule it was computed under.
+Checked: `recompute()` on 496620's bundle still returns 6667 bps for `kimi-k3` — matching
+the chain — while today's `aggregate()` returns 0. F7 is intact. The published set does not
+move either: `sufficient` counts successes, which attribution never touched.
+
+**What is left to do about it: annotate 496591 and 496620 on the dashboard.** As of
+2026-08-31 the strings `429`, `rate limit` and `rate_limit` appear nowhere in `dashboard/`
+or `README.md` — the explanation lives only in this file, which no reader sees. The numbers
+cannot be revised; the context can be published beside them, and principle four says it
+should be.
 
 Epoch 496636 kept the exclusions, ran 450 calls over 435 s, never took the counter below
 **362**, and collected **zero** 429s — 428 of 450 calls answered against 397 of 570. The
@@ -1003,12 +1050,15 @@ so it is where the project's principles become arithmetic:
 - **Never pool by address.** The unit is (address, model), same as ProviderRegistry.
   Pooling by address is the exact defect this project points at — four differently-sized
   models reported at an identical 9408 ms because the figure was aggregated at the address.
-- **Our faults are not their errors.** A 401 from an expired key or a 402 from an empty
-  balance is a *prober* failure. Counting it against a provider's error rate would publish
-  an accusation caused by our own billing. `auth` / `payment` / `bad_request` are excluded
-  from both the rate and the attempt count; `upstream` / `timeout` / `rate_limit` /
-  `malformed` / `not_found` count against the provider; `network` is genuinely ambiguous
-  and is reported as unattributed rather than guessed either way.
+- **Our faults are not their errors.** A 401 from an expired key, a 402 from an empty
+  balance, a 429 from our own rate-limit window are *prober* failures. Counting one against
+  a provider's error rate would publish an accusation caused by our own billing. `auth` /
+  `payment` / `bad_request` / `no_content` / `rate_limit` are excluded from both the rate
+  and the attempt count; `upstream` / `timeout` / `malformed` / `not_found` count against
+  the provider; `network` is genuinely ambiguous and is reported as unattributed rather
+  than guessed either way. **`rate_limit` moved to the prober side on 2026-08-31** — see
+  the correction under *Ready now*; epochs written before that date carry the old rule in
+  their own bundle and verify against it.
 - **Too few samples means no number.** Below 5 successful calls the service is marked
   insufficient and left out of the epoch entirely — which is exactly why
   MeasurementRegistry stores no zero-filled placeholder.
