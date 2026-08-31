@@ -1,0 +1,22 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif",
+    "fontSize": "14px",
+    "primaryColor": "#FFFFFF",
+    "primaryTextColor": "#2A2A2A",
+    "primaryBorderColor": "#8A8A8A",
+    "lineColor": "#6B6B6B",
+    "clusterBkg": "#FAFAF8",
+    "clusterBorder": "#C9C7C0"
+  },
+  "flowchart": {
+    "htmlLabels": true,
+    "nodeSpacing": 34,
+    "rankSpacing": 45,
+    "padding": 12,
+    "wrappingWidth": 900,
+    "useMaxWidth": false,
+    "diagramPadding": 16
+  }
+}

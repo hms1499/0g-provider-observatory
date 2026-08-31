@@ -1,0 +1,60 @@
+---
+title: 0G Provider Observatory — architecture of one measurement epoch
+---
+flowchart TB
+
+  subgraph SRC["1 · SOURCES — what the network says about itself"]
+    OC["<b>0G Compute contract</b><br/>read-only broker"]
+    RT["<b>0G Router</b><br/>GET /v1/providers"]
+  end
+
+  SNAP["<b>snapshot</b> · src/sources/<br/>reconcile both · deriveMode → TeeML · TeeTLS · standard"]
+
+  subgraph MEAS["2 · MEASUREMENT LAYER"]
+    PLAN["<b>plan</b> · probes/plan.ts &nbsp;—&nbsp; <i>pure, offline, free</i><br/>target = (address, model) · negotiate params · 3× price ceiling · group by canonical_id"]
+    ROST["<b>roster</b> · probes/epoch-run.ts + roster-lock.ts<br/>multi-provider groups only · fit whole groups to budget · lock the series"]
+    PROBE["<b>probe</b> · probes/suite.ts + router-client.ts &nbsp;—&nbsp; <i>the only step that spends</i><br/>15 fixed probes × N services · pinned · 1 call, no retry<br/>budget held before the call · pin verified after · transcript .jsonl per call"]
+    DIV["<b>divergence</b> · probes/divergence.ts<br/>TeeML reference, else peer / majority<br/>minus the measured noise floor<br/>unmeasurable → 0xFFFF, never 0"]
+    AGG["<b>aggregate</b> · probes/aggregate.ts<br/>p50 · p95 · errorRateBps<br/>nearest-rank, integers only<br/>our faults ≠ their errors<br/>under 5 samples → no number"]
+    PLAN --> ROST --> PROBE
+    PROBE --> DIV
+    PROBE --> AGG
+  end
+
+  subgraph PUB["3 · PUBLISH"]
+    ROWS["<b>epoch record</b> · aggregate.toMeasurements() + chain/writer.ts<br/>7 integers per service · insufficient services dropped, never zero-filled"]
+    BUN["<b>evidence bundle</b> · storage/bundle.ts<br/>transcript + the rulebook · deterministic bytes"]
+    ST[("<b>0G Storage</b><br/>merkle root<br/>computed locally first")]
+    CH[("<b>0G Chain</b> · MeasurementRegistry<br/>write-once — no update, no delete<br/>7 integers per service in one slot + storageRoot")]
+    ROWS --> BUN --> ST
+    ST -. storageRoot .-> CH
+    ROWS -- "one write-once transaction" --> CH
+  end
+
+  subgraph RD["4 · READERS — no server of ours in the path"]
+    DASH["<b>dashboard/</b><br/>Providers · Verify<br/>Reproduce · Measure"]
+    VER["<b>verify CLI</b> · src/verify/<br/>recomputes from the bundle's<br/>own rules · imports nothing<br/>from probes/"]
+    SDK["<b>selection SDK</b><br/>sdk/pickProvider.ts<br/>chain only<br/>never sees a key"]
+    RELAY["<b>relay</b> → 0G Router<br/>api/router/chat/completions.ts<br/>holds no secret · constant upstream<br/>attaches the ceiling · no chain access"]
+    DASH -. "reader's own key" .-> RELAY
+  end
+
+  RT --> SNAP
+  OC --> SNAP
+  SNAP --> PLAN
+  DIV --> ROWS
+  AGG --> ROWS
+  CH --> DASH
+  CH --> VER
+  CH --> SDK
+  ST --> DASH
+  ST --> VER
+
+  classDef core fill:#FDF3E3,stroke:#B7791F,stroke-width:1.5px,color:#5F4310
+  classDef chain fill:#E8F0FB,stroke:#2B5FA8,stroke-width:1.5px,color:#1B3C6B
+  classDef plain fill:#FFFFFF,stroke:#9A9A94,color:#2A2A2A
+  classDef relay fill:#F6E3E0,stroke:#9E3B2E,color:#7A2C22
+  class PLAN,ROST,PROBE,AGG,DIV core
+  class ST,CH chain
+  class RT,OC,SNAP,ROWS,BUN,DASH,VER,SDK plain
+  class RELAY relay
