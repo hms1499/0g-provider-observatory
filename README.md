@@ -1,12 +1,15 @@
 # 0G Provider Observatory
 
-An independent measurement layer for 0G's inference network.
+Verifiable provider selection for 0G AI apps.
 
-It measures providers from the outside, writes what it found to a write-once ledger on 0G
-mainnet, and puts the raw transcript on 0G Storage — so anyone can recheck the numbers, or
-take their own measurement and compare.
+0G's Router can expose several providers for the same model. This project measures them from
+the outside, writes the summary to a write-once ledger on 0G mainnet, stores the raw transcript
+on 0G Storage, and turns those measurements into a provider-pinned Router request a developer
+can use.
 
-It reports divergence. It does not attribute motive.
+The result is not another trust-me dashboard. A reader can pick a provider, verify the
+evidence behind the pick, or take their own measurement and compare. It reports divergence; it
+does not attribute motive.
 
 **[og-provider-observatory.vercel.app](https://og-provider-observatory.vercel.app)** — the
 dashboard, reading 0G mainnet in your browser. No account, no wallet, nothing served from a
@@ -40,6 +43,23 @@ returned by the network's own service registry reads `TeeML` for 21 of 23 servic
 `TargetSeparated`, inside the metadata blob. A developer following the documented path reads
 a stronger guarantee than 15 of those services provide. That is a measurement, not an accusation, and it is written
 up with the method in [`docs/network-findings.md`](docs/network-findings.md) §3.
+
+## Why 0G specifically
+
+This would be much weaker as an ordinary hosted dashboard. 0G is what lets the measurement
+become verifiable and actionable:
+
+- **0G Compute** is the network being measured: the providers, models, modes, timings, errors
+  and answer divergence.
+- **0G Chain** is the public measurement ledger: one write-once summary per epoch, with no
+  owner update path.
+- **0G Storage** holds the evidence: the full transcript behind each epoch, fetchable and
+  re-hashable by anyone.
+- **0G Router header pinning** turns the result into action: the dashboard can recommend an
+  address, and the developer can call that exact provider with `X-0G-Provider-Address`.
+
+Without 0G Chain and Storage, this is just a dashboard. With them, it is a verifiable
+measurement layer for choosing 0G AI providers.
 
 ## How it works
 
