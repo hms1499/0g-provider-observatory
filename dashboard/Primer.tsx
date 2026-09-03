@@ -7,18 +7,19 @@ const REMEMBERED = 'observatory.primer.open';
  *
  * The page was written for a reader who already understood it. Landing cold, the first screen
  * held eight terms — epoch, p50, p95, divergence, TeeML, TeeTLS, reference, "10 of 38" — with
- * every explanation a thousand pixels below, and nothing anywhere saying what the four tabs
+ * every explanation a thousand pixels below, and nothing anywhere saying what the sections
  * were for or why a stranger should care.
  *
  * The tabs are the part worth stating out loud, because their order is an argument. They
- * escalate from "show me" to "I do not believe you, let me run it myself", and a reader who
- * sees that reads the whole site differently from one who sees four similar words.
+ * escalate from "show me" to "I do not believe you, let me run it myself", then turn those
+ * readings into one address an application can pin. A reader who sees that reads the whole
+ * site differently from one who sees five similar words.
  *
  * The last paragraph exists because the figures outlived the page. They are on chain, so they
  * read from a program as readily as from here — and until it was written down, the only way to
- * find that out was to open the repository. It is a sentence, deliberately: a control on this
- * page that ordered providers by speed would be a league table under this project's own domain,
- * aimed at the people running the network, which is the one thing the site does not build.
+ * find that out was to open the repository. It is a sentence, deliberately: Pick names the
+ * user's criteria before it names a provider, so it stays a decision aid instead of a hidden
+ * ranking.
  */
 export function Primer() {
   /*
@@ -55,6 +56,7 @@ export function Primer() {
     ['Verify', 'whether those numbers follow from the published evidence'],
     ['Reproducibility', 'whether the instrument gives the same answer twice'],
     ['Measure', 'whether you get the same result running it yourself'],
+    ['Pick', 'which provider to pin for your own constraints'],
   ];
 
   return (
@@ -80,13 +82,12 @@ export function Primer() {
         ))}
       </dl>
       <p className="ladder-note">
-        Each tab doubts the one before it. You do not have to take any of it on trust.
+        The first four move from reading to checking; Pick turns the measured history into a
+        provider address you can use. You do not have to take any of it on trust.
       </p>
       <p className="ladder-note">
-        These figures also read from code, straight off the chain, with no API of ours in the
-        path: <code>pnpm pick glm-5.2</code> picks a provider by them. It invents no ranking of
-        its own — you name the field it sorts on, and it reports every service it rejected and
-        why.
+        The Pick tab and <code>pnpm pick glm-5.2</code> use the same rule, straight off the
+        chain: you name the field it sorts on, and it reports every service it rejected and why.
       </p>
     </details>
   );

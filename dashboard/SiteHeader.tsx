@@ -30,7 +30,7 @@ function Mark() {
   );
 }
 
-export type Panel = 'providers' | 'verify' | 'reproduce' | 'measure';
+export type Panel = 'providers' | 'verify' | 'reproduce' | 'measure' | 'pick';
 
 /**
  * The site header.
@@ -58,6 +58,7 @@ export function SiteHeader(props: {
     { id: 'verify', label: 'Verify' },
     { id: 'reproduce', label: 'Reproducibility' },
     { id: 'measure', label: 'Measure' },
+    { id: 'pick', label: 'Pick' },
   ];
 
   return (

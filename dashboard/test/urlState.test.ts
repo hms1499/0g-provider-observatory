@@ -11,6 +11,7 @@ describe('parseHash', () => {
   it('reads a panel', () => {
     assert.equal(parseHash('#verify').panel, 'verify');
     assert.equal(parseHash('#measure').panel, 'measure');
+    assert.equal(parseHash('#pick').panel, 'pick');
   });
 
   it('reads a pinned epoch — the link this format exists for', () => {
@@ -18,6 +19,16 @@ describe('parseHash', () => {
       network: 'mainnet',
       panel: 'providers',
       epoch: 496615,
+      pickModel: null,
+    });
+  });
+
+  it('reads a model for the provider picker', () => {
+    assert.deepEqual(parseHash('#pick/model/qwen%2Fqwen3-vl-30b-a3b-instruct'), {
+      network: 'mainnet',
+      panel: 'pick',
+      epoch: null,
+      pickModel: 'qwen/qwen3-vl-30b-a3b-instruct',
     });
   });
 
@@ -26,6 +37,7 @@ describe('parseHash', () => {
       network: 'testnet',
       panel: 'verify',
       epoch: null,
+      pickModel: null,
     });
   });
 
@@ -47,6 +59,7 @@ describe('parseHash', () => {
       network: 'mainnet',
       panel: 'providers',
       epoch: 496615,
+      pickModel: null,
     });
   });
 });
@@ -57,29 +70,55 @@ describe('formatHash', () => {
   });
 
   it('omits the default network but writes the other one', () => {
-    assert.equal(formatHash({ network: 'mainnet', panel: 'verify', epoch: null }), '#verify');
     assert.equal(
-      formatHash({ network: 'testnet', panel: 'verify', epoch: null }),
+      formatHash({ network: 'mainnet', panel: 'verify', epoch: null, pickModel: null }),
+      '#verify',
+    );
+    assert.equal(
+      formatHash({ network: 'testnet', panel: 'verify', epoch: null, pickModel: null }),
       '#testnet/verify',
     );
   });
 
   it('writes a pinned epoch and omits an unpinned one', () => {
     assert.equal(
-      formatHash({ network: 'mainnet', panel: 'providers', epoch: 496615 }),
+      formatHash({ network: 'mainnet', panel: 'providers', epoch: 496615, pickModel: null }),
       '#providers/epoch/496615',
     );
-    assert.equal(formatHash({ network: 'mainnet', panel: 'providers', epoch: null }), '#providers');
+    assert.equal(
+      formatHash({ network: 'mainnet', panel: 'providers', epoch: null, pickModel: null }),
+      '#providers',
+    );
+  });
+
+  it('writes a picker model as an encoded segment', () => {
+    assert.equal(
+      formatHash({
+        network: 'mainnet',
+        panel: 'pick',
+        epoch: null,
+        pickModel: 'qwen/qwen3-vl-30b-a3b-instruct',
+      }),
+      '#pick/model/qwen%2Fqwen3-vl-30b-a3b-instruct',
+    );
+  });
+
+  it('keeps picker model state out of non-picker URLs', () => {
+    assert.equal(
+      formatHash({ network: 'mainnet', panel: 'providers', epoch: null, pickModel: 'glm-5.2' }),
+      '#providers',
+    );
   });
 });
 
 describe('the two together', () => {
   const views = [
     DEFAULT_VIEW,
-    { network: 'testnet', panel: 'reproduce', epoch: null },
-    { network: 'testnet', panel: 'providers', epoch: 496497 },
-    { network: 'mainnet', panel: 'measure', epoch: null },
-    { network: 'mainnet', panel: 'providers', epoch: 496615 },
+    { network: 'testnet', panel: 'reproduce', epoch: null, pickModel: null },
+    { network: 'testnet', panel: 'providers', epoch: 496497, pickModel: null },
+    { network: 'mainnet', panel: 'measure', epoch: null, pickModel: null },
+    { network: 'mainnet', panel: 'providers', epoch: 496615, pickModel: null },
+    { network: 'mainnet', panel: 'pick', epoch: null, pickModel: 'glm-5.2' },
   ] as const;
 
   it('round-trips every view a reader can reach', () => {

@@ -1,14 +1,15 @@
 # Session handoff — continue from here
 
-**Updated:** 2026-08-31 (`rate_limit` recharged to the prober · the "six services on mainnet"
-claim corrected to nine, measured · 10 epochs on chain · demo video recorded)
+**Updated:** 2026-09-03 (`rate_limit` correction is now shown on the dashboard · local
+quality gates pass · 10 mainnet epochs recorded in this handoff)
 
 ---
 
 ## What this is
 
 **0G Provider Observatory** — an independent measurement layer for 0G's inference network.
-Hard deadline **2026-08-30 22:00**.
+The Wave 3 hackathon deadline was **2026-08-30 22:00**; this file is now an engineering
+handoff and operations log rather than a submission countdown.
 
 Design doc (v3.1): https://claude.ai/code/artifact/d4f6a199-c73f-470d-bc63-e90a22cdd02c
 The architecture was revised after T19 — the relay is a component now, and section 05's
@@ -19,22 +20,16 @@ Source file: `docs/provider-observatory.html` — edit the file and republish to
 
 **One catch on the share link.** The artifact is shared with anyone who has the link, but
 sharing is pinned to a version: people opening the link keep seeing the version that was
-pinned when it was shared, not v3.1, until the pin is moved from the page's share menu. If
-the design doc goes in the submission, move the pin first — otherwise a judge reads v3.
+pinned when it was shared, not v3.1, until the pin is moved from the page's share menu.
 
 ## How we work
 
-**Task-based, not day-based.** There is no per-day schedule. Pick anything from *Ready now*,
-finish it, move it to *Done*. The only real date is the submission deadline.
+**Task-based, not day-based.** The hackathon crunch is over; treat this file as the place to
+recover project state, preserve operational constraints, and pick the next maintenance task.
 
-Optimise for the shortest path to a valid, defensible submission — not for even progress across
-all seven features. Two consequences worth holding onto:
-
-- **The submission gate is T12, not the dashboard.** Wave 3 is invalid without a contract on 0G
-  mainnet plus an explorer link showing real activity. The contracts exist and are tested (T7);
-  what remains is funding a mainnet wallet and deploying, so epochs can start accumulating while
-  everything else is built. On-chain history takes wall-clock time to exist.
-- **Nothing in *Ready now* blocks anything else in *Ready now*.** They can be done in any order.
+Current priorities are production confidence, not new surface area: keep the measurement
+series honest, keep public verification working, and avoid changing the trust model of the
+relay or contracts without writing the reason down here first.
 
 ## Positioning — READ BEFORE WRITING ANYTHING
 
@@ -98,10 +93,13 @@ Not translated: `.claude/skills/**` is a vendored third-party package from the 0
 | T22 | The README describes the project that exists: live link, the relay on the diagram, the 0G components named, every example run before being written down | `README.md` |
 | T13a | **Demo video recorded and hosted on YouTube** (Huy, 2026-08-27) — the link is not in this file yet | — |
 | T23 | Audit of all four panels: nine defects found and fixed, each verified in a browser against mainnet | `ea5325c`, `16f9d92` |
+| T24 | Dashboard annotations for the two `rate_limit`-affected mainnet epochs | `dashboard/epochNotes.ts`, `dashboard/test/epochNotes.test.ts`, `dashboard/Reproduce.tsx` |
 
-### Ready now
+### Current operations
 
-**Accumulate epochs — 10 of the 14 the argument needs.** One command, roughly $0.055 each:
+**Accumulate more epochs if the series needs a stronger history.** The handoff records 10
+mainnet epochs; the methodology note below still explains why 14 was the target for the
+original argument. One default run is roughly $0.055:
 
     pnpm epoch --confirm --write-chain
 
@@ -164,11 +162,10 @@ Checked: `recompute()` on 496620's bundle still returns 6667 bps for `kimi-k3` �
 the chain — while today's `aggregate()` returns 0. F7 is intact. The published set does not
 move either: `sufficient` counts successes, which attribution never touched.
 
-**What is left to do about it: annotate 496591 and 496620 on the dashboard.** As of
-2026-08-31 the strings `429`, `rate limit` and `rate_limit` appear nowhere in `dashboard/`
-or `README.md` — the explanation lives only in this file, which no reader sees. The numbers
-cannot be revised; the context can be published beside them, and principle four says it
-should be.
+**Done: 496591 and 496620 are annotated on the dashboard.** The correction now lives in
+`dashboard/epochNotes.ts`, is covered by `dashboard/test/epochNotes.test.ts`, and is surfaced
+from both the epoch view and the Reproducibility panel. The numbers cannot be revised; the
+context now stands beside them, which is the right trade for a write-once ledger.
 
 Epoch 496636 kept the exclusions, ran 450 calls over 435 s, never took the counter below
 **362**, and collected **zero** 429s — 428 of 450 calls answered against 397 of 570. The
@@ -195,16 +192,14 @@ rest under "not comparable" — but nothing may describe two arbitrary epochs as
 the same roster", because for most pairs on this chain that is false.
 
 The series is also not continuous: two days separate 496540 from 496591, and the README's
-table shows that rather than hiding it. Five more epochs reach 14. **Gas is not the
-constraint** — an epoch costs 0.0022 0G to write plus 0.0012 to put its evidence on
+table shows that rather than hiding it. Four more epochs reach 14 from the 10 recorded here.
+**Gas is not the constraint** — an epoch costs 0.0022 0G to write plus 0.0012 to put its evidence on
 Storage, and the prober held 0.1364 0G on 2026-08-28, which buys about 40 more. Router
 credit is the thing to watch, and it is not readable from here.
 
-**Then T13, and only two pieces of it are left.** The README is done (T22) and the video is
-recorded (T13a). What remains is the public X post — project name, a screenshot or clip,
-`#0GBridge` `#BuildOn0G`, tagging `@0G_labs` `@0G_Builders` `@AKINDO_io` — and submitting on
-AKINDO before 2026-08-30 22:00. The video link still needs to go into the submission and into
-this file.
+**Submission-era note.** The README is done (T22) and the video was recorded (T13a). If the
+old Wave 3 submission has to be reconstructed, the missing local detail is still the public
+video link; do not treat the old X/AKINDO checklist as an active engineering blocker.
 
 **Deployed. `/api/router` exists on the open internet.** Verified 2026-08-26 against the live
 host, not against a local build: the page read epoch 496540 from mainnet, renders four consistency
@@ -474,9 +469,10 @@ pooled so the floor becomes a real rate. `computeDivergence()` accepts pooled in
 `run-epoch.ts` passes only the current run's results, so every published record still carries
 a floor of 0 or 10000 from its single duplicate pair. Running 14 epochs separately does not
 fix this on its own, and the ledger is write-once. Either add pooling to the write path
-before mainnet, or accept that the floor stays coarse and say so.
+before relying on the 14-epoch noise-floor claim, or accept that the floor stays coarse and
+say so.
 
-### Blocked on Huy — nothing is blocked
+### Previously blocked on Huy — nothing is blocked
 
 All three blockers are cleared. Kept as a record of what they were and how they went away.
 
@@ -486,25 +482,27 @@ All three blockers are cleared. Kept as a record of what they were and how they 
 | B2 | ~$10–20 of 0G on **mainnet** | T12 | Done — mainnet deploy, 38 providers registered, first epoch written |
 | B3 | Top up Router credit | T10 | Done (Huy, confirmed 2026-08-26). The "~$0.09 left" figure under Funding predates the top-up and is stale — read the balance from the Router dashboard, not from this file |
 
-Nothing now stands between here and a complete submission except wall-clock time on epochs
-and T13 itself.
+Nothing on the engineering side is blocked by credentials, gas, or Router credit as recorded
+here. The current Router balance is still only visible from the Router dashboard.
 
-### Blocked on other tasks
+### Currently open
 
 | | Task | Waits on |
 |---|---|---|
-| T13 | Submission pack | nothing. README done (T22), video recorded (T13a). Left: the X post, and submitting on AKINDO with the video link |
+| CI | Add an automated quality gate | nothing. Run `pnpm typecheck`, `pnpm test`, `pnpm dashboard:build`, and `forge test` |
+| Ops docs | Split durable runbook notes out of this handoff | nothing. The cost, budget, epoch timing, and relay caveats below are operational knowledge |
+| More epochs | Extend the mainnet history from 10 toward 14+ | Router credit and wall-clock time |
 
-### Not in scope for Wave 3
+### Not in scope for the current build
 
-Provider selection SDK (F6) if time runs short · full statistical methodology (Wave 4) ·
+Full statistical methodology (Wave 4) ·
 multiple decentralised probers with staking (Wave 5 — the contracts already key every record
 by (epoch, prober), so opening the gate needs no data migration).
 
-**Critical path:** B2 -> T12 -> T13, and only T13 is open. Contracts are on mainnet and
-source-verified, five epochs are written and each one verifies, the dashboard and the relay are
-public, the README carries the setup and the explorer links, and the video exists. What is left
-is one X post and the AKINDO form — plus epochs, which cost only wall-clock time.
+**Current state:** contracts are on mainnet and source-verified, 10 epochs are recorded in
+this handoff, the dashboard and relay are public, the README carries the setup and explorer
+links, and the demo video exists. The next useful work is operational hardening rather than
+submission triage.
 
 ### Live on 0G Aristotle mainnet (chain 16661)
 
@@ -621,7 +619,8 @@ epoch.
 **Still open:** the noise floor is 0 or 10000 from a single pair per epoch even when it does
 land. Pooling epochs would fix the granularity but breaks verifiability — the bundle is
 per-epoch, so a verifier holding one bundle could not recompute a pooled figure. Extra
-samples have to come from inside the epoch. Not solved; not blocking a submission.
+samples have to come from inside the epoch. Not solved; not blocking the current dashboard
+or verifier.
 
 ### Funding
 
@@ -708,7 +707,8 @@ groups do not. The chain round trip reads back exactly what was written.
 **The pin held on all 153 successful calls, zero mismatches.** That was the single riskiest
 assumption and it is now measured rather than hoped for.
 
-Four defects surfaced. Two are fixed; two are open and listed in *Ready now*.
+Four defects surfaced in the first live epoch. This is historical context now; the fixes and
+follow-up audit are recorded above in T10b, T14, T15, T23, and T24.
 
 **1. Our own ceiling was being published as their error rate. FIXED.**
 15 replies came back HTTP 200 with `content: null`, the chain of thought in a `reasoning`
@@ -1057,7 +1057,7 @@ so it is where the project's principles become arithmetic:
   and the attempt count; `upstream` / `timeout` / `malformed` / `not_found` count against
   the provider; `network` is genuinely ambiguous and is reported as unattributed rather
   than guessed either way. **`rate_limit` moved to the prober side on 2026-08-31** — see
-  the correction under *Ready now*; epochs written before that date carry the old rule in
+  the correction under *Current operations*; epochs written before that date carry the old rule in
   their own bundle and verify against it.
 - **Too few samples means no number.** Below 5 successful calls the service is marked
   insufficient and left out of the epoch entirely — which is exactly why
@@ -1167,7 +1167,11 @@ SDK, contract, and endpoint details: `docs/0g-reference/ai-context-notes.md`
 
 ---
 
-## Cost
+## Legacy cost estimate — superseded
+
+These figures are kept as the original planning estimate. The current cost guidance is the
+2026-08-24 remeasurement section above, plus whatever `pnpm dry-run` prints against today's
+advertised prices.
 
 | | |
 |---|---|
@@ -1183,11 +1187,10 @@ The five most expensive services (`claude-fable-5`, `gpt-5.6-sol`, `gpt-5.5`, `c
 
 ## Open questions
 
-- **Overlap with VeriAgent** (Wave 3) — they score the trustworthiness of a user's *agent*; we
-  measure the *infrastructure* of the network. This has to be explicit in the one-line description
-  and in the demo video.
-- **Two things worth reporting to 0G DevRel**: the skill points at deprecated SDKs, and the on-chain
-  `verifiability` field overstates the guarantee. Both are genuine contributions and score under
-  Traction & Communication.
+- **Overlap with VeriAgent** — they score the trustworthiness of a user's *agent*; we measure
+  the *infrastructure* of the network. Keep that distinction explicit in external copy.
+- **Two things worth reporting to 0G DevRel**: the skill points at deprecated SDKs, and the
+  on-chain `verifiability` field overstates the guarantee. Both are genuine contributions,
+  independent of the old submission rubric.
 
-Full submission requirements: `HACKATHON-RULES.md`
+Archived submission requirements: `HACKATHON-RULES.md`

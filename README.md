@@ -198,6 +198,7 @@ both flags to measure only the pinned series instead: 10 services, about **$0.05
 ## Use it from code
 
 The figures are on chain, so picking a provider by them needs no API of ours and no sign-up.
+The dashboard's **Pick** tab uses the same rules if you want to do this in the browser.
 
 ```bash
 pnpm pick glm-5.2 --mode=TeeML

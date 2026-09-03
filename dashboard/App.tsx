@@ -3,6 +3,7 @@ import { Caveats } from './Caveats.js';
 import { Measure } from './Measure.js';
 import { NoEpoch } from './NoEpoch.js';
 import { NETWORKS, type NetworkKey } from './networks.js';
+import { Pick } from './Pick.js';
 import { Providers } from './Providers.js';
 import { Reproduce } from './Reproduce.js';
 import { selectEpoch } from './selectEpoch.js';
@@ -45,6 +46,7 @@ export default function App() {
   }, [theme]);
   const [key, setKey] = useState<NetworkKey>(initial.network);
   const [panel, setPanel] = useState<Panel>(initial.panel);
+  const [pickModel, setPickModel] = useState<string | null>(initial.pickModel);
   const net = NETWORKS[key];
   const data = useObservatory(net);
 
@@ -70,16 +72,15 @@ export default function App() {
   }, [key]);
 
   /*
-   * The address follows the page. `replaceState`, not `pushState`: the header calls these
-   * four panels sections of one document, and a Back button that walked backwards through
-   * sections would strand a reader who arrived from somewhere else and wants to leave. What
-   * the hash is for is surviving a reload and being copied out of the bar, and replacing does
-   * both.
+   * The address follows the page. `replaceState`, not `pushState`: the header presents these
+   * panels as sections of one document, and a Back button that walked backwards through them
+   * would strand a reader who arrived from somewhere else and wants to leave. What the hash is
+   * for is surviving a reload and being copied out of the bar, and replacing does both.
    */
   useEffect(() => {
-    const next = formatHash({ network: key, panel, epoch: chosen });
+    const next = formatHash({ network: key, panel, epoch: chosen, pickModel });
     if (window.location.hash !== next) history.replaceState(null, '', next);
-  }, [key, panel, chosen]);
+  }, [key, panel, chosen, pickModel]);
 
   /*
    * The one direction that is not ours: a reader editing the address bar, or following a
@@ -98,6 +99,7 @@ export default function App() {
       setKey(view.network);
       setPanel(view.panel);
       setChosen(view.epoch);
+      setPickModel(view.pickModel);
       const canonical = formatHash(view);
       if (window.location.hash !== canonical) history.replaceState(null, '', canonical);
     };
@@ -195,6 +197,10 @@ export default function App() {
             history={data.history}
             epochs={data.epochs}
             onEpoch={setChosen}
+            onPickModel={(model) => {
+              setPickModel(model);
+              setPanel('pick');
+            }}
           />
         )}
         {data.state === 'ready' && panel === 'providers' && view.state !== 'record' && (
@@ -218,6 +224,16 @@ export default function App() {
         )}
         {data.state === 'ready' && panel === 'measure' && (
           <Measure net={net} epochs={data.epochs} />
+        )}
+        {data.state === 'ready' && panel === 'pick' && (
+          <Pick
+            records={data.records}
+            providers={data.providers}
+            epochs={data.epochs}
+            history={data.history}
+            prefillModel={pickModel}
+            onModel={setPickModel}
+          />
         )}
 
         {/*

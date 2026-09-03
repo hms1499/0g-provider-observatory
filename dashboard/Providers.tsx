@@ -40,6 +40,7 @@ export function Providers(props: {
   /** Every epoch this prober has published, whether or not its record has arrived. */
   epochs: readonly number[];
   onEpoch: (epoch: number) => void;
+  onPickModel: (model: string) => void;
 }) {
   const groups = groupByModel(props.epoch, props.providers);
   const observations = observe(groups);
@@ -148,6 +149,7 @@ export function Providers(props: {
           seriesHi={seriesHi}
           at={props.epoch.epoch}
           history={props.history}
+          onPickModel={props.onPickModel}
         />
       ))}
 
@@ -192,6 +194,7 @@ function ModelBlock(props: {
   seriesHi: number;
   at: number;
   history: HistoryState;
+  onPickModel: (model: string) => void;
 }) {
   const { group } = props;
   const modes = [...new Set(group.rows.map((r) => r.mode))].sort();
@@ -204,6 +207,14 @@ function ModelBlock(props: {
           {group.rows.length} {group.rows.length === 1 ? 'provider' : 'providers'} ·{' '}
           {modes.join(' + ')}
         </span>
+        <button
+          className="model-pick"
+          aria-label={`Pick a provider for ${group.model}`}
+          onClick={() => props.onPickModel(group.model)}
+          title={`Pick a provider for ${group.model}`}
+        >
+          Pick provider
+        </button>
       </h3>
 
       {/*
