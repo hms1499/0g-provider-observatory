@@ -22,6 +22,8 @@ function copiedText(c: Candidate): string {
   ].join('\n');
 }
 
+const jsString = (value: string) => JSON.stringify(value);
+
 function routerSnippet(c: Candidate): string {
   return [
     "await fetch('https://router-api.0g.ai/v1/chat/completions', {",
@@ -29,11 +31,14 @@ function routerSnippet(c: Candidate): string {
     '  headers: {',
     "    authorization: `Bearer ${process.env.ROUTER_API_KEY}`,",
     "    'content-type': 'application/json',",
-    `    'X-0G-Provider-Address': '${c.address}',`,
+    `    'X-0G-Provider-Address': ${jsString(c.address)},`,
     '  },',
     '  body: JSON.stringify({',
-    `    model: '${c.model}',`,
+    `    model: ${jsString(c.model)},`,
     "    messages: [{ role: 'user', content: 'Say hello from the pinned provider.' }],",
+    '    max_tokens: 128,',
+    '    stream: false,',
+    '    temperature: 0,',
     '  }),',
     '});',
   ].join('\n');
@@ -65,6 +70,10 @@ export function Pick(props: {
   const [orderBy, setOrderBy] = useState<OrderBy>('p50');
   const [requireNoDivergence, setRequireNoDivergence] = useState(false);
   const [copied, setCopied] = useState<'pin' | 'call' | null>(null);
+  const choices = useMemo(
+    () => (model && !models.includes(model) ? [model, ...models] : models),
+    [model, models],
+  );
 
   useEffect(() => {
     if (props.prefillModel !== null) setModel(props.prefillModel);
@@ -147,7 +156,7 @@ export function Pick(props: {
           <label>
             model
             <select value={model} onChange={(e) => setModel(e.target.value)}>
-              {models.map((m) => (
+              {choices.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>

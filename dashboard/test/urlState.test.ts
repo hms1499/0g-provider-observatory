@@ -32,6 +32,15 @@ describe('parseHash', () => {
     });
   });
 
+  it('ignores model segments outside the provider picker', () => {
+    assert.deepEqual(parseHash('#providers/model/glm-5.2'), {
+      network: 'mainnet',
+      panel: 'providers',
+      epoch: null,
+      pickModel: null,
+    });
+  });
+
   it('reads a network in front of the panel', () => {
     assert.deepEqual(parseHash('#testnet/verify'), {
       network: 'testnet',

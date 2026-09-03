@@ -82,7 +82,7 @@ export function parseHash(hash: string): ViewState {
       i += 2;
       continue;
     }
-    if (parts[i] === 'model') {
+    if (parts[i] === 'model' && view.panel === 'pick') {
       const raw = parts[i + 1];
       if (raw !== undefined && raw !== '') {
         try {
