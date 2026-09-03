@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isUnmeasured } from '../src/chain/encoding.js';
 import type { EpochRecord, Mode, ProviderRecord } from '../src/chain/registry.js';
-import { select, toHistories, type Candidate, type OrderBy, type Selection } from '../src/sdk/pickProvider.js';
+import { select, toHistories, type Candidate, type OrderBy, type Sample, type Selection } from '../src/sdk/pickProvider.js';
 import type { HistoryState } from './selectEpoch.js';
 import { formatBps, formatSeconds, shortAddress } from './rows.js';
 import { Bar } from './Skeleton.js';
@@ -18,6 +19,23 @@ function copiedText(c: Candidate): string {
   return [
     `X-0G-Provider-Address: ${c.address}`,
     `model: ${c.model}`,
+  ].join('\n');
+}
+
+function routerSnippet(c: Candidate): string {
+  return [
+    "await fetch('https://router-api.0g.ai/v1/chat/completions', {",
+    "  method: 'POST',",
+    '  headers: {',
+    "    authorization: `Bearer ${process.env.ROUTER_API_KEY}`,",
+    "    'content-type': 'application/json',",
+    `    'X-0G-Provider-Address': '${c.address}',`,
+    '  },',
+    '  body: JSON.stringify({',
+    `    model: '${c.model}',`,
+    "    messages: [{ role: 'user', content: 'Say hello from the pinned provider.' }],",
+    '  }),',
+    '});',
   ].join('\n');
 }
 
@@ -46,7 +64,7 @@ export function Pick(props: {
   const [windowSize, setWindowSize] = useState('5');
   const [orderBy, setOrderBy] = useState<OrderBy>('p50');
   const [requireNoDivergence, setRequireNoDivergence] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'pin' | 'call' | null>(null);
 
   useEffect(() => {
     if (props.prefillModel !== null) setModel(props.prefillModel);
@@ -58,7 +76,7 @@ export function Pick(props: {
 
   useEffect(() => {
     onModel(model || null);
-    setCopied(false);
+    setCopied(null);
   }, [model, onModel]);
 
   const windowRecords = useMemo(() => {
@@ -66,9 +84,14 @@ export function Pick(props: {
     return [...props.records].sort((a, b) => a.epoch - b.epoch).slice(-n);
   }, [props.records, windowSize]);
 
+  const histories = useMemo(
+    () => toHistories(windowRecords, props.providers),
+    [props.providers, windowRecords],
+  );
+
   const result = useMemo(() => {
     if (!model) return null;
-    return select(toHistories(windowRecords, props.providers), {
+    return select(histories, {
       model,
       mode: mode || undefined,
       maxP50Ms: num(maxP50),
@@ -88,14 +111,26 @@ export function Pick(props: {
     mode,
     model,
     orderBy,
-    props.providers,
+    histories,
     requireNoDivergence,
-    windowRecords,
   ]);
 
-  async function copy(c: Candidate) {
+  const bestSamples = useMemo(() => {
+    if (!result?.best) return [];
+    const best = result.best;
+    return histories.find(
+      (h) => h.model === best.model && h.address.toLowerCase() === best.address.toLowerCase(),
+    )?.samples ?? [];
+  }, [histories, result]);
+
+  async function copyPin(c: Candidate) {
     await navigator.clipboard.writeText(copiedText(c));
-    setCopied(true);
+    setCopied('pin');
+  }
+
+  async function copyCall(c: Candidate) {
+    await navigator.clipboard.writeText(routerSnippet(c));
+    setCopied('call');
   }
 
   return (
@@ -201,17 +236,26 @@ export function Pick(props: {
         </div>
 
         <p className="pick-window">
-          Window:{' '}
+          Loaded window:{' '}
           {windowRecords.length > 0
             ? windowRecords.map((r) => r.epoch).join(', ')
             : props.history === 'loading'
               ? 'still reading published epochs'
               : 'no records loaded'}
           {props.history === 'loading' && <Bar w="5rem" />}
-          {windowRecords.length > 0 && ` · ${publishedCount} published epoch${publishedCount === 1 ? '' : 's'}`}
+          {windowRecords.length > 0 && ` · ${windowRecords.length} of ${publishedCount} published epoch${publishedCount === 1 ? '' : 's'} read`}
+          {props.history === 'failed' && ' · history reads failed'}
         </p>
 
-        {result && <PickResult result={result} onCopy={copy} copied={copied} />}
+        {result && (
+          <PickResult
+            result={result}
+            samples={bestSamples}
+            onCopyPin={copyPin}
+            onCopyCall={copyCall}
+            copied={copied}
+          />
+        )}
       </div>
     </section>
   );
@@ -219,8 +263,10 @@ export function Pick(props: {
 
 function PickResult(props: {
   result: Selection;
-  onCopy: (candidate: Candidate) => void;
-  copied: boolean;
+  samples: readonly Sample[];
+  onCopyPin: (candidate: Candidate) => void;
+  onCopyCall: (candidate: Candidate) => void;
+  copied: 'pin' | 'call' | null;
 }) {
   const { result } = props;
   if (result.consideredCount === 0) {
@@ -275,11 +321,20 @@ function PickResult(props: {
             </dd>
           </div>
         </dl>
-        <button onClick={() => props.onCopy(best)}>
-          {props.copied ? 'Copied' : 'Copy Router pin'}
-        </button>
+        <div className="pick-actions">
+          <button onClick={() => props.onCopyPin(best)}>
+            {props.copied === 'pin' ? 'Copied' : 'Copy Router pin'}
+          </button>
+          <button className="secondary" onClick={() => props.onCopyCall(best)}>
+            {props.copied === 'call' ? 'Copied' : 'Copy Router call'}
+          </button>
+        </div>
         <pre>{copiedText(best)}</pre>
+        <h3>Router call</h3>
+        <pre>{routerSnippet(best)}</pre>
       </div>
+
+      <PickHistory samples={props.samples} />
 
       {result.matches.length > 1 && (
         <>
@@ -313,6 +368,51 @@ function PickResult(props: {
 
       {result.rejected.length > 0 && <Rejections rejected={result.rejected} />}
     </div>
+  );
+}
+
+function PickHistory(props: { samples: readonly Sample[] }) {
+  const samples = [...props.samples].sort((a, b) => a.epoch - b.epoch);
+  if (samples.length === 0) return null;
+  const max = Math.max(...samples.map((s) => s.p95Ms), 1);
+
+  return (
+    <>
+      <h3>Why this provider</h3>
+      <table className="readings pick-history" role="table">
+        <thead role="rowgroup">
+          <tr role="row">
+            <th role="columnheader">epoch</th>
+            <th role="columnheader">mode</th>
+            <th className="num" role="columnheader">p50</th>
+            <th className="num" role="columnheader">p95</th>
+            <th className="num" role="columnheader">errors</th>
+            <th className="num" role="columnheader">divergence</th>
+            <th role="columnheader">shape</th>
+          </tr>
+        </thead>
+        <tbody role="rowgroup">
+          {samples.map((s) => (
+            <tr key={s.epoch} role="row">
+              <td role="cell" data-label="epoch">{s.epoch}</td>
+              <td role="cell" data-label="mode">{s.observedMode}</td>
+              <td className="num" role="cell" data-label="p50">{formatSeconds(s.p50Ms)}s</td>
+              <td className="num" role="cell" data-label="p95">{formatSeconds(s.p95Ms)}s</td>
+              <td className="num" role="cell" data-label="errors">{formatBps(s.errorRateBps)}</td>
+              <td className="num" role="cell" data-label="divergence">
+                {isUnmeasured(s.divergenceBps) ? 'unmeasured' : formatBps(s.divergenceBps)}
+              </td>
+              <td role="cell" data-label="shape">
+                <div className="history-track" aria-label={`p50 ${s.p50Ms}ms, p95 ${s.p95Ms}ms`}>
+                  <span className="p95" style={{ width: `${Math.max(2, (s.p95Ms / max) * 100)}%` }} />
+                  <span className="p50" style={{ width: `${Math.max(2, (s.p50Ms / max) * 100)}%` }} />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 

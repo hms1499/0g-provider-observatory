@@ -12,6 +12,14 @@ It reports divergence. It does not attribute motive.
 dashboard, reading 0G mainnet in your browser. No account, no wallet, nothing served from a
 database of ours.
 
+## 60-second demo
+
+1. Open the dashboard and choose **Pick**.
+2. Select a model, set the latency/error/divergence limits your app can tolerate, and copy
+   the Router call with `X-0G-Provider-Address` already filled in.
+3. Open **Verify** or **Reproducibility** to see the on-chain record and 0G Storage evidence
+   behind the recommendation.
+
 ---
 
 ## The problem

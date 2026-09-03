@@ -1964,13 +1964,24 @@ button:disabled {
   font-size: var(--t-body);
 }
 
-.pick-best button {
+.pick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.pick-actions button {
   color: var(--bg);
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 3px;
   padding: 0.45rem 0.8rem;
   cursor: pointer;
+}
+
+.pick-actions .secondary {
+  color: var(--ink);
+  background: var(--bg);
 }
 
 .pick-best pre {
@@ -1987,6 +1998,35 @@ button:disabled {
 
 .pick-table {
   margin-top: 0.75rem;
+}
+
+.pick-history {
+  margin-top: 0.75rem;
+}
+
+.history-track {
+  position: relative;
+  width: min(10rem, 100%);
+  height: 0.45rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.history-track span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.history-track .p95 {
+  background: color-mix(in srgb, var(--accent) 35%, var(--panel));
+}
+
+.history-track .p50 {
+  background: var(--accent);
 }
 
 .pick-rejections {
